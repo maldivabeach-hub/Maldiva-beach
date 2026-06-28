@@ -34,7 +34,6 @@
 let firebaseConfig = myFirebaseConfig;
 
 const isFirebaseValid = true;
-        }
 
         // Initialize App & Auth dynamically
         if (isFirebaseValid) {
@@ -787,21 +786,22 @@ const isFirebaseValid = true;
         }
 
         // Database setup
-        document.addEventListener('database-ready', () => {
-            const statusIndicator = document.getElementById('connection-status');
-            
-            if (window.usingFirebase) {
-                statusIndicator.innerText = "● Cloud Mode Actif (Firebase)";
-                statusIndicator.className = "text-emerald-400 font-bold flex items-center gap-1";
-                listenToReservationsCloud();
-                loadCloudSettings();
-            } else {
-                statusIndicator.innerText = "● Local Mode Actif (Koder)";
-                statusIndicator.className = "text-amber-400 font-bold flex items-center gap-1";
-                loadLocalReservations();
-                loadLocalSettings();
-            }
-       });
+document.addEventListener('database-ready', () => {
+    const statusIndicator = document.getElementById('connection-status');
+    
+    if (window.usingFirebase) {
+        statusIndicator.innerText = "● Cloud Mode Actif (Firebase)";
+        statusIndicator.className = "text-emerald-400 font-bold flex items-center gap-1";
+        
+        // تحميل الإعدادات فقط
+        loadCloudSettings();
+    } else {
+        statusIndicator.innerText = "● Local Mode Actif (Koder)";
+        statusIndicator.className = "text-amber-400 font-bold flex items-center gap-1";
+        loadLocalReservations();
+        loadLocalSettings();
+    }
+});
 
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1351,16 +1351,15 @@ const isFirebaseValid = true;
             const pass = document.getElementById('admin-password').value;
             const error = document.getElementById('admin-login-error');
             if (pass === 'mhdrb26') {
-                adminAuthorized = true;
-                error.classList.add('hidden');
                 document.getElementById('admin-login-view').classList.add('hidden');
                 document.getElementById('admin-dashboard-view').classList.remove('hidden');
                 showNotification("Bienvenue, Administrateur !", "success");
-            } else {
-                error.classList.remove('hidden');
-                showNotification("Mot de passe incorrect !", "error");
-            }
+            } else {        // تحميل الحجوزات من Firebase بعد دخول الأدمن
+             if (window.usingFirebase) {
+                listenToReservationsCloud();
         }
+    }
+}
 
         function logoutAdmin() {
             adminAuthorized = false;

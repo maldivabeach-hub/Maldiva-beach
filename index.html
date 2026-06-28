@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maldiva Beach Club - Reservation & Administration</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // =========================================================================
+        // ⚠️ الخطوة الأهم: ضع إعدادات FIREBASE الخاصة بك هنا ⚠️
+        // انسخ هذه المعلومات من مشروعك في Firebase Console وضعها هنا بدلاً من القيم الفارغة
+        // =========================================================================
+        const myFirebaseConfig = {
+            apiKey: "AIzaSyDUBieKJv-C0rSqt07FI87YdrkmMmUbIKY",
+            authDomain: "maldiva-beach-8e669.firebaseapp.com",
+            projectId: "maldiva-beach-8e669",
+            storageBucket: "maldiva-beach-8e669.firebasestorage.app",
+            messagingSenderId: "340126269282",
+            appId: "1:340126269282:web:0d6dbae3b056079f4d363b"
+        };
+        // =========================================================================
+
+        const appId = 'maldiva-beach-club-prod'; // معرف ثابت لمشروعك
+
+        let firebaseConfig = myFirebaseConfig;
+        let isFirebaseValid = false;
+
+        // تحقق بسيط للتأكد من أنك قمت بوضع الـ apiKey
+        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyDUBieKJv-C0rSqt07FI87YdrkmMmUbIKY" && firebaseConfig.apiKey !== "") {
+            isFirebaseValid = true;
+        }
+
+        // Initialize App & Auth dynamically
+        if (isFirebaseValid) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+
+                window.db = db;
+                window.auth = auth;
+                window.appId = appId;
+                window.collection = collection;
+                window.addDoc = addDoc;
+                window.setDoc = setDoc;
+                window.getDoc = getDoc;
+                window.query = query;
+                window.onSnapshot = onSnapshot;
+                window.updateDoc = updateDoc;
+                window.deleteDoc = deleteDoc;
+                window.doc = doc;
+                window.usingFirebase = true;
+
+                // Rule 3: Auth flow (Simplified for standard web app)
+                const initAuth = async () => {
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Auth failed, falling back to safe local mode", error);
+                    }
+                };
+                initAuth();
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.currentUser = user;
+                        document.dispatchEvent(new CustomEvent('database-ready'));
+                    }
+                });
+            } catch (err) {
+                console.error("Firebase init failed, switching to local engine", err);
+                window.usingFirebase = false;
+                setupLocalFallback();
+            }
+        } else {
+            console.warn("⚠️ مفتاح Firebase مفقود! سيتم العمل في وضع 'بدون إنترنت' (Local Storage).");
+            window.usingFirebase = false;
+            setupLocalFallback();
+        }
+
+        function setupLocalFallback() {
+            console.log("Offline Engine Activated. Saving data to LocalStorage.");
+            window.db = null;
+            window.usingFirebase = false;
+            
+            setTimeout(() => {
+                document.dispatchEvent(new CustomEvent('database-ready'));
+            }, 100);
+        }
+    </script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        maldiva: {
+                            dark: '#0b4c53',   /* Deep ocean teal */
+                            teal: '#24a19c',   /* Turquoise */
+                            orange: '#ff7e67', /* Coral Sunset */
+                            sand: '#fbf7f0',   /* Background Sand */
+                            accent: '#f4eee1'  /* Soft beige card */
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #fbf7f0;
+        }
+        .serif-title {
+            font-family: 'Playfair Display', serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-8">
+
+    <!-- Custom Notification/Toast Box -->
+    <div id="custom-toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
+        <span id="toast-icon"></span>
+        <span id="toast-message" class="text-xs font-semibold"></span>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
+            <div class="text-center space-y-3">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+                <h3 class="serif-title text-xl font-bold text-maldiva-dark">Confirmer la suppression</h3>
+                <p class="text-xs text-gray-500">Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est définitive.</p>
+                <p class="text-xs text-gray-400 font-arabic" dir="rtl">هل أنت متأكد من رغبتك في حذف هذا الحجز نهائياً؟</p>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition-colors">Annuler / إلغاء</button>
+                    <button onclick="executePendingDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs transition-colors">Supprimer / حذف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Connection & Status Bar -->
+    <div class="bg-maldiva-dark text-white text-[11px] py-2 px-4 flex justify-between items-center z-30 shadow-sm">
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
+            <span id="connection-status">Connexion en cours...</span>
+        </div>
+        <div class="font-bold tracking-wider text-maldiva-orange">MALDIVA BEACH CLUB</div>
+    </div>
+
+    <!-- Header Section with Dynamic Sticker / Custom Logo -->
+    <header class="relative bg-gradient-to-b from-maldiva-accent to-maldiva-sand pt-6 pb-8 px-4 text-center">
+        <div class="max-w-6xl mx-auto flex flex-col items-center">
+            
+            <!-- LOGO CONTAINER (يتغير ديناميكياً بناءً على إعدادات الأدمن) -->
+            <div class="w-48 h-48 md:w-52 md:h-52 mb-4 relative drop-shadow-xl hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+                
+                <!-- 1. Custom Image Logo -->
+                <div id="custom-logo-wrapper" class="hidden w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
+                    <img id="custom-logo-img" src="https://postimg.cc/vDkD32Sc' target='_blank'><img" class="w-full h-full object-cover" alt="[شعار مخصص]">
+                </div>
+
+                <!-- 2. Original SVG Sticker Logo -->
+                <svg id="default-svg-logo" viewBox="0 0 500 500" class="w-full h-full block">
+                    <defs>
+                        <radialGradient id="stickerBg" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#faf5eb"/>
+                            <stop offset="100%" stop-color="#eedfc6"/>
+                        </radialGradient>
+                        <filter id="stickerShadow" x="-10%" y="-10%" width="130%" height="130%">
+                            <feDropShadow dx="2" dy="8" stdDeviation="10" flood-opacity="0.25"/>
+                        </filter>
+                    </defs>
+
+                    <!-- Main Sticker Circle -->
+                    <circle cx="250" cy="250" r="230" fill="url(#stickerBg)" filter="url(#stickerShadow)"/>
+                    <path d="M 50 150 Q 150 50 320 80 Q 200 130 50 150 Z" fill="#cfbeaa" opacity="0.45"/>
+                    <circle cx="270" cy="245" r="55" fill="#ff7e67" />
+                    <line x1="210" y1="260" x2="330" y2="260" stroke="#24a19c" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="225" y1="272" x2="315" y2="272" stroke="#ff7e67" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="240" y1="282" x2="300" y2="282" stroke="#ff7e67" stroke-width="3" stroke-linecap="round"/>
+
+                    <path d="M 270 205 Q 275 200 280 205 Q 285 200 290 205" stroke="#0b4c53" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <path d="M 320 250 Q 345 185 295 130" stroke="#7e4a1e" stroke-width="8" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 235 145 205 110" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 240 100 230 65" stroke="#169371" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 300 70 325 50" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 350 90 370 100" stroke="#169371" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 355 145 375 180" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <path d="M 295 130 Q 320 170 310 205" stroke="#0d5944" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+                    <!-- Surfboard 2 -->
+                    <g transform="translate(165, 110) rotate(-6)">
+                        <path d="M 0 0 C 25 40 35 125 25 185 C 15 205 -15 205 -25 185 C -35 125 -25 40 0 0 Z" fill="#24a19c" />
+                    </g>
+
+                    <!-- Surfboard 1 -->
+                    <g transform="translate(120, 120) rotate(6)">
+                        <path d="M 0 0 C 25 40 35 125 25 185 C 15 205 -15 205 -25 185 C -35 125 -25 40 0 0 Z" fill="#fbd1a2" stroke="#dba672" stroke-width="3"/>
+                        <circle cx="0" cy="115" r="10" fill="#ff7e67" />
+                        <ellipse cx="-16" cy="105" rx="12" ry="8" fill="#ff7e67" transform="rotate(20 -16 105)"/>
+                        <ellipse cx="16" cy="105" rx="12" ry="8" fill="#ff7e67" transform="rotate(-20 16 105)"/>
+                        <ellipse cx="-13" cy="128" rx="12" ry="8" fill="#ff7e67" transform="rotate(-40 -13 128)"/>
+                        <ellipse cx="13" cy="128" rx="12" ry="8" fill="#ff7e67" transform="rotate(40 13 128)"/>
+                        <ellipse cx="0" cy="90" rx="8" ry="14" fill="#ff7e67" />
+                        <circle cx="0" cy="115" r="5" fill="#fbd1a2" />
+                    </g>
+
+                    <!-- Wave Base -->
+                    <path d="M 90 355 Q 200 310 310 340 T 430 330 L 415 390 Q 300 410 90 390 Z" fill="#24a19c" />
+                    <text x="250" y="320" font-family="'Playfair Display', serif" font-weight="bold" font-size="68" fill="#0b4c53" text-anchor="middle">Maldiva</text>
+
+                    <!-- Curved Text -->
+                    <path id="curvePath" d="M 330 200 A 110 110 0 0 1 430 305" fill="none" />
+                    <text font-family="'Montserrat', sans-serif" font-weight="800" font-size="16" fill="#0b4c53" letter-spacing="4">
+                        <textPath href="#curvePath" startOffset="10%">BEACH CLUB</textPath>
+                    </text>
+
+                    <!-- Peel fold -->
+                    <path d="M 412 412 L 440 380 C 420 370 390 390 412 412 Z" fill="#ffffff" opacity="0.15"/>
+                    <path d="M 412 412 L 440 380 A 230 230 0 0 1 380 440 Z" fill="#d2c4ae" />
+                    <path d="M 380 440 L 412 412 L 440 380 C 390 360 360 390 380 440 Z" fill="#ffffff" stroke="#eedfc6" stroke-width="1"/>
+                </svg>
+            </div>
+
+            <!-- Titles -->
+            <h1 class="serif-title text-4xl md:text-5xl font-extrabold text-maldiva-dark mb-1">Maldiva Beach Club</h1>
+            <p class="text-xs uppercase tracking-widest text-maldiva-teal font-bold mb-3">Location Équipements de Plage • حجز تجهيزات الشاطئ والراحة</p>
+            <div class="w-16 h-1 bg-gradient-to-r from-maldiva-teal to-maldiva-orange rounded-full"></div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs for Mobile -->
+    <div class="bg-white border-y border-gray-100 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-2xl mx-auto flex justify-around">
+            <button onclick="switchTab('booking-form')" id="btn-tab-booking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1">
+                <i class="fa-solid fa-umbrella-beach text-base"></i>
+                <span>Réserver / حجز</span>
+            </button>
+            <button onclick="switchTab('tracking-section')" id="btn-tab-tracking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1">
+                <i class="fa-solid fa-magnifying-glass text-base"></i>
+                <span>Suivi / تتبع الحجز</span>
+            </button>
+            <button onclick="switchTab('admin-portal')" id="btn-tab-admin" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1">
+                <i class="fa-solid fa-lock text-base"></i>
+                <span>Espace Admin / الإدارة</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN VIEW AREA -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <!-- TAB 1: BOOKING & RATES VIEW -->
+        <div id="tab-booking-form" class="space-y-8 block">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Rates Catalog (Left 2 Columns) -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="border-b border-gray-200 pb-3">
+                        <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Nos Tarifs de Location • قائمة الأسعار</h3>
+                        <p class="text-xs text-gray-500 mt-1">Tarifs journaliers valables pour toute la saison estivale • الأسعار صالحة طوال اليوم</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- 🛋️ 1. Chaise Longue (كرسي الاستلقاء) -->
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
+                            <div class="w-20 h-20 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0">
+                                <img id="img-item-chaise" src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpgw=150" class="w-full h-full object-cover" alt="[صورة كرسي استلقاء]">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-baseline">
+                                    <h4 class="font-bold text-gray-800 text-sm">Chaise Longue</h4>
+                                    <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي استلقاء</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">Avec matelas standard et parasol inclus.</p>
+                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">1,500 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                            </div>
+                        </div>
+
+                        <!-- 🛋️ 2. Transat en Bois (كرسي الإسترخاء بالخشب) -->
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
+                            <div class="w-20 h-20 rounded-xl overflow-hidden bg-teal-100 flex-shrink-0">
+                                <img id="img-item-tranzat" src="https://i.postimg.cc/zyG4KscT/IMG-8145.jpgw=150" class="w-full h-full object-cover" alt="[صورة كرسي الاسترخاء بالخشب ]">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-baseline">
+                                    <h4 class="font-bold text-gray-800 text-sm">Transat en Bois</h4>
+                                    <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">Matelas épais, oreiller & parasol ajustable.</p>
+                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">2,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                            </div>
+                        </div>
+
+                        <!-- 🛋️ 4. Baldaquin (البالداكين الملكي المظلل) -->
+                        <!-- أزلت شارة VIP من البالداكين كما طلبت إزالة كل ما يتعلق بـ VIP -->
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all relative">
+                            <div class="w-20 h-20 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0">
+                                <img id="img-item-baldaquin" src="https://i.postimg.cc/xX1BMw4H/IMG-8148.jpgw=150" class="w-full h-full object-cover" alt="[صورة بالداكين]">
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-baseline">
+                                    <h4 class="font-bold text-gray-800 text-sm">Baldaquin Royal</h4>
+                                    <span class="text-xs text-gray-400 font-arabic" dir="rtl">بالداكين ملكي</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-0.5">Lit de plage double, rideaux occultants & intimité.</p>
+                                <span class="text-sm font-extrabold text-maldiva-orange block mt-1.5">6,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Amenities -->
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100">
+                        <h4 class="font-bold text-sm text-maldiva-dark mb-4 border-b pb-2">Inclus Gratuitement avec vos Réservations / خدمات مجانية مدرجة</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                            <div class="space-y-1">
+                                <i class="fa-solid fa-square-parking text-lg text-maldiva-teal"></i>
+                                <div class="text-xs font-bold text-gray-700">Parking Gratuit</div>
+                                <div class="text-[10px] text-gray-400">مواقف سيارات محروسة</div>
+                            </div>
+                            <div class="space-y-1">
+                                <i class="fa-solid fa-shower text-lg text-maldiva-teal"></i>
+                                <div class="text-xs font-bold text-gray-700">Douches & Cabines</div>
+                                <div class="text-[10px] text-gray-400">مرشات وغرف غسيل</div>
+                            </div>
+                            <div class="space-y-1">
+                                <i class="fa-solid fa-child-reaching text-lg text-maldiva-teal"></i>
+                                <div class="text-xs font-bold text-gray-700">Jeux pour ENFANTS</div>
+                                <div class="text-[10px] text-gray-400">ألعاب للأطفال</div>
+                            </div>
+                            <div class="space-y-1">
+                                <i class="fa-solid fa-glass-water text-lg text-maldiva-teal"></i>
+                                <div class="text-xs font-bold text-gray-700">Service de table</div>
+                                <div class="text-[10px] text-gray-400">خدمة التوصيل للمظلات</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Booking Calculator -->
+                <div class="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 h-fit space-y-4">
+                    <div class="border-b border-gray-100 pb-3 text-center">
+                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">Réserver vos places</h4>
+                        <p class="text-xs text-gray-400">احسب السعر واملأ تفاصيل حجزك</p>
+                    </div>
+
+                    <form id="booking-form-el" class="space-y-4" onsubmit="event.preventDefault();">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Nom Complet / الاسم الكامل *</label>
+                                <input type="text" id="client-name" placeholder="Ex: Mohamed Alami" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Téléphone / رقم الهاتف *</label>
+                                <input type="tel" id="client-phone" placeholder="Ex: 0555 12 34 56" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase">Date de Visite / تاريخ الزيارة *</label>
+                                <input type="date" id="visit-date" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required>
+                            </div>
+                        </div>
+
+                        <!-- Quantities selectors -->
+                        <div class="space-y-2.5">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase">Équipements à louer / عدد المستلزمات</label>
+                            
+                            <!-- Chaise Longue -->
+                            <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl">
+                                <span class="text-xs font-bold text-gray-700"> Chaise Longue (1,500 DA)</span>
+                                <div class="flex items-center gap-2.5">
+                                    <button type="button" onclick="adjustQty('qty-chaise', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
+                                    <span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span>
+                                    <button type="button" onclick="adjustQty('qty-chaise', 1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">+</button>
+                                </div>
+                            </div>
+
+                            <!--  Transaten Bois -->
+                            <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl">
+                                <span class="text-xs font-bold text-gray-700">Transat en Bois (2,000 DA)</span>
+                                <div class="flex items-center gap-2.5">
+                                    <button type="button" onclick="adjustQty('qty-transat', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
+                                    <span id="qty-transat" class="font-bold w-4 text-center text-xs">0</span>
+                                    <button type="button" onclick="adjustQty('qty-transat', 1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">+</button>
+                                </div>
+                            </div>
+
+                            <!-- Baldaquin -->
+                            <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl border border-maldiva-orange/20">
+                                <span class="text-xs font-bold text-gray-700">Baldaquins (6,000 DA)</span>
+                                <div class="flex items-center gap-2.5">
+                                    <button type="button" onclick="adjustQty('qty-baldaquin', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
+                                    <span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span>
+                                    <button type="button" onclick="adjustQty('qty-baldaquin', 1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Days Duration with Discount -->
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Durée / عدد الأيام</label>
+                            <select id="duration" onchange="calculateTotal()" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                <option value="1">1 Jour / يوم واحد</option>
+                                <option value="2">2 Jours / يومين</option>
+                                <option value="3">3 Jours / 3 أيام</option>
+                                <option value="5">5 Jours (-10% de remise) / 5 أيام</option>
+                                <option value="7">Une semaine (-15% de remise) / أسبوع كامل</option>
+                            </select>
+                        </div>
+
+                        <!-- Total Display -->
+                        <div class="bg-gradient-to-tr from-maldiva-dark to-teal-950 rounded-2xl p-4 text-white">
+                            <div class="flex justify-between items-center mb-1 text-[10px] opacity-80">
+                                <span>Total Estimé / المجموع الإجمالي</span>
+                                <span id="discount-badge" class="hidden bg-maldiva-orange text-white font-bold px-2 py-0.5 rounded text-[8px]">REMISE ACTIVE</span>
+                            </div>
+                            <div class="flex justify-between items-baseline">
+                                <span id="total-price" class="text-2xl font-extrabold text-maldiva-orange">0 DA</span>
+                                <span class="text-xs opacity-70">TTC</span>
+                            </div>
+                        </div>
+
+                        <!-- Book Button -->
+                        <button type="button" onclick="submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 transform active:scale-95 uppercase text-xs tracking-wider">
+                            Envoyer ma Demande • إرسال طلب الحجز
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 2: RESERVATION TRACKING FOR CLIENTS -->
+        <div id="tab-tracking-section" class="max-w-xl mx-auto space-y-6 hidden">
+            <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4">
+                <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div>
+                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Suivi de Réservation • تتبع الحجز</h3>
+                    <p class="text-xs text-gray-500 mt-1">Saisissez votre code pour vérifier si votre حجز a été validé par l'équipe</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                    <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-maldiva-teal uppercase">
+                    <button onclick="trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">
+                        Vérifier / تحقق
+                    </button>
+                </div>
+            </div>
+
+            <!-- Track Result Container -->
+            <div id="track-result-box" class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hidden space-y-4">
+                <div class="text-center space-y-2 border-b pb-4">
+                    <div id="track-status-icon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl"></div>
+                    <h4 class="font-bold text-lg text-gray-800">Détails du الحجز</h4>
+                    <span id="track-status-badge" class="px-3 py-1 rounded-full text-xs font-bold inline-block"></span>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="space-y-3 text-xs text-gray-600">
+                    <div class="flex justify-between border-b pb-2">
+                        <span>Code de suivi:</span>
+                        <strong id="track-res-code" class="text-maldiva-dark"></strong>
+                    </div>
+                    <div class="flex justify-between border-b pb-2">
+                        <span>Client / الاسم:</span>
+                        <strong id="track-res-name"></strong>
+                    </div>
+                    <div class="flex justify-between border-b pb-2">
+                        <span>Date de visite / التاريخ:</span>
+                        <strong id="track-res-date"></strong>
+                    </div>
+                    <div class="flex justify-between border-b pb-2">
+                        <span>Durée / المدة:</span>
+                        <strong id="track-res-dur"></strong>
+                    </div>
+                    <div id="track-res-items" class="bg-maldiva-sand p-3 rounded-xl space-y-1.5 font-semibold text-gray-700"></div>
+                </div>
+
+                <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed" dir="rtl"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ADMIN PORTAL & RESERVATIONS LIST -->
+        <div id="tab-admin-portal" class="space-y-6 hidden">
+            
+            <!-- Admin Lock View -->
+            <div id="admin-login-view" class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4">
+                <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur • الإدارة</h3>
+                    <p class="text-xs text-gray-500 mt-1">Accès réservé uniquement au gérant du club شاطئ مالديفا</p>
+                </div>
+                <div>
+                    <input type="password" id="admin-password" placeholder="Mot de passe d'administration" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-orange">
+                    <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Mot de passe incorrect!</span>
+                </div>
+                <button onclick="verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors">
+                    Se Connecter / دخول الإدارة
+                </button>
+            </div>
+
+            <!-- Admin Live Dashboard View -->
+            <div id="admin-dashboard-view" class="hidden space-y-6">
+                <!-- Sub tabs for Admin Panel -->
+                <div class="flex border-b border-gray-200">
+                    <button onclick="switchAdminSubTab('reservations')" id="admin-subtab-btn-res" class="py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Demandes • طلبات الحجز</span>
+                    </button>
+                    <button onclick="switchAdminSubTab('settings')" id="admin-subtab-btn-settings" class="py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-gears"></i>
+                        <span>Configuration • إعدادات الصور والموقع</span>
+                    </button>
+                </div>
+
+                <!-- SUB VIEW A: RESERVATIONS LIST -->
+                <div id="admin-subview-reservations" class="space-y-6">
+                    <!-- Summary Stats cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold">Total demandes</div>
+                            <span id="stat-total" class="text-2xl font-extrabold text-maldiva-dark">0</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold text-yellow-600">En attente ⏳</div>
+                            <span id="stat-pending" class="text-2xl font-extrabold text-yellow-600">0</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold text-green-600">Confirmés ✔️</div>
+                            <span id="stat-approved" class="text-2xl font-extrabold text-green-600">0</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm text-center">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold text-red-600">Refusés ❌</div>
+                            <span id="stat-declined" class="text-2xl font-extrabold text-red-600">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Admin Action and list -->
+                    <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+                            <div>
+                                <h4 class="serif-title text-xl font-bold text-maldiva-dark">Demandes Récentes de Réservation</h4>
+                                <p class="text-xs text-gray-400">Gérez les demandes et envoyez des notifications de confirmation</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="logoutAdmin()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-1.5 rounded-xl transition-all">
+                                    Déconnexion
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live feed content -->
+                        <div id="admin-reservations-list" class="space-y-4">
+                            <div class="text-center py-12 text-gray-400 text-xs">
+                                Aucun حجز مسجل حالياً.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB VIEW B: SETTINGS PANEL (إعدادات تغيير الصور) -->
+                <div id="admin-subview-settings" class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hidden space-y-6">
+                    <div>
+                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">Configuration visuelle du site</h4>
+                        <p class="text-xs text-gray-500">Personnalisez votre logo et les images des équipements sans toucher au code.</p>
+                        <p class="text-[10px] text-gray-400 mt-0.5" dir="rtl">يمكنك هنا تغيير شعار الموقع وصور كراسي الاستلقاء فوراً بلصق روابط الصور المباشرة.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        <!-- Custom logo settings -->
+                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50 space-y-3">
+                            <div class="flex items-center gap-2 text-maldiva-dark font-bold text-xs uppercase">
+                                <i class="fa-solid fa-image"></i>
+                                <span>Logo du Site • شعار الموقع</span>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Remplacer par un lien d'image externe (URL) :</label>
+                                <input type="url" id="setting-logo-url" placeholder="Ex: https://votre-site.com/mon-logo.png" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                                <span class="text-[10px] text-gray-400 block mt-1">Laissez vide pour conserver l'éblouissant logo SVG sticker d'origine.</span>
+                            </div>
+                        </div>
+
+                        <!-- Image 1: Chaise Longue -->
+                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50 space-y-3">
+                            <div class="flex items-center gap-2 text-maldiva-dark font-bold text-xs uppercase">
+                                <i class="fa-solid fa-chair"></i>
+                                <span>Image Chaise Longue • صورة كرسي الاستلقاء</span>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Lien de l'image (URL) :</label>
+                                <input type="url" id="setting-transat-url" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                            </div>
+                        </div>
+
+                        <!-- Image 2: Transat en Bois -->
+                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50 space-y-3">
+                            <div class="flex items-center gap-2 text-maldiva-dark font-bold text-xs uppercase">
+                                <i class="fa-solid fa-mattress-pillow"></i>
+                                <span>Image Transat en Bois • صورة كرسي الإسترخاء بالخشب</span>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Lien de l'image (URL) :</label>
+                                <input type="url" id="setting-chaise-url" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                            </div>
+                        </div>
+
+                        <!-- Image 4: Baldaquin -->
+                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50 space-y-3">
+                            <div class="flex items-center gap-2 text-maldiva-dark font-bold text-xs uppercase">
+                                <i class="fa-solid fa-hotel"></i>
+                                <span>Image Baldaquin Royal • صورة البالداكين</span>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">Lien de l'image (URL) :</label>
+                                <input type="url" id="setting-baldaquin-url" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions buttons inside settings panel -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                        <button onclick="saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>Sauvegarder les modifications • حفظ التعديلات</span>
+                        </button>
+                        <button onclick="resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase tracking-wider transition-colors">
+                            Réinitialiser par défaut • استعادة الافتراضي
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SUCCESS FEEDBACK MODAL -->
+    <div id="success-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 relative">
+            <button onclick="hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Demande envoyée !</h3>
+                    <p class="text-xs text-gray-500 mt-1">Votre demande a été enregistrée avec succès. Notez bien votre code de suivi :</p>
+                </div>
+
+                <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">
+                    #MLD-0000
+                </div>
+
+                <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">
+                    <div class="font-bold text-maldiva-dark border-b border-gray-200 pb-1.5 mb-1.5">Résumé :</div>
+                    <div id="summary-items" class="space-y-1 text-gray-600"></div>
+                    <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between">
+                        <span>Total estimé :</span>
+                        <span id="summary-total" class="text-sm">0 DA</span>
+                    </p>
+                </div>
+
+                <p class="text-xs text-gray-500 font-arabic" dir="rtl">انسخ كود الحجز أعلاه لمتابعة طلبك! سنتواصل معك هاتفياً قريباً لتأكيد كل التفاصيل.</p>
+
+                <button type="button" onclick="hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange transition-colors">
+                    Fermer / إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Footer -->
+    <footer class="bg-maldiva-dark text-white py-8 px-4 border-t-4 border-maldiva-orange mt-12">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+            <div>
+                <span class="serif-title text-2xl font-bold tracking-wider text-maldiva-orange">MALDIVA</span>
+                <p class="text-[10px] uppercase tracking-widest text-gray-300 mt-1">Plage Dorée, Tipaza, Algérie</p>
+            </div>
+            <p class="text-[10px] text-gray-400">
+                &copy; 2026 Maldiva Beach Club. Tous droits réservés.
+            </p>
+        </div>
+    </footer>
+
+    <!-- MAIN APP SCRIPT -->
+    <script>
+        let localReservationsArray = [];
+        let pendingDeleteId = null;
+
+        // Default default images in case settings are not modified
+        const defaultImages = {
+            logoUrl: '',
+            transatUrl: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=150',
+            chaiseUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150',
+            baldaquinUrl: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=150'
+        };
+
+        // Custom Notification/Toast
+        function showNotification(msg, type = 'info') {
+            const toast = document.getElementById('custom-toast');
+            const icon = document.getElementById('toast-icon');
+            const message = document.getElementById('toast-message');
+            
+            message.innerText = msg;
+            
+            if (type === 'success') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-green-400 text-lg"></i>';
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-400 text-lg"></i>';
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-400 text-lg"></i>';
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div').classList.add('translate-y-4');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            pendingDeleteId = null;
+        }
+
+        function removeReservation(trackingCode) {
+            pendingDeleteId = trackingCode;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div').classList.remove('translate-y-4');
+            }, 10);
+        }
+
+        async function executePendingDelete() {
+            if (!pendingDeleteId) return;
+            const code = pendingDeleteId;
+            closeConfirmModal();
+
+            if (window.usingFirebase) {
+                try {
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', code);
+                    await window.deleteDoc(docRef);
+                    showNotification("Réservation supprimée !", "success");
+                } catch (e) {
+                    console.warn("Firebase delete failed, running local delete fallback: ", e);
+                    deleteLocalReservation(code);
+                    showNotification("Réservation supprimée !", "success");
+                }
+            } else {
+                deleteLocalReservation(code);
+                showNotification("Réservation supprimée !", "success");
+            }
+        }
+
+        // Database setup
+        document.addEventListener('database-ready', () => {
+            const statusIndicator = document.getElementById('connection-status');
+            
+            if (window.usingFirebase) {
+                statusIndicator.innerText = "● Cloud Mode Actif (Firebase)";
+                statusIndicator.className = "text-emerald-400 font-bold flex items-center gap-1";
+                listenToReservationsCloud();
+                loadCloudSettings();
+            } else {
+                statusIndicator.innerText = "● Local Mode Actif (Koder)";
+                statusIndicator.className = "text-amber-400 font-bold flex items-center gap-1";
+                loadLocalReservations();
+                loadLocalSettings();
+            }
+       });
+
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('visit-date').value = tomorrow.toISOString().split('T')[0];
+
+        const prices = {
+            'qty-chaise': 1500,
+            'qty-transat': 2000,
+            'qty-baldaquin': 6000
+        };
+
+        const names = {
+            'qty-chaise': 'Chaise(s) Longue(s)',
+            'qty-transat': 'Transat(s) en Bois(s)',
+            'qty-baldaquin': 'Baldaquin(s) Royal'
+        };
+
+        function adjustQty(elementId, amount) {
+            const span = document.getElementById(elementId);
+            let current = parseInt(span.innerText);
+            current += amount;
+            if (current < 0) current = 0;
+            span.innerText = current;
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0;
+            for (let id in prices) {
+                const qty = parseInt(document.getElementById(id).innerText);
+                subtotal += qty * prices[id];
+            }
+
+            const durationSelect = document.getElementById('duration');
+            const duration = parseInt(durationSelect.value);
+            let total = subtotal * duration;
+
+            let discountApplied = false;
+            if (duration === 5) {
+                total = total * 0.90;
+                discountApplied = true;
+            } else if (duration === 7) {
+                total = total * 0.85;
+                discountApplied = true;
+            }
+
+            const discountBadge = document.getElementById('discount-badge');
+            if (discountApplied) {
+                discountBadge.classList.remove('hidden');
+            } else {
+                discountBadge.classList.add('hidden');
+            }
+
+            document.getElementById('total-price').innerText = total.toLocaleString() + ' DA';
+            return total;
+        }
+
+        function switchTab(tabId) {
+            document.getElementById('tab-booking-form').classList.add('hidden');
+            document.getElementById('tab-tracking-section').classList.add('hidden');
+            document.getElementById('tab-admin-portal').classList.add('hidden');
+
+            document.getElementById('btn-tab-booking').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
+            document.getElementById('btn-tab-tracking').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
+            document.getElementById('btn-tab-admin').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
+
+            if (tabId === 'booking-form') {
+                document.getElementById('tab-booking-form').classList.remove('hidden');
+                document.getElementById('btn-tab-booking').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1";
+            } else if (tabId === 'tracking-section') {
+                document.getElementById('tab-tracking-section').classList.remove('hidden');
+                document.getElementById('btn-tab-tracking').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1";
+            } else if (tabId === 'admin-portal') {
+                document.getElementById('tab-admin-portal').classList.remove('hidden');
+                document.getElementById('btn-tab-admin').className = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1";
+            }
+        }
+
+        // Sub tabs of Admin dashboard
+        function switchAdminSubTab(subTabId) {
+            const btnRes = document.getElementById('admin-subtab-btn-res');
+            const btnSettings = document.getElementById('admin-subtab-btn-settings');
+            const viewRes = document.getElementById('admin-subview-reservations');
+            const viewSettings = document.getElementById('admin-subview-settings');
+
+            if (subTabId === 'reservations') {
+                btnRes.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5";
+                btnSettings.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5";
+                viewRes.classList.remove('hidden');
+                viewSettings.classList.add('hidden');
+            } else {
+                btnSettings.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5";
+                btnRes.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5";
+                viewSettings.classList.remove('hidden');
+                viewRes.classList.add('hidden');
+            }
+        }
+
+        function loadLocalReservations() {
+            const raw = localStorage.getItem('maldiva_reservations');
+            if (raw) {
+                localReservationsArray = JSON.parse(raw);
+            } else {
+                localReservationsArray = [];
+            }
+            updateAdminDashboardUI(localReservationsArray);
+        }
+
+        function saveLocalReservation(data) {
+            localReservationsArray.push(data);
+            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
+            updateAdminDashboardUI(localReservationsArray);
+        }
+
+        function updateLocalReservationStatus(id, newStatus) {
+            localReservationsArray = localReservationsArray.map(item => {
+                if (item.trackingCode === id) {
+                    item.status = newStatus;
+                }
+                return item;
+            });
+            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
+            updateAdminDashboardUI(localReservationsArray);
+        }
+
+        function deleteLocalReservation(id) {
+            localReservationsArray = localReservationsArray.filter(item => item.trackingCode !== id);
+            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
+            updateAdminDashboardUI(localReservationsArray);
+        }
+
+        function generateTrackingCode() {
+            return 'MLD-' + Math.floor(1000 + Math.random() * 9000);
+        }
+
+        async function submitReservation() {
+            const clientName = document.getElementById('client-name').value.trim();
+            const clientPhone = document.getElementById('client-phone').value.trim();
+            const visitDate = document.getElementById('visit-date').value;
+
+            if (!clientName || !clientPhone || !visitDate) {
+                showNotification("Veuillez remplir tous les champs obligatoires.", "error");
+                return;
+            }
+
+            let hasItems = false;
+            let chosenItems = {};
+            for (let id in prices) {
+                const qty = parseInt(document.getElementById(id).innerText);
+                if (qty > 0) {
+                    hasItems = true;
+                    chosenItems[names[id]] = qty;
+                }
+            }
+
+            if (!hasItems) {
+                showNotification("Veuillez choisir au moins un équipement.", "error");
+                return;
+            }
+
+            const duration = parseInt(document.getElementById('duration').value);
+            const totalStr = document.getElementById('total-price').innerText;
+            const trackingCode = generateTrackingCode();
+
+            const reservationData = {
+                clientName: clientName,
+                clientPhone: clientPhone,
+                visitDate: visitDate,
+                items: chosenItems,
+                duration: duration,
+                totalPrice: totalStr,
+                status: 'pending',
+                trackingCode: trackingCode,
+                createdAt: new Date().toISOString()
+            };
+
+            document.getElementById('booking-success-code').innerText = '#' + trackingCode;
+            document.getElementById('summary-items').innerHTML = Object.entries(chosenItems)
+                .map(([name, qty]) => `<div>• ${qty} x ${name}</div>`).join('');
+            document.getElementById('summary-total').innerText = totalStr;
+
+            if (window.usingFirebase) {
+                try {
+                    const customDocRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', trackingCode);
+                    await window.setDoc(customDocRef, reservationData);
+                    showSuccessModal();
+                    resetForm();
+                } catch (err) {
+                    console.error("Firebase save failed, saving locally instead: ", err);
+                    saveLocalReservation(reservationData);
+                    showSuccessModal();
+                    resetForm();
+                }
+            } else {
+                saveLocalReservation(reservationData);
+                showSuccessModal();
+                resetForm();
+            }
+        }
+
+        async function trackReservation() {
+            let code = document.getElementById('track-code-input').value.trim().toUpperCase();
+            if (!code) {
+                showNotification("Veuillez entrer votre رمز الحجز", "error");
+                return;
+            }
+            if (code.startsWith('#')) code = code.substring(1);
+
+            let data = null;
+
+            if (window.usingFirebase) {
+                try {
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', code);
+                    const snap = await window.getDoc(docRef);
+                    if (snap.exists()) {
+                        data = snap.data();
+                    }
+                } catch (err) {
+                    console.error("Firebase lookup failed: ", err);
+                }
+            }
+
+            if (!data) {
+                data = localReservationsArray.find(item => item.trackingCode === code);
+            }
+
+            if (!data) {
+                showNotification("Aucun حجز trouvé avec ce رمز !", "error");
+                return;
+            }
+
+            document.getElementById('track-result-box').classList.remove('hidden');
+            document.getElementById('track-res-code').innerText = '#' + code;
+            document.getElementById('track-res-name').innerText = data.clientName;
+            document.getElementById('track-res-date').innerText = data.visitDate;
+            document.getElementById('track-res-dur').innerText = data.duration + " Jour(s)";
+
+            let itemsHTML = '';
+            for (let [name, qty] of Object.entries(data.items || {})) {
+                itemsHTML += `<div>• ${qty} x ${name}</div>`;
+            }
+            
+            itemsHTML += `<div class="pt-2 border-t font-bold text-maldiva-dark">Total : ${data.totalPrice}</div>`;
+            document.getElementById('track-res-items').innerHTML = itemsHTML;
+
+            const statusConfig = {
+                'pending': { label: 'En attente ⏳', class: 'bg-yellow-100 text-yellow-800', icon: 'bg-yellow-100 text-yellow-600', fa: 'fa-clock', ar: 'طلبك قيد المراجعة والدراسة حالياً. سنتواصل بك هاتفياً قريباً لتأكيد كل التفاصيل.' },
+                'approved': { label: 'Confirmé ✔', class: 'bg-green-100 text-green-800', icon: 'bg-green-100 text-green-600', fa: 'fa-circle-check', ar: 'تهانينا! حجزك مقبول ومثبت بنجاح. يرجى القدوم إلى النادي الشاطئي قبل الساعة 10:30 صباحاً.' },
+                'declined': { label: 'Refusé ❌', class: 'bg-red-100 text-red-800', icon: 'bg-red-100 text-red-600', fa: 'fa-circle-xmark', ar: 'نعتذر منك، لم نتمكن من قبول حجزك نظراً لعدم توفر الأماكن في التاريخ المحدد.' }
+            };
+
+            const current = statusConfig[data.status || 'pending'];
+            const badge = document.getElementById('track-status-badge');
+            badge.innerText = current.label;
+            badge.className = `px-3 py-1 rounded-full text-xs font-bold inline-block ${current.class}`;
+
+            const iconBox = document.getElementById('track-status-icon');
+            iconBox.className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl ${current.icon}`;
+            iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
+
+            document.getElementById('track-status-arabic').innerText = current.ar;
+        }
+
+        function listenToReservationsCloud() {
+            const pathCollection = window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations');
+            window.onSnapshot(pathCollection, (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => {
+                    list.push({ id: doc.id, ...doc.data() });
+                });
+                list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                updateAdminDashboardUI(list);
+            }, (error) => {
+                console.warn("Firestore sync error: ", error);
+            });
+        }
+
+        function updateAdminDashboardUI(list) {
+            window.currentReservationsList = list;
+
+            const container = document.getElementById('admin-reservations-list');
+            
+            const total = list.length;
+            const pending = list.filter(i => i.status === 'pending').length;
+            const approved = list.filter(i => i.status === 'approved').length;
+            const declined = list.filter(i => i.status === 'declined').length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-approved').innerText = approved;
+            document.getElementById('stat-declined').innerText = declined;
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400 text-xs">
+                        Aucune réservation enregistrée.<br>لا توجد أي حجوزات مسجلة حالياً.
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(res => {
+                let itemsHTML = '';
+                for (let [name, qty] of Object.entries(res.items || {})) {
+                    itemsHTML += `<span class="bg-teal-50 text-teal-800 text-[10px] px-2 py-0.5 rounded font-semibold">${qty} x ${name}</span> `;
+                }
+
+                const statusStyles = {
+                    'pending': 'bg-yellow-100 text-yellow-800',
+                    'approved': 'bg-green-100 text-green-800',
+                    'declined': 'bg-red-100 text-red-800'
+                };
+
+                html += `
+                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 relative hover:border-maldiva-teal transition-all">
+                        <div class="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
+                            <div>
+                                <h5 class="font-bold text-sm text-gray-800">${res.clientName} <span class="text-xs text-gray-400 font-mono">#${res.trackingCode}</span></h5>
+                                <a href="tel:${res.clientPhone}" class="text-xs text-maldiva-teal hover:underline font-semibold flex items-center gap-1 mt-0.5">
+                                    <i class="fa-solid fa-phone"></i> ${res.clientPhone}
+                                </a>
+                            </div>
+                            <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${statusStyles[res.status || 'pending']}">${res.status || 'pending'}</span>
+                        </div>
+
+                        <div class="text-xs text-gray-600 space-y-1 my-3 border-t border-b border-gray-100 py-2">
+                            <div><strong>Date de visite:</strong> ${res.visitDate} (${res.duration} jour(s))</div>
+                            <div class="flex flex-wrap gap-1 pt-1">${itemsHTML}</div>
+                        </div>
+
+                        <div class="flex justify-between items-center gap-2 flex-wrap">
+                            <span class="text-sm font-extrabold text-maldiva-dark">${res.totalPrice}</span>
+                            
+                            <div class="flex items-center gap-1">
+                                <button onclick="setReservationStatus('${res.trackingCode}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded transition-all">Accepter</button>
+                                <button onclick="setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded transition-all">Refuser</button>
+                                <button onclick="dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1 transition-all">
+                                    <i class="fa-brands fa-whatsapp text-xs"></i>
+                                    <span>WhatsApp</span>
+                                </button>
+                                <button onclick="removeReservation('${res.trackingCode}')" class="bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded text-[10px] transition-all"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function setReservationStatus(trackingCode, newStatus) {
+            if (window.usingFirebase) {
+                try {
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', trackingCode);
+                    await window.updateDoc(docRef, { status: newStatus });
+                    showNotification("Statut mis à jour avec succès !", "success");
+                } catch (e) {
+                    console.warn("Firebase status save fail, saving locally: ", e);
+                    updateLocalReservationStatus(trackingCode, newStatus);
+                    showNotification("Statut mis à jour localement !", "success");
+                }
+            } else {
+                updateLocalReservationStatus(trackingCode, newStatus);
+                showNotification("Statut mis à jour localement !", "success");
+            }
+        }
+
+        function dispatchWhatsAppMessage(trackingCode) {
+            if (!window.currentReservationsList) {
+                showNotification("Une erreur s'est produite. Actualisez.", "error");
+                return;
+            }
+
+            const res = window.currentReservationsList.find(item => item.trackingCode === trackingCode);
+            if (!res) {
+                showNotification("Réservation introuvable !", "error");
+                return;
+            }
+
+            let cleanPhone = res.clientPhone.replace(/[^\d+]/g, '');
+            
+            if (cleanPhone.startsWith('+')) {
+                cleanPhone = cleanPhone.substring(1);
+            }
+            
+            if (cleanPhone.startsWith('00213')) {
+                cleanPhone = cleanPhone.substring(5);
+            } else if (cleanPhone.startsWith('213')) {
+                cleanPhone = cleanPhone.substring(3);
+            }
+
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = cleanPhone.substring(1);
+            }
+
+            cleanPhone = '213' + cleanPhone;
+
+            const itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
+            let text = "";
+
+            if (res.status === 'approved') {
+                text = `Bonjour ${res.clientName}! 🏖️\n\n` +
+                       `Votre demande de réservation chez *Maldiva Beach Club* a été *CONFIRMÉE* avec succès ! ✔️\n\n` +
+                       `📝 *Détails de votre réservation :*\n` +
+                       `• Code de suivi : #${res.trackingCode}\n` +
+                       `• Date de visite : ${res.visitDate}\n` +
+                       `• Équipements réservés :\n${itemsStr}\n` +
+                       `• Tarif total : *${res.totalPrice}*\n\n` +
+                       `⚠️ *Important :* Veuillez vous présenter au club avant 10:30 صباحاً لضمان توفر الأماكن. مرحباً بك في مالديفا!\n\n` +
+                       `--- \n` +
+                       `مرحباً ${res.clientName}! تم *تأكيد* حجزك بنجاح في نادي *مالديفا الشاطئي*! ✔️ نتمنى لكم يوماً رائعاً معنا.`;
+            } else if (res.status === 'declined') {
+                text = `Bonjour ${res.clientName},\n\n` +
+                       `Nous sommes désolés, mais nous ne pouvons pas confirmer votre demande chez *Maldiva Beach Club* pour le ${res.visitDate} (places complètes ou indisponibilité). ❌\n\n` +
+                       `N'hésitez pas à tenter un autre jour de la semaine !\n\n` +
+                       `--- \n` +
+                       `مرحباً ${res.clientName}، نعتذر منك بشدة لعدم تمكننا من قبول حجزك في نادي *مالديفا الشاطئي* ليوم ${res.visitDate} نظراً لعدم توفر الأماكن الكافية حالياً. نرحب بك دائماً في تاريخ آخر!`;
+            } else {
+                showNotification("Veuillez d'abord Accepter أو Refuser الحجز لتجهيز رسالة واتساب المناسبة.", "error");
+                return;
+            }
+
+            const finalUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+            
+            const anchor = document.createElement('a');
+            anchor.href = finalUrl;
+            anchor.target = '_blank';
+            anchor.click();
+        }
+
+        // ==========================================
+        // 🛠️ DYNAMIC SETTINGS & IMAGE CHANGER ENGINE
+        // ==========================================
+
+        // Applies custom site images dynamically to elements
+        function applySiteSettings(settings) {
+            // Apply Logo settings
+            const defaultSvg = document.getElementById('default-svg-logo');
+            const customLogoWrapper = document.getElementById('custom-logo-wrapper');
+            const customLogoImg = document.getElementById('custom-logo-img');
+
+            if (settings.logoUrl && settings.logoUrl.trim() !== "") {
+                defaultSvg.classList.replace('block', 'hidden');
+                customLogoWrapper.classList.remove('hidden');
+                customLogoImg.src = settings.logoUrl.trim();
+            } else {
+                defaultSvg.classList.replace('hidden', 'block');
+                customLogoWrapper.classList.add('hidden');
+                customLogoImg.src = "";
+            }
+
+            // Apply items image URLs
+            document.getElementById('img-item-transat').src = settings.transatUrl || defaultImages.transatUrl;
+            document.getElementById('img-item-chaise').src = settings.chaiseUrl || defaultImages.chaiseUrl;
+            document.getElementById('img-item-baldaquin').src = settings.baldaquinUrl || defaultImages.baldaquinUrl;
+
+            // Fill inputs in Admin config panel for easy editing
+            document.getElementById('setting-logo-url').value = settings.logoUrl || "";
+            document.getElementById('setting-transat-url').value = settings.transatUrl || defaultImages.transatUrl;
+            document.getElementById('setting-chaise-url').value = settings.chaiseUrl || defaultImages.chaiseUrl;
+            document.getElementById('setting-baldaquin-url').value = settings.baldaquinUrl || defaultImages.baldaquinUrl;
+        }
+
+        // Load Settings from LocalStorage
+        function loadLocalSettings() {
+            const raw = localStorage.getItem('maldiva_settings');
+            if (raw) {
+                const settings = JSON.parse(raw);
+                applySiteSettings(settings);
+            } else {
+                applySiteSettings(defaultImages);
+            }
+        }
+
+        // Load Settings from Firebase Cloud
+        async function loadCloudSettings() {
+            try {
+                // Rule 1: Restricted path
+                const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config');
+                const snap = await window.getDoc(docRef);
+                if (snap.exists()) {
+                    applySiteSettings(snap.data());
+                } else {
+                    applySiteSettings(defaultImages);
+                }
+            } catch (e) {
+                console.warn("Could not retrieve cloud settings, fallback to local:", e);
+                loadLocalSettings();
+            }
+        }
+
+        // Save Settings to Firebase/LocalStorage
+        async function saveSiteSettings() {
+            const settingsData = {
+                logoUrl: document.getElementById('setting-logo-url').value.trim(),
+                transatUrl: document.getElementById('setting-transat-url').value.trim(),
+                chaiseUrl: document.getElementById('setting-chaise-url').value.trim(),
+                baldaquinUrl: document.getElementById('setting-baldaquin-url').value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (window.usingFirebase) {
+                try {
+                    // Save to public settings doc (Rule 1)
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config');
+                    await window.setDoc(docRef, settingsData);
+                    applySiteSettings(settingsData);
+                    showNotification("Images sauvegardées et appliquées en ligne !", "success");
+                } catch (e) {
+                    console.error("Cloud configuration save failed: ", e);
+                    localStorage.setItem('maldiva_settings', JSON.stringify(settingsData));
+                    applySiteSettings(settingsData);
+                    showNotification("Images sauvegardées localement !", "success");
+                }
+            } else {
+                localStorage.setItem('maldiva_settings', JSON.stringify(settingsData));
+                applySiteSettings(settingsData);
+                showNotification("Images sauvegardées localement !", "success");
+            }
+        }
+
+        // Reset Settings to default SVG & Original Images
+        async function resetSettingsToDefault() {
+            if (!confirm("Voulez-vous restaurer les images par défaut d'origine ?")) return;
+
+            if (window.usingFirebase) {
+                try {
+                    const docRef = window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config');
+                    await window.setDoc(docRef, defaultImages);
+                    applySiteSettings(defaultImages);
+                    showNotification("Images d'origine restaurées !", "success");
+                } catch (e) {
+                    console.error("Cloud config reset failed, trying local reset:", e);
+                    localStorage.removeItem('maldiva_settings');
+                    applySiteSettings(defaultImages);
+                    showNotification("Images d'origine restaurées !", "success");
+                }
+            } else {
+                localStorage.removeItem('maldiva_settings');
+                applySiteSettings(defaultImages);
+                showNotification("Images d'origine restaurées !", "success");
+            }
+        }
+
+        // Admin login logic
+        let adminAuthorized = false;
+        function verifyAdminLogin() {
+            const pass = document.getElementById('admin-password').value;
+            const error = document.getElementById('admin-login-error');
+            if (pass === 'mhdrb26') {
+                adminAuthorized = true;
+                error.classList.add('hidden');
+                document.getElementById('admin-login-view').classList.add('hidden');
+                document.getElementById('admin-dashboard-view').classList.remove('hidden');
+                showNotification("Bienvenue, Administrateur !", "success");
+            } else {
+                error.classList.remove('hidden');
+                showNotification("Mot de passe incorrect !", "error");
+            }
+        }
+
+        function logoutAdmin() {
+            adminAuthorized = false;
+            document.getElementById('admin-password').value = '';
+            document.getElementById('admin-login-view').classList.remove('hidden');
+            document.getElementById('admin-dashboard-view').classList.add('hidden');
+            showNotification("Déconnecté.", "info");
+        }
+
+        function resetForm() {
+            document.getElementById('client-name').value = '';
+            document.getElementById('client-phone').value = '';
+            for (let id in prices) {
+                document.getElementById(id).innerText = '0';
+            }
+            calculateTotal();
+        }
+
+        function showSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div').classList.remove('translate-y-4');
+            }, 10);
+        }
+
+        function hideSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div').classList.add('translate-y-4');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    </script>
+</body>
+</html> 

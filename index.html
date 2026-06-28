@@ -31,12 +31,9 @@
 
         const appId = 'maldiva-beach-club-prod'; // معرف ثابت لمشروعك
 
-        let firebaseConfig = myFirebaseConfig;
-        let isFirebaseValid = false;
+let firebaseConfig = myFirebaseConfig;
 
-        // تحقق بسيط للتأكد من أنك قمت بوضع الـ apiKey
-        if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyDUBieKJv-C0rSqt07FI87YdrkmMmUbIKY" && firebaseConfig.apiKey !== "") {
-            isFirebaseValid = true;
+const isFirebaseValid = true;
         }
 
         // Initialize App & Auth dynamically

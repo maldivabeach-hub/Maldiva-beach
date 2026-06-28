@@ -1351,14 +1351,18 @@ document.addEventListener('database-ready', () => {
             const pass = document.getElementById('admin-password').value;
             const error = document.getElementById('admin-login-error');
             if (pass === 'mhdrb26') {
-                document.getElementById('admin-login-view').classList.add('hidden');
-                document.getElementById('admin-dashboard-view').classList.remove('hidden');
-                showNotification("Bienvenue, Administrateur !", "success");
-            } else {        // تحميل الحجوزات من Firebase بعد دخول الأدمن
-             if (window.usingFirebase) {
-                listenToReservationsCloud();
-        }
+    adminAuthorized = true;
+    error.classList.add('hidden');
+    document.getElementById('admin-login-view').classList.add('hidden');
+    document.getElementById('admin-dashboard-view').classList.remove('hidden');
+
+    if (window.usingFirebase) {
+        listenToReservationsCloud();
+    } else {
+        updateAdminDashboardUI(getLocalReservations());
     }
+
+    showNotification("Bienvenue, Administrateur !", "success");
 }
 
         function logoutAdmin() {

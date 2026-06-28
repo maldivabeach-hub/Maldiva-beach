@@ -297,7 +297,7 @@ const isFirebaseValid = true;
                                     <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي استلقاء</span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-0.5">Avec matelas standard et parasol inclus.</p>
-                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">1,500 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">2,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
                             </div>
                         </div>
 
@@ -312,7 +312,7 @@ const isFirebaseValid = true;
                                     <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب </span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-0.5">Matelas épais, oreiller & parasol ajustable.</p>
-                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">2,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                                <span class="text-sm font-extrabold text-maldiva-teal block mt-1.5">3,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
                             </div>
                         </div>
 
@@ -328,7 +328,7 @@ const isFirebaseValid = true;
                                     <span class="text-xs text-gray-400 font-arabic" dir="rtl">بالداكين ملكي</span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-0.5">Lit de plage double, rideaux occultants & intimité.</p>
-                                <span class="text-sm font-extrabold text-maldiva-orange block mt-1.5">6,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                                <span class="text-sm font-extrabold text-maldiva-orange block mt-1.5">10,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
                             </div>
                         </div>
                     </div>
@@ -390,7 +390,7 @@ const isFirebaseValid = true;
                             
                             <!-- Chaise Longue -->
                             <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl">
-                                <span class="text-xs font-bold text-gray-700"> Chaise Longue (1,500 DA)</span>
+                                <span class="text-xs font-bold text-gray-700"> Chaise Longue (2,000 DA)</span>
                                 <div class="flex items-center gap-2.5">
                                     <button type="button" onclick="adjustQty('qty-chaise', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
                                     <span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span>
@@ -400,7 +400,7 @@ const isFirebaseValid = true;
 
                             <!--  Transaten Bois -->
                             <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl">
-                                <span class="text-xs font-bold text-gray-700">Transat en Bois (2,000 DA)</span>
+                                <span class="text-xs font-bold text-gray-700">Transat en Bois (3,000 DA)</span>
                                 <div class="flex items-center gap-2.5">
                                     <button type="button" onclick="adjustQty('qty-transat', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
                                     <span id="qty-transat" class="font-bold w-4 text-center text-xs">0</span>
@@ -410,7 +410,7 @@ const isFirebaseValid = true;
 
                             <!-- Baldaquin -->
                             <div class="flex items-center justify-between bg-maldiva-sand px-3 py-2 rounded-xl border border-maldiva-orange/20">
-                                <span class="text-xs font-bold text-gray-700">Baldaquins (6,000 DA)</span>
+                                <span class="text-xs font-bold text-gray-700">Baldaquins (10,000 DA)</span>
                                 <div class="flex items-center gap-2.5">
                                     <button type="button" onclick="adjustQty('qty-baldaquin', -1)" class="w-7 h-7 rounded bg-white shadow-sm flex items-center justify-center font-bold text-xs">-</button>
                                     <span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span>
@@ -811,9 +811,9 @@ document.addEventListener('database-ready', () => {
         document.getElementById('visit-date').value = tomorrow.toISOString().split('T')[0];
 
         const prices = {
-            'qty-chaise': 1500,
-            'qty-transat': 2000,
-            'qty-baldaquin': 6000
+            'qty-chaise': 2000,
+            'qty-transat': 3000,
+            'qty-baldaquin': 10000
         };
 
         const names = {

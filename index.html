@@ -1350,7 +1350,7 @@ document.addEventListener('database-ready', () => {
         function verifyAdminLogin() {
             const pass = document.getElementById('admin-password').value;
             const error = document.getElementById('admin-login-error');
-            if (pass === 'mhdrb26') {
+         if (pass === 'mhdrb26') {
     adminAuthorized = true;
     error.classList.add('hidden');
     document.getElementById('admin-login-view').classList.add('hidden');
@@ -1364,7 +1364,10 @@ document.addEventListener('database-ready', () => {
 
     showNotification("Bienvenue, Administrateur !", "success");
 }
+    }
 
+getLocalReservations());
+    }
         function logoutAdmin() {
             adminAuthorized = false;
             document.getElementById('admin-password').value = '';

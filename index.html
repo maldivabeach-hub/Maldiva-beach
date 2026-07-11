@@ -77,13 +77,15 @@
         <!-- Booking Tab -->
         <div id="tab-booking-form" class="space-y-8 block">
             
+            <!-- الملاحظة الهامة (تم تحديثها) -->
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-2xl shadow-sm max-w-4xl mx-auto">
                 <h4 class="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation"></i> Note Importante / ملاحظة هامة
                 </h4>
-                <div class="text-xs text-yellow-700 leading-relaxed space-y-1.5">
-                    <p>Les 3 premières rangées sont réservées exclusivement aux <strong>Transats en bois</strong>. Le choix des places se fait sur la plage (Premier arrivé, premier servi).</p>
-                    <p class="font-arabic" dir="rtl">الصفوف الثلاثة الأولى مخصصة فقط لمن يحجز <strong>كرسي خشب (Transat)</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولاً).</p>
+                <div class="text-xs text-yellow-700 leading-relaxed space-y-3">
+                    <p>Les 3 premières rangées sont réservées exclusivement aux réservations de <strong>2 Transats en bois ou plus</strong>. Le choix des places se fait sur la plage (Premier arrivé, premier servi). <br><strong class="text-red-600">⚠️ Note : Les groupes d'hommes ne sont pas autorisés. Merci de votre compréhension.</strong></p>
+                    
+                    <p class="font-arabic border-t border-yellow-200 pt-2" dir="rtl">الصفوف الثلاثة الأولى مخصصة فقط لمن يحجز <strong>كرسي خشب +2 (Transat)</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولا). <br><strong class="text-red-600">⚠️ ملاحظة بسيطة: لا نقبل بمجموعة من الرجال، نشكركم على حسن تعاونكم.</strong></p>
                 </div>
             </div>
 
@@ -364,9 +366,19 @@
                 </div>
                 <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">#MLD-0000</div>
                 
-                <!-- الرسالة الفرنسية الجديدة -->
+                <!-- رسالة التنبيه الجديدة لتتبع الحجز (تمت إضافتها وتنسيقها بشكل بارز) -->
+                <div class="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 shadow-md transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-center text-blue-700 mb-1">
+                        <i class="fa-solid fa-magnifying-glass text-lg mr-2 animate-bounce"></i>
+                        <span class="font-bold text-sm uppercase tracking-wider">Suivi de Réservation / تتبع الحجز</span>
+                    </div>
+                    <p class="text-blue-800 text-xs font-semibold">Conservez ce code ! Utilisez-le dans l'onglet "Suivi" pour vérifier l'état de votre réservation.</p>
+                    <p class="text-blue-800 text-xs font-bold font-arabic mt-1" dir="rtl">احتفظ بهذا الكود! واستخدمه في قسم "تتبع الحجز" لمعرفة هل تم قبول حجزك أم لا.</p>
+                </div>
+
+                <!-- الرسالة الفرنسية لـ ScreenShot -->
                 <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse">
-                    <i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code pour suivi votre réservation
+                    <i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code
                 </div>
 
                 <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">

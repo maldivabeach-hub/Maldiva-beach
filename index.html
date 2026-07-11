@@ -3,77 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maldiva Beach Club - Reservation & Administration</title>
+    <title>Maldiva Beach Club - Réservation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const myFirebaseConfig = {
-            apiKey: "AIzaSyDMHbPerIT_IPNobLCwBObWheTQerK-W_4",
-            authDomain: "maldiva-beach-4fe61.firebaseapp.com",
-            projectId: "maldiva-beach-4fe61",
-            storageBucket: "maldiva-beach-4fe61.firebasestorage.app",
-            messagingSenderId: "528746467653",
-            appId: "1:528746467653:web:9d456c59a8221130936e2c"
-        };
-
-        const appId = 'maldiva-beach-club-prod';
-
-        let firebaseConfig = myFirebaseConfig;
-        const isFirebaseValid = true;
-
-        if (isFirebaseValid) {
-            try {
-                const app = initializeApp(firebaseConfig);
-                const auth = getAuth(app);
-                const db = getFirestore(app);
-
-                window.db = db;
-                window.auth = auth;
-                window.appId = appId;
-                window.collection = collection;
-                window.addDoc = addDoc;
-                window.setDoc = setDoc;
-                window.getDoc = getDoc;
-                window.query = query;
-                window.onSnapshot = onSnapshot;
-                window.updateDoc = updateDoc;
-                window.deleteDoc = deleteDoc;
-                window.doc = doc;
-                window.usingFirebase = true;
-
-                const initAuth = async () => {
-                    try { await signInAnonymously(auth); } catch (error) { console.error("Auth failed", error); }
-                };
-                initAuth();
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        window.currentUser = user;
-                        document.dispatchEvent(new CustomEvent('database-ready'));
-                    }
-                });
-            } catch (err) {
-                console.error("Firebase init failed, switching to local engine", err);
-                window.usingFirebase = false;
-                setupLocalFallback();
-            }
-        } else {
-            window.usingFirebase = false;
-            setupLocalFallback();
-        }
-
-        function setupLocalFallback() {
-            window.db = null;
-            window.usingFirebase = false;
-            setTimeout(() => { document.dispatchEvent(new CustomEvent('database-ready')); }, 100);
-        }
-    </script>
+    <!-- ربط ملف التصميم -->
+    <link rel="stylesheet" href="./css/style.css">
 
     <script>
         tailwind.config = {
@@ -92,78 +28,13 @@
             }
         }
     </script>
-    <style>
-        body { font-family: 'Montserrat', sans-serif; background-color: #fbf7f0; }
-        .serif-title { font-family: 'Playfair Display', serif; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-8">
 
+    <!-- الإشعارات -->
     <div id="custom-toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
         <span id="toast-icon"></span>
         <span id="toast-message" class="text-xs font-semibold"></span>
-    </div>
-
-    <!-- Confirm Modal -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
-            <div class="text-center space-y-3">
-                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
-                    <i class="fa-solid fa-trash"></i>
-                </div>
-                <h3 class="serif-title text-xl font-bold text-maldiva-dark">Confirmer la suppression</h3>
-                <p class="text-xs text-gray-500">Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
-                <div class="flex gap-2 pt-2">
-                    <button onclick="closeConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs">Annuler</button>
-                    <button onclick="executePendingDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs">Supprimer</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <div>
-                    <h3 class="serif-title text-xl font-bold text-maldiva-dark">Modifier / تعديل الحجز</h3>
-                    <p class="text-[10px] text-gray-500 mt-0.5" id="edit-modal-code"></p>
-                </div>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <div class="overflow-y-auto hide-scrollbar space-y-4 pr-1 flex-grow">
-                <div class="space-y-2 bg-maldiva-sand/50 p-3 rounded-2xl">
-                    <input type="text" id="edit-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Nom">
-                    <input type="tel" id="edit-phone" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Téléphone">
-                    <div class="flex gap-2">
-                        <input type="date" id="edit-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
-                        <select id="edit-duration" onchange="calcEditTotal()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
-                            <option value="1">1 Jour</option>
-                            <option value="2">2 Jours</option>
-                            <option value="3">3 Jours</option>
-                            <option value="5">5 Jours (-10%)</option>
-                            <option value="7">1 Semaine (-15%)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><i class="fa-solid fa-list-check"></i> Équipements & Activités</div>
-                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50"></div>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center bg-white">
-                <div>
-                    <div class="text-[10px] text-gray-500 uppercase font-bold">Nouveau Total</div>
-                    <div class="font-extrabold text-maldiva-orange text-xl" id="edit-total-price">0 DA</div>
-                </div>
-                <button onclick="saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider">
-                    Enregistrer
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- Header & Navigation -->
@@ -177,44 +48,13 @@
 
     <header class="relative bg-gradient-to-b from-maldiva-accent to-maldiva-sand pt-6 pb-8 px-4 text-center">
         <div class="max-w-6xl mx-auto flex flex-col items-center">
+            <!-- الشعار الجديد -->
             <div class="w-48 h-48 md:w-52 md:h-52 mb-4 relative drop-shadow-xl hover:scale-105 transition-transform duration-500 flex items-center justify-center">
-                <div id="custom-logo-wrapper" class="hidden w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
-                    <img id="custom-logo-img" src="" class="w-full h-full object-cover" alt="[شعار]">
+                <div id="custom-logo-wrapper" class="w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
+                    <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Maldiva Beach Club Logo">
                 </div>
-                <svg id="default-svg-logo" viewBox="0 0 500 500" class="w-full h-full block">
-                    <defs>
-                        <radialGradient id="stickerBg" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stop-color="#faf5eb"/><stop offset="100%" stop-color="#eedfc6"/>
-                        </radialGradient>
-                        <filter id="stickerShadow" x="-10%" y="-10%" width="130%" height="130%">
-                            <feDropShadow dx="2" dy="8" stdDeviation="10" flood-opacity="0.25"/>
-                        </filter>
-                    </defs>
-                    <circle cx="250" cy="250" r="230" fill="url(#stickerBg)" filter="url(#stickerShadow)"/>
-                    <path d="M 50 150 Q 150 50 320 80 Q 200 130 50 150 Z" fill="#cfbeaa" opacity="0.45"/>
-                    <circle cx="270" cy="245" r="55" fill="#ff7e67" />
-                    <line x1="210" y1="260" x2="330" y2="260" stroke="#24a19c" stroke-width="5" stroke-linecap="round"/>
-                    <line x1="225" y1="272" x2="315" y2="272" stroke="#ff7e67" stroke-width="4" stroke-linecap="round"/>
-                    <line x1="240" y1="282" x2="300" y2="282" stroke="#ff7e67" stroke-width="3" stroke-linecap="round"/>
-                    <path d="M 270 205 Q 275 200 280 205 Q 285 200 290 205" stroke="#0b4c53" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                    <path d="M 320 250 Q 345 185 295 130" stroke="#7e4a1e" stroke-width="8" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 235 145 205 110" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 240 100 230 65" stroke="#169371" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 300 70 325 50" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 350 90 370 100" stroke="#169371" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 355 145 375 180" stroke="#11755a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                    <path d="M 295 130 Q 320 170 310 205" stroke="#0d5944" stroke-width="5" fill="none" stroke-linecap="round"/>
-                    <g transform="translate(165, 110) rotate(-6)"><path d="M 0 0 C 25 40 35 125 25 185 C 15 205 -15 205 -25 185 C -35 125 -25 40 0 0 Z" fill="#24a19c" /></g>
-                    <g transform="translate(120, 120) rotate(6)"><path d="M 0 0 C 25 40 35 125 25 185 C 15 205 -15 205 -25 185 C -35 125 -25 40 0 0 Z" fill="#fbd1a2" stroke="#dba672" stroke-width="3"/><circle cx="0" cy="115" r="10" fill="#ff7e67" /><ellipse cx="-16" cy="105" rx="12" ry="8" fill="#ff7e67" transform="rotate(20 -16 105)"/><ellipse cx="16" cy="105" rx="12" ry="8" fill="#ff7e67" transform="rotate(-20 16 105)"/><ellipse cx="-13" cy="128" rx="12" ry="8" fill="#ff7e67" transform="rotate(-40 -13 128)"/><ellipse cx="13" cy="128" rx="12" ry="8" fill="#ff7e67" transform="rotate(40 13 128)"/><ellipse cx="0" cy="90" rx="8" ry="14" fill="#ff7e67" /><circle cx="0" cy="115" r="5" fill="#fbd1a2" /></g>
-                    <path d="M 90 355 Q 200 310 310 340 T 430 330 L 415 390 Q 300 410 90 390 Z" fill="#24a19c" />
-                    <text x="250" y="320" font-family="'Playfair Display', serif" font-weight="bold" font-size="68" fill="#0b4c53" text-anchor="middle">Maldiva</text>
-                    <path id="curvePath" d="M 330 200 A 110 110 0 0 1 430 305" fill="none" />
-                    <text font-family="'Montserrat', sans-serif" font-weight="800" font-size="16" fill="#0b4c53" letter-spacing="4"><textPath href="#curvePath" startOffset="10%">BEACH CLUB</textPath></text>
-                    <path d="M 412 412 L 440 380 C 420 370 390 390 412 412 Z" fill="#ffffff" opacity="0.15"/>
-                    <path d="M 412 412 L 440 380 A 230 230 0 0 1 380 440 Z" fill="#d2c4ae" />
-                    <path d="M 380 440 L 412 412 L 440 380 C 390 360 360 390 380 440 Z" fill="#ffffff" stroke="#eedfc6" stroke-width="1"/>
-                </svg>
             </div>
+            
             <h1 class="serif-title text-4xl md:text-5xl font-extrabold text-maldiva-dark mb-1">Maldiva Beach Club</h1>
             <p class="text-[11px] uppercase tracking-widest text-maldiva-teal font-bold mb-3">Équipements & Activités Nautiques • حجز المستلزمات والأنشطة البحرية</p>
             <div class="w-16 h-1 bg-gradient-to-r from-maldiva-teal to-maldiva-orange rounded-full"></div>
@@ -223,14 +63,11 @@
 
     <div class="bg-white border-y border-gray-100 sticky top-0 z-30 shadow-sm">
         <div class="max-w-2xl mx-auto flex justify-around">
-            <button onclick="switchTab('booking-form')" id="btn-tab-booking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1">
+            <button onclick="window.switchTab('booking-form')" id="btn-tab-booking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1">
                 <i class="fa-solid fa-umbrella-beach text-base"></i><span>Réserver / حجز</span>
             </button>
-            <button onclick="switchTab('tracking-section')" id="btn-tab-tracking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1">
+            <button onclick="window.switchTab('tracking-section')" id="btn-tab-tracking" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1">
                 <i class="fa-solid fa-magnifying-glass text-base"></i><span>Suivi / تتبع الحجز</span>
-            </button>
-            <button onclick="switchTab('admin-portal')" id="btn-tab-admin" class="flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1">
-                <i class="fa-solid fa-lock text-base"></i><span>Admin / الإدارة</span>
             </button>
         </div>
     </div>
@@ -240,7 +77,6 @@
         <!-- Booking Tab -->
         <div id="tab-booking-form" class="space-y-8 block">
             
-            <!-- BILINGUAL ALERT BANNER -->
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-2xl shadow-sm max-w-4xl mx-auto">
                 <h4 class="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation"></i> Note Importante / ملاحظة هامة
@@ -260,7 +96,6 @@
                             <p class="text-xs text-gray-500 mt-1">Tarifs journaliers valables pour toute la journée • الأسعار صالحة طوال اليوم</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- MODIFIED CHAISE LONGUE -->
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0"><img id="img-item-chaise" src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Chaise]"></div>
                                 <div class="flex-grow">
@@ -273,7 +108,6 @@
                                 </div>
                             </div>
 
-                            <!-- TRANSAT EN BOIS -->
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-teal-100 flex-shrink-0"><img id="img-item-transat" src="https://i.postimg.cc/zyG4KscT/IMG-8145.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Transat]"></div>
                                 <div class="flex-grow">
@@ -281,7 +115,7 @@
                                         <h4 class="font-bold text-gray-800 text-sm">Transat en Bois</h4>
                                         <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب</span>
                                     </div>
-                                    <p class="text-[10px] text-gray-500 mt-0.5">Matelas épais, parasol & table ajustable.</p>
+                                    <p class="text-[10px] text-gray-500 mt-0.5">À partir de 3 transats Matelas épais, parasol & table ajustable.</p>
                                     <span class="text-sm font-extrabold text-maldiva-teal block mt-1">3,000 DA <span class="text-[10px] font-normal text-gray-400">/ personne</span></span>
                                 </div>
                             </div>
@@ -399,15 +233,15 @@
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase bg-gray-50 py-1.5 px-3 rounded-lg border border-gray-100"><i class="fa-solid fa-umbrella-beach text-maldiva-orange mr-1"></i> Équipements de plage</label>
                                 <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
                                     <span class="text-xs font-bold text-gray-700">Chaise Longue</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="adjustQty('qty-chaise', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="adjustQty('qty-chaise', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
+                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-chaise', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
                                 </div>
                                 <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
                                     <span class="text-xs font-bold text-gray-700">Transat en Bois</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="adjustQty('qty-transat', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-transat" class="font-bold w-4 text-center text-xs text-maldiva-teal">0</span><button type="button" onclick="adjustQty('qty-transat', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
+                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-transat', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-transat" class="font-bold w-4 text-center text-xs text-maldiva-teal">0</span><button type="button" onclick="window.adjustQty('qty-transat', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
                                 </div>
                                 <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl border border-maldiva-orange/20">
                                     <span class="text-xs font-bold text-gray-700">Baldaquins</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="adjustQty('qty-baldaquin', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="adjustQty('qty-baldaquin', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
+                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-baldaquin', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
                                 </div>
                             </div>
 
@@ -418,35 +252,35 @@
                                 <div class="h-40 overflow-y-auto pr-1 space-y-2 hide-scrollbar">
                                     <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
                                         <div class="text-[11px] font-bold text-gray-800 mb-1.5">Jet-Ski</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">15 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-jetski-15', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-15" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-jetski-15', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-jetski-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-jetski-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-jetski-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-jetski-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">15 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-15" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                                     </div>
                                     <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
                                         <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bouée Tractée</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">2 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-bouee-2', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-2" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-bouee-2', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">3 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-bouee-3', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-3" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-bouee-3', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">2 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-2" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">3 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-3" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-3', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                                     </div>
                                     <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
                                         <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bateau (Sortie)</div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">+4 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-bateau-standard', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bateau-standard" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-bateau-standard', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">+4 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bateau-standard" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bateau-standard', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                                     </div>
                                     <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
                                         <div class="text-[11px] font-bold text-gray-800 mb-1.5">Pédalo</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-pedalo-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-pedalo-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-pedalo-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-pedalo-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                                     </div>
                                     <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
                                         <div class="text-[11px] font-bold text-gray-800 mb-1.5">Kayak</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-kayak-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-kayak-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="adjustQty('qty-kayak-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="adjustQty('qty-kayak-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="pt-2 border-t border-gray-100">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Durée (Équipements Plage) / أيام مستلزمات الشاطئ</label>
-                                <select id="duration" onchange="calculateTotal()" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                <select id="duration" onchange="window.calculateTotal()" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
                                     <option value="1">1 Jour / يوم واحد</option>
                                     <option value="2">2 Jours / يومين</option>
                                     <option value="3">3 Jours / 3 أيام</option>
@@ -466,7 +300,10 @@
                                 </div>
                             </div>
 
-                            <button type="button" onclick="submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 uppercase text-xs tracking-wider">
+                            <!-- حاوية ملاحظات التسعير الخاصة (تمت إضافتها) -->
+                            <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full mt-2"></div>
+
+                            <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 uppercase text-xs tracking-wider">
                                 Confirmer la Demande • إرسال الطلب
                             </button>
                         </form>
@@ -486,7 +323,7 @@
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
                     <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none uppercase">
-                    <button onclick="trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
+                    <button onclick="window.trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
                 </div>
             </div>
 
@@ -496,6 +333,13 @@
                     <h4 class="font-bold text-lg text-gray-800">Détails du الحجز</h4>
                     <span id="track-status-badge" class="px-3 py-1 rounded-full text-xs font-bold inline-block"></span>
                 </div>
+
+                <div id="track-res-parasol" class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center hidden animate-pulse">
+                    <div class="text-blue-800 font-bold text-sm uppercase tracking-wide"><i class="fa-solid fa-umbrella-beach mr-1"></i> Votre Parasol / رقم مظلتك</div>
+                    <div id="track-parasol-id" class="text-3xl font-extrabold text-blue-900 mt-1">--</div>
+                    <div class="text-[10px] text-blue-600 mt-1 font-arabic" dir="rtl">يرجى التوجه إلى هذه المظلة المخصصة لك.</div>
+                </div>
+
                 <div class="space-y-3 text-xs text-gray-600">
                     <div class="flex justify-between border-b pb-2"><span>Code:</span><strong id="track-res-code" class="text-maldiva-dark"></strong></div>
                     <div class="flex justify-between border-b pb-2"><span>Client:</span><strong id="track-res-name"></strong></div>
@@ -506,108 +350,12 @@
                 <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed" dir="rtl"></div>
             </div>
         </div>
-
-        <!-- Admin Tab -->
-        <div id="tab-admin-portal" class="space-y-6 hidden">
-            
-            <div id="admin-login-view" class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4">
-                <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto"><i class="fa-solid fa-lock"></i></div>
-                <div>
-                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur</h3>
-                    <p class="text-xs text-gray-500 mt-1">Accès réservé au gérant du club</p>
-                </div>
-                <div>
-                    <input type="password" id="admin-password" placeholder="Mot de passe" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none">
-                    <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Mot de passe incorrect!</span>
-                </div>
-                <button onclick="verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider">
-                    Se Connecter
-                </button>
-            </div>
-
-            <div id="admin-dashboard-view" class="hidden space-y-6">
-                <div class="flex border-b border-gray-200">
-                    <button onclick="switchAdminSubTab('reservations')" id="admin-subtab-btn-res" class="py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5"><i class="fa-solid fa-list-check"></i><span>Demandes</span></button>
-                    <button onclick="switchAdminSubTab('settings')" id="admin-subtab-btn-settings" class="py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5"><i class="fa-solid fa-image"></i><span>Images & Tarifs</span></button>
-                </div>
-
-                <div id="admin-subview-reservations" class="space-y-6">
-                    <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-4">
-                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-4">
-                            <div>
-                                <h4 class="serif-title text-xl font-bold text-maldiva-dark">Bilan Journalier • الحصيلة اليومية</h4>
-                                <p class="text-xs text-gray-500">Cliquez sur les cases pour filtrer / إضغط على المربعات للفرز</p>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                                <div class="relative flex-grow max-w-[200px]">
-                                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                                    <input type="text" id="admin-search-mld" oninput="renderAdminReservations()" placeholder="Chercher code MLD..." class="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal uppercase">
-                                </div>
-                                <button onclick="setAdminDateFilterToday()" class="bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-teal/20">Aujourd'hui</button>
-                                <input type="date" id="admin-filter-date" onchange="renderAdminReservations()" class="bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-xs focus:outline-none">
-                                <button onclick="clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-4 py-2 rounded-xl text-xs transition-all w-max">Voir Tout</button>
-                            </div>
-                        </div>
-
-                        <!-- STAT CARDS (Now clickable for filtering) -->
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div onclick="setStatusFilter('all')" class="cursor-pointer bg-gray-50 hover:bg-gray-100 p-4 rounded-2xl border border-gray-200 shadow-sm text-center transition-all" id="filter-btn-all">
-                                <div class="text-[10px] text-gray-400 uppercase font-bold">Total Clients</div><span id="stat-total" class="text-2xl font-extrabold text-maldiva-dark">0</span>
-                            </div>
-                            <div onclick="setStatusFilter('pending')" class="cursor-pointer bg-yellow-50 hover:bg-yellow-100 p-4 rounded-2xl border border-yellow-100 shadow-sm text-center transition-all" id="filter-btn-pending">
-                                <div class="text-[10px] text-yellow-600 uppercase font-bold">En attente ⏳</div><span id="stat-pending" class="text-2xl font-extrabold text-yellow-600">0</span>
-                            </div>
-                            <div onclick="setStatusFilter('approved')" class="cursor-pointer bg-green-50 hover:bg-green-100 p-4 rounded-2xl border border-green-100 shadow-sm text-center transition-all" id="filter-btn-approved">
-                                <div class="text-[10px] text-green-600 uppercase font-bold">Confirmés ✔️</div><span id="stat-approved" class="text-2xl font-extrabold text-green-600">0</span>
-                            </div>
-                            <div onclick="setStatusFilter('declined')" class="cursor-pointer bg-red-50 hover:bg-red-100 p-4 rounded-2xl border border-red-100 shadow-sm text-center transition-all" id="filter-btn-declined">
-                                <div class="text-[10px] text-red-600 uppercase font-bold">Refusés ❌</div><span id="stat-declined" class="text-2xl font-extrabold text-red-600">0</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 rounded-2xl shadow-md flex justify-between items-center text-white mt-2">
-                            <div><div class="text-xs uppercase font-bold text-maldiva-accent">Revenu Estimé / المداخيل المقدرة</div><div class="text-[10px] text-gray-300 mt-0.5">N'inclut pas les demandes refusées / لا يشمل الحجوزات المرفوضة</div></div>
-                            <span id="stat-revenue" class="text-3xl font-extrabold text-maldiva-orange">0 DA</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-4">
-                        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
-                            <h4 class="serif-title text-xl font-bold text-maldiva-dark">Liste des Réservations <span id="current-filter-label" class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded ml-2 align-middle uppercase">Tout</span></h4>
-                            <button onclick="logoutAdmin()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-1.5 rounded-xl">Déconnexion</button>
-                        </div>
-                        <div id="admin-reservations-list" class="space-y-4">
-                            <div class="text-center py-12 text-gray-400 text-xs">Aucun حجز مسجل حالياً.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="admin-subview-settings" class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hidden space-y-6">
-                    <div><h4 class="serif-title text-xl font-bold text-maldiva-dark">Gestion des Images</h4><p class="text-xs text-gray-500">Personnalisez les images de votre club.</p></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-image"></i> Logo du Site</div><input type="url" id="setting-logo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-chair"></i> Chaise Longue</div><input type="url" id="setting-chaise-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-mattress-pillow"></i> Transat Bois</div><input type="url" id="setting-transat-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-maldiva-sand p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-hotel"></i> Baldaquin Royal</div><input type="url" id="setting-baldaquin-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ship"></i> Jet-Ski</div><input type="url" id="setting-jetski-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-bicycle"></i> Pédalo</div><input type="url" id="setting-pedalo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-anchor"></i> Kayak</div><input type="url" id="setting-kayak-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-life-ring"></i> Bouée Tractée</div><input type="url" id="setting-bouee-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                        <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ferry"></i> Bateau</div><input type="url" id="setting-bateau-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                        <button onclick="saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Sauvegarder les modifications</span></button>
-                        <button onclick="resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser par défaut</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <!-- Success Modal -->
     <div id="success-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 relative">
-            <button onclick="hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <button onclick="window.hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center space-y-4">
                 <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl"><i class="fa-solid fa-circle-check"></i></div>
                 <div>
@@ -615,15 +363,26 @@
                     <p class="text-xs text-gray-500 mt-1">Notez bien votre code de suivi :</p>
                 </div>
                 <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">#MLD-0000</div>
+                
+                <!-- الرسالة الفرنسية الجديدة -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse">
+                    <i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code pour suivi votre réservation
+                </div>
+
                 <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">
                     <div class="font-bold text-maldiva-dark border-b border-gray-200 pb-1.5 mb-1.5">Résumé :</div>
                     <div id="summary-items" class="space-y-1 text-gray-600 max-h-32 overflow-y-auto"></div>
                     <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between">
                         <span>Total estimé :</span><span id="summary-total" class="text-sm">0 DA</span>
                     </p>
+                    <!-- ملاحظات التسعير في الملخص (تمت إضافتها) -->
+                    <div id="summary-special-notes" class="hidden pt-1.5 border-t border-gray-200"></div>
                 </div>
-                <p class="text-xs text-gray-500 font-arabic" dir="rtl">سنتواصل معك هاتفياً قريباً لتأكيد الحجز.</p>
-                <button type="button" onclick="hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange">Fermer / إغلاق</button>
+                
+                <!-- الرسالة العربية الجديدة -->
+                <p class="text-sm text-maldiva-dark font-arabic font-extrabold text-center mt-2" dir="rtl">تواصل معنا هاتفيا لتأكيد الحجز</p>
+                
+                <button type="button" onclick="window.hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange mt-2">Fermer / إغلاق</button>
             </div>
         </div>
     </div>
@@ -635,526 +394,10 @@
         </div>
     </footer>
 
-    <script>
-        let localReservationsArray = [];
-        let allReservationsList = [];
-        let pendingDeleteId = null;
-        let currentEditId = null; 
-        
-        let currentStatusFilter = 'all'; // للفلترة في الإدارة
+    <!-- ربط السكريبتات بنظام Modular -->
+    <script type="module" src="./js/firebase.js"></script>
+    <script type="module" src="./js/ui.js"></script>
+    <script type="module" src="./js/reservation.js"></script>
 
-        // ✨ التعديل تم هنا: إضافة رابط الشعار الجديد ليكون هو الافتراضي ✨
-        const defaultImages = {
-            logoUrl: 'https://i.postimg.cc/dh3KTX2L/IMG-7963.png',
-            chaiseUrl: 'https://i.postimg.cc/3kxzmscR/IMG-8144.jpg?w=500&q=80',
-            transatUrl: 'https://i.postimg.cc/zyG4KscT/IMG-8145.jpg?w=500&q=80',
-            baldaquinUrl: 'https://i.postimg.cc/xX1BMw4H/IMG-8148.jpg?w=500&q=80',
-            jetskiUrl: 'https://i.postimg.cc/ykVK7WWh/IMG-8522.jpg?w=500&q=80',
-            pedaloUrl: 'https://i.postimg.cc/GHcRb99K/IMG-8524.jpg?w=500&q=80',
-            kayakUrl: 'https://i.postimg.cc/hfSnKhhM/IMG-8521.jpg?w=500&q=80',
-            boueeUrl: 'https://i.postimg.cc/TpRxThh9/IMG-8523.jpg?w=500&q=80',
-            bateauUrl: 'https://i.postimg.cc/grMpkmRj/IMG-8525.jpg?w=500&q=80'
-        };
-
-        const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
-        const actPrices = { 
-            'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
-            'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 
-            'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
-            'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 
-            'qty-bateau-standard': 4000 
-        };
-        const names = { 
-            'qty-chaise': 'Chaise Longue', 'qty-transat': 'Transat en Bois', 'qty-baldaquin': 'Baldaquin Royal', 
-            'qty-jetski-15': 'Jet-Ski (15 Min)', 'qty-jetski-30': 'Jet-Ski (30 Min)', 'qty-jetski-60': 'Jet-Ski (1 Heure)', 
-            'qty-pedalo-30': 'Pédalo (30 Min)', 'qty-pedalo-60': 'Pédalo (1 Heure)', 
-            'qty-kayak-30': 'Kayak (30 Min)', 'qty-kayak-60': 'Kayak (1 Heure)', 
-            'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 
-            'qty-bateau-standard': 'Bateau (+4 pers)' 
-        };
-        const allPrices = { ...equipPrices, ...actPrices };
-
-        function showNotification(msg, type = 'info') {
-            const toast = document.getElementById('custom-toast');
-            const icon = document.getElementById('toast-icon');
-            const message = document.getElementById('toast-message');
-            message.innerText = msg;
-            if (type === 'success') icon.innerHTML = '<i class="fa-solid fa-circle-check text-green-400 text-lg"></i>';
-            else if (type === 'error') icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-400 text-lg"></i>';
-            else icon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-400 text-lg"></i>';
-            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none'); }, 3500);
-        }
-
-        // ======================= MODALS =========================
-        function closeConfirmModal() {
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.remove('opacity-100');
-            modal.querySelector('div').classList.add('translate-y-4');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-            pendingDeleteId = null;
-        }
-        function removeReservation(trackingCode) {
-            pendingDeleteId = trackingCode;
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.add('opacity-100'); modal.querySelector('div').classList.remove('translate-y-4'); }, 10);
-        }
-        async function executePendingDelete() {
-            if (!pendingDeleteId) return;
-            const code = pendingDeleteId;
-            closeConfirmModal();
-            if (window.usingFirebase) {
-                try {
-                    await window.deleteDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', code));
-                    showNotification("Réservation supprimée !", "success");
-                } catch (e) { deleteLocalReservation(code); showNotification("Réservation supprimée !", "success"); }
-            } else { deleteLocalReservation(code); showNotification("Réservation supprimée !", "success"); }
-        }
-
-        function openEditModal(code) {
-            currentEditId = code;
-            const res = allReservationsList.find(r => r.trackingCode === code);
-            if(!res) return;
-            document.getElementById('edit-modal-code').innerText = "Client: " + res.clientName + " | Code: #" + res.trackingCode;
-            document.getElementById('edit-name').value = res.clientName;
-            document.getElementById('edit-phone').value = res.clientPhone;
-            document.getElementById('edit-date').value = res.visitDate;
-            document.getElementById('edit-duration').value = res.duration || 1;
-
-            let itemsHtml = '';
-            for (let id in allPrices) {
-                let itemName = names[id];
-                let currentQty = (res.items && res.items[itemName]) ? res.items[itemName] : 0;
-                itemsHtml += `<div class="flex justify-between items-center bg-white p-2 rounded-xl shadow-sm border border-gray-100"><span class="text-xs font-bold text-gray-700">${itemName}</span><input type="number" id="edit-${id}" min="0" value="${currentQty}" onchange="calcEditTotal()" class="w-16 bg-maldiva-sand text-center border border-gray-200 rounded-lg text-xs py-1.5 focus:outline-none focus:ring-1 focus:ring-maldiva-teal font-bold text-maldiva-dark"></div>`;
-            }
-            document.getElementById('edit-items-container').innerHTML = itemsHtml;
-            calcEditTotal();
-            const modal = document.getElementById('edit-modal');
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.add('opacity-100'); modal.querySelector('div').classList.remove('translate-y-4'); }, 10);
-        }
-
-        function closeEditModal() {
-            const modal = document.getElementById('edit-modal');
-            modal.classList.remove('opacity-100');
-            modal.querySelector('div').classList.add('translate-y-4');
-            setTimeout(() => { modal.classList.add('hidden'); }, 300);
-            currentEditId = null;
-        }
-
-        function calcEditTotal() {
-            let subtotalEquip = 0, subtotalAct = 0;
-            for (let id in equipPrices) subtotalEquip += (parseInt(document.getElementById('edit-'+id).value) || 0) * equipPrices[id];
-            for (let id in actPrices) subtotalAct += (parseInt(document.getElementById('edit-'+id).value) || 0) * actPrices[id];
-            const duration = parseInt(document.getElementById('edit-duration').value);
-            let totalEquip = subtotalEquip * duration;
-            if (duration === 5) totalEquip *= 0.90; else if (duration === 7) totalEquip *= 0.85;
-            let finalTotal = totalEquip + subtotalAct;
-            document.getElementById('edit-total-price').innerText = finalTotal.toLocaleString() + ' DA';
-            return finalTotal;
-        }
-
-        async function saveEditedReservation() {
-            const res = allReservationsList.find(r => r.trackingCode === currentEditId);
-            if(!res) return;
-            const newName = document.getElementById('edit-name').value.trim();
-            const newPhone = document.getElementById('edit-phone').value.trim();
-            const newDuration = parseInt(document.getElementById('edit-duration').value);
-
-            if(!newName || !newPhone) return showNotification("Veuillez remplir les informations.", "error");
-
-            let newItems = {};
-            for(let id in allPrices) {
-                let qty = parseInt(document.getElementById('edit-'+id).value) || 0;
-                if(qty > 0) newItems[names[id]] = qty;
-            }
-            const updatedData = { 
-                clientName: newName, 
-                clientPhone: newPhone, 
-                duration: newDuration, 
-                items: newItems, 
-                totalPrice: document.getElementById('edit-total-price').innerText 
-            };
-
-            if(window.usingFirebase) {
-                try {
-                    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', currentEditId), updatedData);
-                    showNotification("Réservation modifiée avec succès!", "success"); closeEditModal();
-                } catch(e) { updateLocalReservationData(currentEditId, updatedData); showNotification("Modifié localement!", "success"); closeEditModal(); }
-            } else { updateLocalReservationData(currentEditId, updatedData); showNotification("Modifié localement!", "success"); closeEditModal(); }
-        }
-
-        // ======================= BOOT =========================
-        document.addEventListener('database-ready', () => {
-            const statusIndicator = document.getElementById('connection-status');
-            if (window.usingFirebase) {
-                statusIndicator.innerText = "● Cloud Mode Actif (Firebase)";
-                statusIndicator.className = "text-emerald-400 font-bold flex items-center gap-1";
-                loadCloudSettings();
-                listenToReservationsCloud(); 
-            } else {
-                statusIndicator.innerText = "● Local Mode Actif (Koder)";
-                statusIndicator.className = "text-amber-400 font-bold flex items-center gap-1";
-                loadLocalSettings();
-                loadLocalReservations(); 
-            }
-        });
-
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        document.getElementById('visit-date').value = tomorrow.toISOString().split('T')[0];
-
-        function adjustQty(elementId, amount) {
-            const span = document.getElementById(elementId);
-            let current = parseInt(span.innerText);
-            current += amount;
-            if (current < 0) current = 0;
-            span.innerText = current;
-            calculateTotal();
-        }
-
-        function calculateTotal() {
-            let subtotalEquip = 0, subtotalAct = 0;
-            for (let id in equipPrices) subtotalEquip += parseInt(document.getElementById(id).innerText) * equipPrices[id];
-            for (let id in actPrices) subtotalAct += parseInt(document.getElementById(id).innerText) * actPrices[id];
-            const duration = parseInt(document.getElementById('duration').value);
-            let totalEquip = subtotalEquip * duration;
-            let discountApplied = false;
-            if (duration === 5) { totalEquip *= 0.90; discountApplied = true; } 
-            else if (duration === 7) { totalEquip *= 0.85; discountApplied = true; }
-
-            const discountBadge = document.getElementById('discount-badge');
-            if (discountApplied && subtotalEquip > 0) discountBadge.classList.remove('hidden');
-            else discountBadge.classList.add('hidden');
-
-            let finalTotal = totalEquip + subtotalAct;
-            document.getElementById('total-price').innerText = finalTotal.toLocaleString() + ' DA';
-            return finalTotal;
-        }
-
-        function switchTab(tabId) {
-            document.getElementById('tab-booking-form').classList.add('hidden');
-            document.getElementById('tab-tracking-section').classList.add('hidden');
-            document.getElementById('tab-admin-portal').classList.add('hidden');
-            const inactive = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
-            const active = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1";
-            document.getElementById('btn-tab-booking').className = inactive; document.getElementById('btn-tab-tracking').className = inactive; document.getElementById('btn-tab-admin').className = inactive;
-            if (tabId === 'booking-form') { document.getElementById('tab-booking-form').classList.remove('hidden'); document.getElementById('btn-tab-booking').className = active; }
-            else if (tabId === 'tracking-section') { document.getElementById('tab-tracking-section').classList.remove('hidden'); document.getElementById('btn-tab-tracking').className = active; }
-            else if (tabId === 'admin-portal') { document.getElementById('tab-admin-portal').classList.remove('hidden'); document.getElementById('btn-tab-admin').className = active; }
-        }
-        function switchAdminSubTab(subTabId) {
-            const btnRes = document.getElementById('admin-subtab-btn-res'), btnSettings = document.getElementById('admin-subtab-btn-settings');
-            const viewRes = document.getElementById('admin-subview-reservations'), viewSettings = document.getElementById('admin-subview-settings');
-            if (subTabId === 'reservations') {
-                btnRes.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5";
-                btnSettings.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5";
-                viewRes.classList.remove('hidden'); viewSettings.classList.add('hidden');
-            } else {
-                btnSettings.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5";
-                btnRes.className = "py-2.5 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 flex items-center gap-1.5";
-                viewSettings.classList.remove('hidden'); viewRes.classList.add('hidden');
-            }
-        }
-
-        // ======================= DATA FUNCTIONS =========================
-        function loadLocalReservations() {
-            const raw = localStorage.getItem('maldiva_reservations');
-            localReservationsArray = raw ? JSON.parse(raw) : [];
-            allReservationsList = localReservationsArray;
-            if(adminAuthorized) renderAdminReservations();
-        }
-        function saveLocalReservation(data) {
-            localReservationsArray.push(data);
-            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
-            allReservationsList = localReservationsArray;
-            if(adminAuthorized) renderAdminReservations();
-        }
-        function updateLocalReservationStatus(id, newStatus) {
-            localReservationsArray = localReservationsArray.map(item => { if (item.trackingCode === id) item.status = newStatus; return item; });
-            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
-            allReservationsList = localReservationsArray;
-            if(adminAuthorized) renderAdminReservations(); 
-        }
-        function updateLocalReservationData(id, newData) {
-            localReservationsArray = localReservationsArray.map(item => { if (item.trackingCode === id) return { ...item, ...newData }; return item; });
-            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
-            allReservationsList = localReservationsArray;
-            if(adminAuthorized) renderAdminReservations();
-        }
-        function deleteLocalReservation(id) {
-            localReservationsArray = localReservationsArray.filter(item => item.trackingCode !== id);
-            localStorage.setItem('maldiva_reservations', JSON.stringify(localReservationsArray));
-            allReservationsList = localReservationsArray;
-            if(adminAuthorized) renderAdminReservations(); 
-        }
-
-        function generateTrackingCode() { return 'MLD-' + Math.floor(1000 + Math.random() * 9000); }
-
-        async function submitReservation() {
-            const clientName = document.getElementById('client-name').value.trim();
-            const clientPhone = document.getElementById('client-phone').value.trim();
-            const visitDate = document.getElementById('visit-date').value;
-
-            if (!clientName || !clientPhone || !visitDate) return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
-
-            let hasItems = false, chosenItems = {};
-            for (let id in allPrices) {
-                const el = document.getElementById(id);
-                if(el) {
-                    const qty = parseInt(el.innerText);
-                    if (qty > 0) { hasItems = true; chosenItems[names[id]] = qty; }
-                }
-            }
-            if (!hasItems) return showNotification("Veuillez choisir au moins un équipement ou activité.", "error");
-
-            const duration = parseInt(document.getElementById('duration').value);
-            const totalStr = document.getElementById('total-price').innerText;
-            const trackingCode = generateTrackingCode();
-
-            const reservationData = {
-                clientName: clientName,
-                clientPhone: clientPhone,
-                visitDate: visitDate,
-                items: chosenItems,
-                duration: duration,
-                totalPrice: totalStr,
-                status: 'pending',
-                trackingCode: trackingCode,
-                createdAt: new Date().toISOString()
-            };
-
-            document.getElementById('booking-success-code').innerText = '#' + trackingCode;
-            
-            // إضافة عدد الأيام للملخص في نافذة النجاح
-            document.getElementById('summary-items').innerHTML = `<div class="text-xs py-1 text-maldiva-teal font-bold mb-1 border-b border-gray-100"><i class="fa-solid fa-clock"></i> الأيام المحددة: ${duration} يوم / Jour(s)</div>` + 
-                Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');
-                
-            document.getElementById('summary-total').innerText = totalStr;
-
-            if (window.usingFirebase) {
-                try {
-                    await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', trackingCode), reservationData);
-                    showSuccessModal(); resetForm();
-                } catch (err) { saveLocalReservation(reservationData); showSuccessModal(); resetForm(); }
-            } else { saveLocalReservation(reservationData); showSuccessModal(); resetForm(); }
-        }
-
-        async function trackReservation() {
-            let code = document.getElementById('track-code-input').value.trim().toUpperCase();
-            if (!code) return showNotification("Entrez votre code", "error");
-            if (code.startsWith('#')) code = code.substring(1);
-            let data = null;
-            if (window.usingFirebase) {
-                try {
-                    const snap = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', code));
-                    if (snap.exists()) data = snap.data();
-                } catch (err) {}
-            }
-            if (!data) data = allReservationsList.find(item => item.trackingCode === code);
-            if (!data) return showNotification("Aucun حجز trouvé avec ce رمز !", "error");
-
-            document.getElementById('track-result-box').classList.remove('hidden');
-            document.getElementById('track-res-code').innerText = '#' + code;
-            document.getElementById('track-res-name').innerText = data.clientName;
-            document.getElementById('track-res-date').innerText = data.visitDate;
-            document.getElementById('track-res-dur').innerText = data.duration + " Jour(s)";
-            
-            let itemsHTML = '';
-            for (let [name, qty] of Object.entries(data.items || {})) itemsHTML += `<div>• ${qty} x ${name}</div>`;
-            itemsHTML += `<div class="pt-2 border-t font-bold text-maldiva-dark">Total : ${data.totalPrice}</div>`;
-            document.getElementById('track-res-items').innerHTML = itemsHTML;
-
-            const statusConfig = {
-                'pending': { label: 'En attente ⏳', class: 'bg-yellow-100 text-yellow-800', icon: 'bg-yellow-100 text-yellow-600', fa: 'fa-clock', ar: 'طلبك قيد المراجعة والدراسة حالياً.' },
-                'approved': { label: 'Confirmé ✔', class: 'bg-green-100 text-green-800', icon: 'bg-green-100 text-green-600', fa: 'fa-circle-check', ar: 'تهانينا! حجزك مقبول ومثبت بنجاح.' },
-                'declined': { label: 'Refusé ❌', class: 'bg-red-100 text-red-800', icon: 'bg-red-100 text-red-600', fa: 'fa-circle-xmark', ar: 'نعتذر، لم نتمكن من قبول حجزك نظراً لعدم توفر الأماكن.' }
-            };
-            const current = statusConfig[data.status || 'pending'];
-            const badge = document.getElementById('track-status-badge');
-            badge.innerText = current.label; badge.className = `px-3 py-1 rounded-full text-xs font-bold inline-block ${current.class}`;
-            const iconBox = document.getElementById('track-status-icon');
-            iconBox.className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl ${current.icon}`;
-            iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
-            document.getElementById('track-status-arabic').innerText = current.ar;
-        }
-
-        function listenToReservationsCloud() {
-            window.onSnapshot(window.collection(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations'), (snapshot) => {
-                const list = [];
-                snapshot.forEach(doc => { list.push({ id: doc.id, ...doc.data() }); });
-                list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                allReservationsList = list;
-                if (adminAuthorized) renderAdminReservations();
-            });
-        }
-
-        // ======================= ADMIN LOGIC & FILTERING =========================
-        function setAdminDateFilterToday() {
-            const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-            document.getElementById('admin-filter-date').value = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
-            renderAdminReservations();
-        }
-        function clearAdminDateFilter() {
-            document.getElementById('admin-filter-date').value = '';
-            document.getElementById('admin-search-mld').value = '';
-            currentStatusFilter = 'all'; // Reset status filter
-            renderAdminReservations();
-        }
-
-        function setStatusFilter(status) {
-            currentStatusFilter = status;
-            renderAdminReservations();
-        }
-
-        function renderAdminReservations() {
-            const filterDate = document.getElementById('admin-filter-date').value;
-            const searchMLD = document.getElementById('admin-search-mld') ? document.getElementById('admin-search-mld').value.toUpperCase().trim() : '';
-            let list = allReservationsList || [];
-
-            // 1. Calculate global stats BEFORE applying filters
-            const globalList = list.filter(res => {
-                if (filterDate && res.visitDate !== filterDate) return false;
-                if (searchMLD && !res.trackingCode.includes(searchMLD)) return false;
-                return true;
-            });
-
-            document.getElementById('stat-total').innerText = globalList.length;
-            document.getElementById('stat-pending').innerText = globalList.filter(i => i.status === 'pending').length;
-            document.getElementById('stat-approved').innerText = globalList.filter(i => i.status === 'approved').length;
-            document.getElementById('stat-declined').innerText = globalList.filter(i => i.status === 'declined').length;
-
-            let totalRevenue = 0;
-            globalList.forEach(res => {
-                if (res.status !== 'declined') totalRevenue += (parseInt(res.totalPrice.replace(/[^\d]/g, '')) || 0);
-            });
-            document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString() + ' DA';
-
-            // 2. Apply status filter for the view
-            let viewList = globalList;
-            if (currentStatusFilter !== 'all') {
-                viewList = globalList.filter(res => res.status === currentStatusFilter);
-            }
-
-            // 3. Update styling of filter buttons to show active state
-            document.getElementById('filter-btn-all').className = `cursor-pointer p-4 rounded-2xl border shadow-sm text-center transition-all ${currentStatusFilter === 'all' ? 'bg-gray-200 border-gray-300 transform scale-105' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`;
-            document.getElementById('filter-btn-pending').className = `cursor-pointer p-4 rounded-2xl border shadow-sm text-center transition-all ${currentStatusFilter === 'pending' ? 'bg-yellow-200 border-yellow-300 transform scale-105' : 'bg-yellow-50 border-yellow-100 hover:bg-yellow-100'}`;
-            document.getElementById('filter-btn-approved').className = `cursor-pointer p-4 rounded-2xl border shadow-sm text-center transition-all ${currentStatusFilter === 'approved' ? 'bg-green-200 border-green-300 transform scale-105' : 'bg-green-50 border-green-100 hover:bg-green-100'}`;
-            document.getElementById('filter-btn-declined').className = `cursor-pointer p-4 rounded-2xl border shadow-sm text-center transition-all ${currentStatusFilter === 'declined' ? 'bg-red-200 border-red-300 transform scale-105' : 'bg-red-50 border-red-100 hover:bg-red-100'}`;
-            
-            // Update filter label
-            const labelMap = { 'all': 'Tout', 'pending': 'En Attente', 'approved': 'Confirmés', 'declined': 'Refusés' };
-            document.getElementById('current-filter-label').innerText = labelMap[currentStatusFilter];
-
-            const container = document.getElementById('admin-reservations-list');
-            if (viewList.length === 0) {
-                container.innerHTML = `<div class="text-center py-12 text-gray-400 text-xs">Aucune réservation pour cette sélection.</div>`; return;
-            }
-
-            let html = '';
-            viewList.forEach(res => {
-                let itemsHTML = '';
-                for (let [name, qty] of Object.entries(res.items || {})) itemsHTML += `<span class="bg-teal-50 text-teal-800 text-[10px] px-2 py-0.5 rounded border border-teal-100 font-semibold mb-1 mr-1 inline-block">${qty} x ${name}</span> `;
-                const statusStyles = { 'pending': 'bg-yellow-100 text-yellow-800', 'approved': 'bg-green-100 text-green-800', 'declined': 'bg-red-100 text-red-800' };
-
-                html += `
-                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 relative hover:border-maldiva-teal transition-all">
-                        <div class="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
-                            <div>
-                                <h5 class="font-bold text-sm text-gray-800">${res.clientName} <span class="text-xs text-gray-400 font-mono">#${res.trackingCode}</span></h5>
-                                <a href="tel:${res.clientPhone}" class="text-xs text-maldiva-teal hover:underline font-semibold flex items-center gap-1 mt-0.5"><i class="fa-solid fa-phone"></i> ${res.clientPhone}</a>
-                            </div>
-                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${statusStyles[res.status || 'pending']}">${res.status || 'pending'}</span>
-                        </div>
-                        <div class="text-xs text-gray-600 space-y-1 my-3 border-t border-b border-gray-100 py-2">
-                            <div class="flex items-center gap-2">
-                                <strong class="text-maldiva-dark"><i class="fa-regular fa-calendar"></i> ${res.visitDate}</strong>
-                                <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded font-bold ml-auto"><i class="fa-solid fa-clock"></i> ${res.duration || 1} Jour(s)</span>
-                            </div>
-                            <div class="pt-1">${itemsHTML}</div>
-                        </div>
-                        <div class="flex justify-between items-center gap-2 flex-wrap">
-                            <span class="text-sm font-extrabold text-maldiva-dark">${res.totalPrice}</span>
-                            <div class="flex items-center gap-1">
-                                <button onclick="setReservationStatus('${res.trackingCode}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded">Accepter</button>
-                                <button onclick="setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded">Refuser</button>
-                                <button onclick="dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
-                                <button onclick="openEditModal('${res.trackingCode}')" class="bg-blue-100 hover:bg-blue-200 text-blue-600 p-1.5 rounded text-[10px]"><i class="fa-solid fa-pen"></i></button>
-                                <button onclick="removeReservation('${res.trackingCode}')" class="bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded text-[10px]"><i class="fa-solid fa-trash-can"></i></button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        async function setReservationStatus(trackingCode, newStatus) {
-            if (window.usingFirebase) {
-                try {
-                    await window.updateDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'reservations', trackingCode), { status: newStatus });
-                    showNotification("Statut mis à jour !", "success");
-                } catch (e) { updateLocalReservationStatus(trackingCode, newStatus); showNotification("Statut mis à jour localement !", "success"); }
-            } else { updateLocalReservationStatus(trackingCode, newStatus); showNotification("Statut mis à jour localement !", "success"); }
-        }
-
-        function dispatchWhatsAppMessage(trackingCode) {
-            const res = allReservationsList.find(item => item.trackingCode === trackingCode);
-            if (!res) return showNotification("Réservation introuvable !", "error");
-            let cleanPhone = res.clientPhone.replace(/[^\d+]/g, '');
-            if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
-            if (cleanPhone.startsWith('00213')) cleanPhone = cleanPhone.substring(5); else if (cleanPhone.startsWith('213')) cleanPhone = cleanPhone.substring(3);
-            if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1); cleanPhone = '213' + cleanPhone;
-
-            const itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
-            let text = "";
-            if (res.status === 'approved') {
-                text = `Bonjour ${res.clientName}! 🏖️\n\nVotre demande chez *Maldiva Beach Club* a été *CONFIRMÉE* ✔️\n\n📝 *Détails :*\n• Code : #${res.trackingCode}\n• Date : ${res.visitDate} (Pour ${res.duration || 1} Jours)\n• Équipements & Activités :\n${itemsStr}\n• Total : *${res.totalPrice}*\n\n⚠️ Veuillez vous présenter avant 10:30.\n\n--- \nمرحباً ${res.clientName}! تم *تأكيد* حجزك في نادي *مالديفا الشاطئي* ✔️`;
-            } else if (res.status === 'declined') {
-                text = `Bonjour ${res.clientName},\n\nNous sommes désolés, mais nous ne pouvons pas confirmer votre demande chez *Maldiva Beach Club* pour le ${res.visitDate} (places complètes). ❌\n\n--- \nمرحباً ${res.clientName}، نعتذر لعدم تمكننا من قبول حجزك ليوم ${res.visitDate} نظراً لعدم توفر الأماكن.`;
-            } else { return showNotification("Acceptez ou refusez la réservation d'abord.", "error"); }
-
-            const anchor = document.createElement('a');
-            anchor.href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
-            anchor.target = '_blank'; anchor.click();
-        }
-
-        // ======================= SETTINGS =========================
-        function applySiteSettings(settings) {
-            const defaultSvg = document.getElementById('default-svg-logo'), customLogoWrapper = document.getElementById('custom-logo-wrapper'), customLogoImg = document.getElementById('custom-logo-img');
-            if (settings.logoUrl && settings.logoUrl.trim() !== "") { defaultSvg.classList.replace('block', 'hidden'); customLogoWrapper.classList.remove('hidden'); customLogoImg.src = settings.logoUrl.trim(); }
-            else { defaultSvg.classList.replace('hidden', 'block'); customLogoWrapper.classList.add('hidden'); customLogoImg.src = ""; }
-            document.getElementById('img-item-transat').src = settings.transatUrl || defaultImages.transatUrl; document.getElementById('img-item-chaise').src = settings.chaiseUrl || defaultImages.chaiseUrl; document.getElementById('img-item-baldaquin').src = settings.baldaquinUrl || defaultImages.baldaquinUrl; document.getElementById('img-item-jetski').src = settings.jetskiUrl || defaultImages.jetskiUrl; document.getElementById('img-item-pedalo').src = settings.pedaloUrl || defaultImages.pedaloUrl; document.getElementById('img-item-kayak').src = settings.kayakUrl || defaultImages.kayakUrl; document.getElementById('img-item-bouee').src = settings.boueeUrl || defaultImages.boueeUrl; document.getElementById('img-item-bateau').src = settings.bateauUrl || defaultImages.bateauUrl;
-            document.getElementById('setting-logo-url').value = settings.logoUrl || ""; document.getElementById('setting-transat-url').value = settings.transatUrl || defaultImages.transatUrl; document.getElementById('setting-chaise-url').value = settings.chaiseUrl || defaultImages.chaiseUrl; document.getElementById('setting-baldaquin-url').value = settings.baldaquinUrl || defaultImages.baldaquinUrl; document.getElementById('setting-jetski-url').value = settings.jetskiUrl || defaultImages.jetskiUrl; document.getElementById('setting-pedalo-url').value = settings.pedaloUrl || defaultImages.pedaloUrl; document.getElementById('setting-kayak-url').value = settings.kayakUrl || defaultImages.kayakUrl; document.getElementById('setting-bouee-url').value = settings.boueeUrl || defaultImages.boueeUrl; document.getElementById('setting-bateau-url').value = settings.bateauUrl || defaultImages.bateauUrl;
-        }
-        function loadLocalSettings() { const raw = localStorage.getItem('maldiva_settings'); applySiteSettings(raw ? JSON.parse(raw) : defaultImages); }
-        async function loadCloudSettings() { try { const snap = await window.getDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config')); applySiteSettings(snap.exists() ? snap.data() : defaultImages); } catch (e) { loadLocalSettings(); } }
-        async function saveSiteSettings() {
-            const settingsData = { logoUrl: document.getElementById('setting-logo-url').value.trim(), transatUrl: document.getElementById('setting-transat-url').value.trim(), chaiseUrl: document.getElementById('setting-chaise-url').value.trim(), baldaquinUrl: document.getElementById('setting-baldaquin-url').value.trim(), jetskiUrl: document.getElementById('setting-jetski-url').value.trim(), pedaloUrl: document.getElementById('setting-pedalo-url').value.trim(), kayakUrl: document.getElementById('setting-kayak-url').value.trim(), boueeUrl: document.getElementById('setting-bouee-url').value.trim(), bateauUrl: document.getElementById('setting-bateau-url').value.trim(), updatedAt: new Date().toISOString() };
-            if (window.usingFirebase) { try { await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config'), settingsData); applySiteSettings(settingsData); showNotification("Images sauvegardées !", "success"); } catch (e) { localStorage.setItem('maldiva_settings', JSON.stringify(settingsData)); applySiteSettings(settingsData); showNotification("Sauvegardé localement !", "success"); } }
-            else { localStorage.setItem('maldiva_settings', JSON.stringify(settingsData)); applySiteSettings(settingsData); showNotification("Sauvegardé localement !", "success"); }
-        }
-        async function resetSettingsToDefault() {
-            if (!confirm("Voulez-vous restaurer les images par défaut ?")) return;
-            if (window.usingFirebase) { try { await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'settings', 'config'), defaultImages); applySiteSettings(defaultImages); showNotification("Images restaurées !", "success"); } catch (e) { localStorage.removeItem('maldiva_settings'); applySiteSettings(defaultImages); showNotification("Images restaurées !", "success"); } }
-            else { localStorage.removeItem('maldiva_settings'); applySiteSettings(defaultImages); showNotification("Images restaurées !", "success"); }
-        }
-
-        // ======================= ADMIN LOGIN =========================
-        function verifyAdminLogin() {
-            const pass = document.getElementById('admin-password').value;
-            const error = document.getElementById('admin-login-error');
-            if (pass === 'mhdrb26') {
-                adminAuthorized = true; error.classList.add('hidden'); document.getElementById('admin-login-view').classList.add('hidden'); document.getElementById('admin-dashboard-view').classList.remove('hidden');
-                if (!window.usingFirebase) { allReservationsList = localReservationsArray; }
-                renderAdminReservations();
-                showNotification("Bienvenue, Administrateur !", "success");
-            } else { error.classList.remove('hidden'); }
-        }
-        function logoutAdmin() { adminAuthorized = false; document.getElementById('admin-password').value = ''; document.getElementById('admin-login-view').classList.remove('hidden'); document.getElementById('admin-dashboard-view').classList.add('hidden'); showNotification("Déconnecté.", "info"); }
-        function resetForm() { document.getElementById('client-name').value = ''; document.getElementById('client-phone').value = ''; for (let id in allPrices) { if(document.getElementById(id)) document.getElementById(id).innerText = '0'; } calculateTotal(); }
-        function showSuccessModal() { const modal = document.getElementById('success-modal'); modal.classList.remove('hidden'); setTimeout(() => { modal.classList.add('opacity-100'); modal.querySelector('div').classList.remove('translate-y-4'); }, 10); }
-        function hideSuccessModal() { const modal = document.getElementById('success-modal'); modal.classList.remove('opacity-100'); modal.querySelector('div').classList.add('translate-y-4'); setTimeout(() => { modal.classList.add('hidden'); }, 300); }
-    </script>
 </body>
 </html>

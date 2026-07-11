@@ -1,0 +1,33 @@
+/* /css/style.css */
+
+/* الإعدادات العامة والخطوط */
+body { 
+    font-family: 'Montserrat', sans-serif; 
+    background-color: #fbf7f0; 
+}
+
+.serif-title { 
+    font-family: 'Playfair Display', serif; 
+}
+
+/* إخفاء شريط التمرير في المتصفح للحصول على شكل أنيق */
+.hide-scrollbar::-webkit-scrollbar { 
+    display: none; 
+}
+.hide-scrollbar { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none; 
+}
+
+/* تحسينات إضافية للتجاوب */
+@media (max-width: 768px) {
+    .mobile-full {
+        width: 100%;
+    }
+}
+
+/* تنسيق مخصص للوحة التحكم */
+.admin-tab-active {
+    border-bottom: 2px solid #ff7e67;
+    color: #ff7e67;
+}

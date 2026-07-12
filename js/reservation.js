@@ -3,7 +3,7 @@ import { initPublicAuth } from './firebase.js';
 import { submitNewReservation, getReservationByCode } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
-// 1. تسجيل الدخول المجهول للزبون (لكي تسمح له قاعدة البيانات بالكتابة)
+// 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
 
 // 2. الأسعار والأسماء كما هي في نظامك
@@ -25,7 +25,7 @@ const names = {
 };
 const allPrices = { ...equipPrices, ...actPrices };
 
-// متغير عام لحفظ ملاحظات العروض الخاصة لإظهارها في الفاتورة النهائية
+// متغير عام لحفظ ملاحظات العروض الخاصة
 let currentSpecialNotes = [];
 
 const setInitialDate = () => {
@@ -50,31 +50,32 @@ const calculateTotal = () => {
     let subtotalEquip = 0, subtotalAct = 0;
     currentSpecialNotes = []; // تصفير الملاحظات مع كل حساب جديد
 
-    // ==========================================
-    // حساب أسعار مستلزمات الشاطئ (مع تطبيق القواعد الخاصة)
-    // ==========================================
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
-    // القاعدة 1: بالضبط 2 Chaise Longues = 5000
-    if (qtyChaise === 2) {
+    // ==========================================
+    // حساب أسعار مستلزمات الشاطئ (بالمنطق المصحح)
+    // ==========================================
+
+    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
+    if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
         currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
-    } else {
-        subtotalEquip += qtyChaise * equipPrices['qty-chaise'];
-    }
-
-    // القاعدة 2: بالضبط 2 Transats en bois = 7000
-    if (qtyTransat === 2) {
+    } 
+    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
+    else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
         currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
-    } else {
-        subtotalEquip += qtyTransat * equipPrices['qty-transat'];
+    } 
+    // الحالة الثالثة: أي مزيج آخر (مثلا 2 كراسي و 1 خشب) أو كميات أخرى -> يحسب السعر العادي دون أي زيادات
+    else {
+        subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
+        subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
 
-    // حساب البالداكين (بدون تغيير)
-    subtotalEquip += qtyBaldaquin * equipPrices['qty-baldaquin'];
+    // حساب البالداكين بشكل مستقل
+    subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
 
     // ==========================================
     // حساب أسعار الأنشطة البحرية (بدون تغيير)
@@ -85,7 +86,7 @@ const calculateTotal = () => {
     }
     
     // ==========================================
-    // حساب المدة الزمنية والتخفيضات الإضافية (إن وجدت)
+    // حساب المدة الزمنية والتخفيضات الإضافية
     // ==========================================
     const durationSelect = document.getElementById('duration');
     const duration = durationSelect ? parseInt(durationSelect.value) : 1;
@@ -172,7 +173,6 @@ const submitReservation = async () => {
         Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');
     document.getElementById('summary-total').innerText = totalStr;
 
-    // إضافة ملاحظات التخفيض الخاصة في فاتورة النجاح (Modal)
     const summaryNotesContainer = document.getElementById('summary-special-notes');
     if (summaryNotesContainer) {
         if (currentSpecialNotes.length > 0) {

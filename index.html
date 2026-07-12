@@ -48,7 +48,7 @@
 
     <header class="relative bg-gradient-to-b from-maldiva-accent to-maldiva-sand pt-6 pb-8 px-4 text-center">
         <div class="max-w-6xl mx-auto flex flex-col items-center">
-            <!-- الشعار الجديد -->
+            <!-- الشعار -->
             <div class="w-48 h-48 md:w-52 md:h-52 mb-4 relative drop-shadow-xl hover:scale-105 transition-transform duration-500 flex items-center justify-center">
                 <div id="custom-logo-wrapper" class="w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
                     <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Maldiva Beach Club Logo">
@@ -77,15 +77,19 @@
         <!-- Booking Tab -->
         <div id="tab-booking-form" class="space-y-8 block">
             
-            <!-- الملاحظة الهامة -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-2xl shadow-sm max-w-4xl mx-auto">
-                <h4 class="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Note Importante / ملاحظة هامة
-                </h4>
-                <div class="text-xs text-yellow-700 leading-relaxed space-y-3">
-                    <p>Les 3 premières rangées sont réservées exclusivement aux réservations de <strong>2 Transats en bois ou plus</strong>. Le choix des places se fait sur la plage (Premier arrivé, premier servi). <br><strong class="text-red-600">⚠️ Note : Les groupes d'hommes ne sont pas autorisés. Merci de votre compréhension.</strong></p>
-                    
-                    <p class="font-arabic border-t border-yellow-200 pt-2" dir="rtl">الصفوف الثلاثة الأولى مخصصة فقط لمن يحجز <strong>كرسي خشب +2 (Transat)</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولا). <br><strong class="text-red-600">⚠️ ملاحظة بسيطة: لا نقبل بمجموعة من الرجال، نشكركم على حسن تعاونكم.</strong></p>
+            <!-- الزر الجديد التفاعلي لفتح القواعد (بدل المربع الأصفر القديم) -->
+            <div onclick="window.openRulesModal()" class="cursor-pointer bg-gradient-to-r from-maldiva-dark to-teal-900 p-4 rounded-2xl shadow-md max-w-4xl mx-auto flex items-center justify-between text-white hover:shadow-lg transition-all transform hover:-translate-y-0.5 border border-teal-800 group">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm tracking-wide">Règlement et Infos Importantes</h4>
+                        <p class="text-[11px] opacity-80 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</p>
+                    </div>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
                 </div>
             </div>
 
@@ -350,7 +354,7 @@
                     <div id="track-res-items" class="bg-maldiva-sand p-3 rounded-xl space-y-1.5 font-semibold text-gray-700"></div>
                 </div>
 
-                <!-- رسالة التقاط الصورة التي تم نقلها إلى قسم التتبع -->
+                <!-- رسالة التقاط الصورة -->
                 <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse text-center mt-4">
                     <p><i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code et le présenter lors de votre visite !</p>
                     <p class="font-arabic mt-1" dir="rtl">هام: يرجى التقاط صورة لهذه الشاشة (Capture) وتقديمها عند زيارتك للنادي!</p>
@@ -401,12 +405,118 @@
         </div>
     </div>
 
+    <!-- ============================================== -->
+    <!-- النافذة المنبثقة لقواعد ومعلومات النادي (الجديدة) -->
+    <!-- ============================================== -->
+    <div id="rules-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="rules-modal-content" class="bg-maldiva-sand rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 transform translate-y-8 scale-95 transition-all duration-400 relative overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- الهيدر -->
+            <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 text-white text-center relative flex-shrink-0">
+                <button onclick="window.closeRulesModal()" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full hover:bg-white/40 transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                <div class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
+                </div>
+                <h3 class="serif-title text-xl font-bold tracking-wide">Règlement du Club</h3>
+                <p class="text-xs font-arabic mt-1 opacity-90" dir="rtl">القواعد والمعلومات الهامة</p>
+            </div>
+
+            <!-- المحتوى (القواعد) قابل للتمرير -->
+            <div class="p-5 md:p-6 space-y-4 overflow-y-auto flex-grow custom-scrollbar">
+                
+                <!-- القاعدة 1: ساعات العمل -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 border border-blue-100"><i class="fa-solid fa-clock text-lg"></i></div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-maldiva-dark">Horaires d'Ouverture</h4>
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">La plage est ouverte tous les jours de <strong>08h00 à 22h00</strong>.</p>
+                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الشاطئ مفتوح كل يوم من الساعة <strong>08:00 صباحاً إلى 22:00 ليلاً</strong>.</p>
+                    </div>
+                </div>
+
+                <!-- القاعدة 2: وقت الوصول -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-10 h-10 rounded-full bg-orange-50 text-maldiva-orange flex items-center justify-center flex-shrink-0 border border-orange-100"><i class="fa-solid fa-hourglass-end text-lg"></i></div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-maldiva-dark">Délai d'Arrivée</h4>
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Toute réservation sans présentation avant <strong>13h00</strong> sera automatiquement annulée, sauf avis préalable.</p>
+                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">سيتم إلغاء أي حجز لا يحضر أصحابه قبل الساعة <strong>13:00 (الواحدة زوالاً)</strong> تلقائياً، ما لم يتم إبلاغنا مسبقاً.</p>
+                    </div>
+                </div>
+
+                <!-- القاعدة 3: الكراسي -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="w-10 h-10 rounded-full bg-teal-50 text-maldiva-teal flex items-center justify-center flex-shrink-0 border border-teal-100"><i class="fa-solid fa-umbrella-beach text-lg"></i></div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-maldiva-dark">Placement (Transats)</h4>
+                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Les 3 premières rangées sont réservées pour <strong>2 Transats en bois ou plus</strong>. Choix sur place (1er arrivé, 1er servi).</p>
+                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الصفوف الـ 3 الأولى مخصصة لحجوزات <strong>كرسي خشب +2</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولاً).</p>
+                    </div>
+                </div>
+
+                <!-- القاعدة 4: سياسة الدخول -->
+                <div class="bg-red-50 p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-red-200">
+                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-ban text-lg"></i></div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-red-800">Politique d'Accès</h4>
+                        <p class="text-xs text-red-700 mt-1 font-semibold leading-relaxed">Les groupes composés uniquement d'hommes ne sont pas autorisés. Merci de votre compréhension.</p>
+                        <p class="text-[11px] text-red-700 mt-1.5 font-arabic font-semibold border-t border-red-200 pt-1.5" dir="rtl">عذراً، لا نقبل الحجوزات للمجموعات المكونة من الشباب (الرجال) فقط. نشكركم على تفهمكم.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- الفوتر (زر الإغلاق) -->
+            <div class="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+                <button onclick="window.closeRulesModal()" class="w-full bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg uppercase tracking-wider text-xs flex justify-center items-center gap-2">
+                    <span>J'ai compris</span>
+                    <span class="opacity-50">|</span>
+                    <span class="font-arabic" dir="rtl">موافق، فهمت ذلك</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer class="bg-maldiva-dark text-white py-8 px-4 border-t-4 border-maldiva-orange mt-12">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
             <div><span class="serif-title text-2xl font-bold tracking-wider text-maldiva-orange">MALDIVA</span><p class="text-[10px] uppercase tracking-widest text-gray-300 mt-1">Plage Dorée, Tipaza, Algérie</p></div>
             <p class="text-[10px] text-gray-400">&copy; 2026 Maldiva Beach Club. Tous droits réservés.</p>
         </div>
     </footer>
+
+    <!-- سكريبت التحكم في نافذة القواعد -->
+    <script>
+        // دالة فتح النافذة
+        window.openRulesModal = function() {
+            const modal = document.getElementById('rules-modal');
+            const content = document.getElementById('rules-modal-content');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('translate-y-8', 'scale-95');
+        };
+
+        // دالة إغلاق النافذة
+        window.closeRulesModal = function() {
+            const modal = document.getElementById('rules-modal');
+            const content = document.getElementById('rules-modal-content');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            content.classList.add('translate-y-8', 'scale-95');
+        };
+
+        // نظام الفتح التلقائي عند الزيارة الأولى
+        document.addEventListener('DOMContentLoaded', () => {
+            // نتحقق إذا كان المستخدم قد رأى القواعد من قبل
+            const hasSeenRules = localStorage.getItem('maldiva_rules_seen');
+            
+            if (!hasSeenRules) {
+                // إذا لم يرها، نفتحها بعد 1.5 ثانية من تحميل الصفحة
+                setTimeout(() => {
+                    window.openRulesModal();
+                    // نحفظ في المتصفح أنه قد رأى القواعد كي لا نزعجه في المرات القادمة
+                    localStorage.setItem('maldiva_rules_seen', 'true');
+                }, 1500);
+            }
+        });
+    </script>
 
     <!-- ربط السكريبتات بنظام Modular -->
     <script type="module" src="./js/firebase.js"></script>

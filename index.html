@@ -77,7 +77,7 @@
         <!-- Booking Tab -->
         <div id="tab-booking-form" class="space-y-8 block">
             
-            <!-- الملاحظة الهامة (تم تحديثها) -->
+            <!-- الملاحظة الهامة -->
             <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-2xl shadow-sm max-w-4xl mx-auto">
                 <h4 class="text-sm font-bold text-yellow-800 mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation"></i> Note Importante / ملاحظة هامة
@@ -302,7 +302,7 @@
                                 </div>
                             </div>
 
-                            <!-- حاوية ملاحظات التسعير الخاصة (تمت إضافتها) -->
+                            <!-- حاوية ملاحظات التسعير الخاصة -->
                             <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full mt-2"></div>
 
                             <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 uppercase text-xs tracking-wider">
@@ -349,7 +349,14 @@
                     <div class="flex justify-between border-b pb-2"><span>Durée Plage:</span><strong id="track-res-dur"></strong></div>
                     <div id="track-res-items" class="bg-maldiva-sand p-3 rounded-xl space-y-1.5 font-semibold text-gray-700"></div>
                 </div>
-                <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed" dir="rtl"></div>
+
+                <!-- رسالة التقاط الصورة التي تم نقلها إلى قسم التتبع -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse text-center mt-4">
+                    <p><i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code et le présenter lors de votre visite !</p>
+                    <p class="font-arabic mt-1" dir="rtl">هام: يرجى التقاط صورة لهذه الشاشة (Capture) وتقديمها عند زيارتك للنادي!</p>
+                </div>
+
+                <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed mt-2" dir="rtl"></div>
             </div>
         </div>
     </main>
@@ -366,7 +373,7 @@
                 </div>
                 <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">#MLD-0000</div>
                 
-                <!-- رسالة التنبيه الجديدة لتتبع الحجز (تمت إضافتها وتنسيقها بشكل بارز) -->
+                <!-- رسالة التنبيه لتتبع الحجز -->
                 <div class="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 shadow-md transform hover:scale-105 transition-all duration-300">
                     <div class="flex items-center justify-center text-blue-700 mb-1">
                         <i class="fa-solid fa-magnifying-glass text-lg mr-2 animate-bounce"></i>
@@ -376,22 +383,17 @@
                     <p class="text-blue-800 text-xs font-bold font-arabic mt-1" dir="rtl">احتفظ بهذا الكود! واستخدمه في قسم "تتبع الحجز" لمعرفة هل تم قبول حجزك أم لا.</p>
                 </div>
 
-                <!-- الرسالة الفرنسية لـ ScreenShot -->
-                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse">
-                    <i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code
-                </div>
-
                 <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">
                     <div class="font-bold text-maldiva-dark border-b border-gray-200 pb-1.5 mb-1.5">Résumé :</div>
                     <div id="summary-items" class="space-y-1 text-gray-600 max-h-32 overflow-y-auto"></div>
                     <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between">
                         <span>Total estimé :</span><span id="summary-total" class="text-sm">0 DA</span>
                     </p>
-                    <!-- ملاحظات التسعير في الملخص (تمت إضافتها) -->
+                    <!-- ملاحظات التسعير في الملخص -->
                     <div id="summary-special-notes" class="hidden pt-1.5 border-t border-gray-200"></div>
                 </div>
                 
-                <!-- الرسالة العربية الجديدة -->
+                <!-- الرسالة العربية -->
                 <p class="text-sm text-maldiva-dark font-arabic font-extrabold text-center mt-2" dir="rtl">تواصل معنا هاتفيا لتأكيد الحجز</p>
                 
                 <button type="button" onclick="window.hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange mt-2">Fermer / إغلاق</button>

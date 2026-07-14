@@ -221,7 +221,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
                         <button onclick="window.setReservationStatus('${res.trackingCode}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded" title="Accepter"><i class="fa-solid fa-check"></i></button>
                         <button onclick="window.setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded" title="Refuser"><i class="fa-solid fa-xmark"></i></button>
                         
-                        <!-- زر التعديل الجديد -->
                         <button onclick="window.openEditModal('${res.trackingCode}')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-pen"></i> Modifier</button>
                         
                         <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
@@ -291,19 +290,16 @@ export const openEditModal = async (trackingCode) => {
     document.getElementById('edit-notes').value = res.notes || '';
     document.getElementById('edit-total-price').innerText = res.totalPrice || '0 DA';
 
-    // نضمن توفر كل النشاطات الممكنة للتعديل، بالإضافة لما حجزه الزبون مسبقاً
     const standardItems = [
         'Chaise longue', 'Transat', 'Baldaquin', 
         'Jet-Ski', 'Bateau', 'Bouée tractée', 'Kayak', 'Pédalo'
     ];
     const currentItemsKeys = res.items ? Object.keys(res.items) : [];
-    // دمج القائمتين وحذف التكرار لتكوين قائمة الأنشطة المتاحة للتعديل
     const itemsToDisplay = [...new Set([...standardItems, ...currentItemsKeys])];
 
     let itemsHTML = '';
     itemsToDisplay.forEach((item, index) => {
         const currentQty = (res.items && res.items[item]) ? res.items[item] : 0;
-        // استخدام index لإنشاء ID آمن بدون مسافات
         itemsHTML += `
             <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-gray-100">
                 <span class="text-xs font-semibold text-gray-700">${item}</span>
@@ -318,9 +314,16 @@ export const openEditModal = async (trackingCode) => {
 
     document.getElementById('edit-items-container').innerHTML = itemsHTML;
     
+    // إصلاح مشكلة ظهور النافذة
     const modal = document.getElementById('edit-modal');
     modal.classList.remove('hidden');
-    setTimeout(() => modal.querySelector('div').classList.remove('translate-y-4', 'opacity-0'), 10);
+    
+    setTimeout(() => {
+        // إزالة الشفافية من الخلفية
+        modal.classList.remove('opacity-0');
+        // تحريك صندوق النافذة للأعلى (إزالة الانزياح للأسفل)
+        modal.querySelector('div').classList.remove('translate-y-4');
+    }, 10);
 };
 
 export const updateEditItemQty = (id, change) => {
@@ -334,15 +337,20 @@ export const updateEditItemQty = (id, change) => {
 
 export const closeEditModal = () => {
     const modal = document.getElementById('edit-modal');
-    modal.querySelector('div').classList.add('translate-y-4', 'opacity-0');
-    setTimeout(() => modal.classList.add('hidden'), 300);
+    
+    // إعادة الشفافية والانزياح للأسفل عند الإغلاق
+    modal.classList.add('opacity-0');
+    modal.querySelector('div').classList.add('translate-y-4');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300); // الانتظار حتى تنتهي الحركة (0.3 ثانية)
 };
 
 export const saveEditedReservation = async () => {
     const trackingCode = document.getElementById('edit-modal-code').innerText;
     const newItems = {};
 
-    // تجميع النشاطات التي قيمتها أكبر من 0 فقط
     document.querySelectorAll('.edit-item-qty').forEach(el => {
         const qty = parseInt(el.innerText);
         if (qty > 0) {
@@ -350,7 +358,6 @@ export const saveEditedReservation = async () => {
         }
     });
 
-    // تحديث البيانات (دون المساس بـ totalPrice إطلاقاً)
     const updatedData = {
         clientName: document.getElementById('edit-name').value,
         clientPhone: document.getElementById('edit-phone').value,
@@ -364,7 +371,7 @@ export const saveEditedReservation = async () => {
         await updateReservationData(trackingCode, updatedData);
         showNotification("Réservation modifiée avec succès !", "success");
         closeEditModal();
-        renderAdminReservations(true); // إعادة التحميل لإظهار التعديلات الجديدة
+        renderAdminReservations(true); 
     } catch (error) {
         showNotification("Erreur lors de la modification.", "error");
     }
@@ -379,7 +386,6 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     
     if (!res) return showNotification("Réservation introuvable !", "error");
     
-    // تنظيف رقم الهاتف وإضافة رمز الدولة
     let cleanPhone = res.clientPhone.replace(/[^\d+]/g, '');
     if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
     if (cleanPhone.startsWith('00213')) cleanPhone = cleanPhone.substring(5); 
@@ -440,7 +446,6 @@ window.prepareDelete = prepareDelete;
 window.executePendingDelete = executePendingDelete;
 window.dispatchWhatsAppMessage = dispatchWhatsAppMessage;
 
-// دوال نظام التعديل الجديدة
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.updateEditItemQty = updateEditItemQty;

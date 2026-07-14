@@ -30,13 +30,12 @@
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col bg-gray-50">
 
-    <!-- الاشعارات -->
     <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
         <span id="toast-icon"></span>
         <span id="toast-message" class="text-xs font-semibold"></span>
     </div>
 
-    <!-- نوافذ التأكيد -->
+    <!-- Modals (Archive, Confirm, Parasol) restent inchangés -->
     <div id="archive-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
             <div class="text-center space-y-3">
@@ -69,80 +68,47 @@
         </div>
     </div>
 
-    <!-- نافذة تعديل الحجز -->
+    <!-- Edit Modal Mis à jour -->
     <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-start mb-4 border-b pb-3">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <div>
                     <h3 class="serif-title text-xl font-bold text-maldiva-dark">Modifier / تعديل الحجز</h3>
-                    <p class="text-[10px] text-gray-500 mt-1 font-mono" id="edit-modal-code">Code: #...</p>
-                    <p class="text-[10px] text-maldiva-teal mt-1 font-bold flex items-center gap-1">
-                        <i class="fa-regular fa-clock"></i> 
-                        <span dir="rtl">حُجز في: </span> 
-                        <span id="edit-modal-timestamp" class="text-gray-600">--/--/---- --:--</span>
-                    </p>
+                    <p class="text-[10px] text-gray-500 mt-0.5" id="edit-modal-code"></p>
                 </div>
-                <button onclick="window.closeEditModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="window.closeEditModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             <div class="overflow-y-auto hide-scrollbar space-y-4 pr-1 flex-grow">
-                <div class="space-y-3 bg-maldiva-sand/50 p-4 rounded-2xl">
+                <div class="space-y-2 bg-maldiva-sand/50 p-3 rounded-2xl">
+                    <input type="text" id="edit-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Nom">
+                    <input type="tel" id="edit-phone" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Téléphone">
                     <div class="flex gap-2">
-                        <div class="w-full">
-                            <label class="text-[10px] text-gray-500 font-bold ml-1">Nom / الإسم</label>
-                            <input type="text" id="edit-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal mt-1" placeholder="Nom">
-                        </div>
-                        <div class="w-full">
-                            <label class="text-[10px] text-gray-500 font-bold ml-1">Tél / الهاتف</label>
-                            <input type="tel" id="edit-phone" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal mt-1" placeholder="Téléphone">
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <div class="w-full">
-                            <label class="text-[10px] text-gray-500 font-bold ml-1">Date / يوم الحجز</label>
-                            <input type="date" id="edit-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal mt-1">
-                        </div>
-                        <div class="w-full">
-                            <label class="text-[10px] text-gray-500 font-bold ml-1">Heure / وقت الوصول</label>
-                            <input type="time" id="edit-time" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal mt-1">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] text-gray-500 font-bold ml-1">Durée / المدة</label>
-                        <select id="edit-duration" onchange="window.calcEditTotal()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal mt-1">
-                            <option value="1">1 Jour (يوم واحد)</option>
+                        <input type="date" id="edit-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
+                        <select id="edit-duration" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
+                            <option value="1">1 Jour</option>
                             <option value="2">2 Jours</option>
                             <option value="3">3 Jours</option>
-                            <option value="5">5 Jours (-10%)</option>
-                            <option value="7">1 Semaine (-15%)</option>
+                            <option value="5">5 Jours</option>
+                            <option value="7">1 Semaine</option>
                         </select>
                     </div>
+                    <textarea id="edit-notes" rows="2" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Notes (ex: avec parasol, vue mer...)"></textarea>
                 </div>
 
-                <div class="flex items-center justify-between mt-2">
-                    <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1">
-                        <i class="fa-solid fa-list-check"></i> Équipements & Activités
-                    </div>
-                    <button type="button" onclick="window.addEditItemRow()" class="text-[10px] bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white px-2 py-1 rounded-lg font-bold transition-colors flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Ajouter
-                    </button>
-                </div>
-                
-                <!-- حاوية إدراج عناصر التعديل من الجافاسكريبت -->
-                <div id="edit-items-container" class="space-y-2 border border-gray-100 rounded-2xl p-3 bg-gray-50">
-                    <!-- سيتم تعبئتها برمجياً -->
+                <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><i class="fa-solid fa-list-check"></i> Équipements & Activités</div>
+                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50">
+                    <!-- Généré dynamiquement -->
                 </div>
             </div>
 
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center bg-white">
                 <div>
-                    <div class="text-[10px] text-gray-500 uppercase font-bold">Nouveau Total</div>
+                    <div class="text-[10px] text-gray-500 uppercase font-bold">Total (Inchangé)</div>
                     <div class="font-extrabold text-maldiva-orange text-xl" id="edit-total-price">0 DA</div>
                 </div>
-                <button onclick="window.saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer
+                <button onclick="window.saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider">
+                    Enregistrer
                 </button>
             </div>
         </div>
@@ -152,7 +118,7 @@
         <div class="font-bold tracking-wider text-maldiva-orange text-sm flex items-center gap-2">
             <i class="fa-solid fa-shield-halved"></i> Espace Admin
         </div>
-        <a href="index.html" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+        <a href="index.html" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors">
             <i class="fa-solid fa-arrow-left"></i> Retour au site
         </a>
     </div>
@@ -178,7 +144,9 @@
             
             <div class="flex overflow-x-auto hide-scrollbar border-b border-gray-200 bg-white rounded-t-2xl px-2 pt-2">
                 <button onclick="window.switchAdminSubTab('reservations')" id="admin-subtab-btn-res" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-list-check"></i><span>Demandes</span></button>
+                <button onclick="window.switchAdminSubTab('loyalty')" id="admin-subtab-btn-loyalty" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star"></i><span>Fidélité / زبائن أوفياء</span></button>
                 <button onclick="window.switchAdminSubTab('settings')" id="admin-subtab-btn-settings" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-image"></i><span>Images & Tarifs</span></button>
+                <a href="orders.html" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-maldiva-teal flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-utensils"></i><span>Restaurant (Externe)</span></a>
             </div>
 
             <div id="admin-subview-reservations" class="space-y-6">
@@ -189,18 +157,14 @@
                             <p class="text-xs text-gray-500">Cliquez sur les cases pour filtrer / إضغط على المربعات للفرز</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                            <!-- زر إغلاق الموقع -->
-                            <button id="sys-lock-btn" onclick="window.toggleSystemLock()" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm flex items-center gap-2">
-                                <i class="fa-solid fa-lock"></i> <span>Fermer Site</span>
-                            </button>
-
-                            <div class="relative flex-grow max-w-[180px]">
+                            <div class="relative flex-grow max-w-[220px]">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                                <input type="text" id="admin-search-mld" oninput="window.renderAdminReservations()" placeholder="Chercher code..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
+                                <input type="text" id="admin-search-mld" oninput="window.renderAdminReservations()" placeholder="Chercher code, nom, tél..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
                             </div>
                             <button onclick="window.setAdminDateFilterToday()" class="bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-teal/20">Aujourd'hui</button>
                             <input type="date" id="admin-filter-date" onchange="window.renderAdminReservations()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none w-[130px]">
                             <button onclick="window.clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs transition-all">Tout</button>
+                            <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5" title="Afficher uniquement les activités nautiques"><i class="fa-solid fa-water"></i> Activités</button>
                         </div>
                     </div>
 
@@ -223,7 +187,7 @@
                     </div>
 
                     <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 rounded-2xl shadow-md flex justify-between items-center text-white mt-2">
-                        <div><div class="text-xs uppercase font-bold text-maldiva-accent">Revenu (Confirmé Seulement) / المداخيل المؤكدة</div><div class="text-[10px] text-gray-300 mt-0.5">Seulement les réservations acceptées de la date sélectionnée</div></div>
+                        <div><div class="text-xs uppercase font-bold text-maldiva-accent">Revenu Estimé / المداخيل المقدرة</div><div class="text-[10px] text-gray-300 mt-0.5">N'inclut pas les refusés (Inclus les archivés)</div></div>
                         <span id="stat-revenue" class="text-3xl font-extrabold text-maldiva-orange">0 DA</span>
                     </div>
                 </div>
@@ -231,14 +195,7 @@
                 <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
                     <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
                         <h4 class="serif-title text-xl font-bold text-maldiva-dark">Liste des Réservations <span id="current-filter-label" class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded ml-2 align-middle uppercase">Tout</span></h4>
-                        <div class="flex items-center gap-2">
-                            <button onclick="window.exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all" title="Télécharger en format Excel/CSV">
-                                <i class="fa-solid fa-file-excel"></i> Télécharger Excel
-                            </button>
-                            <button onclick="window.logoutAdmin()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-2 rounded-xl transition-colors flex items-center gap-1">
-                                <i class="fa-solid fa-power-off"></i> Déconnexion
-                            </button>
-                        </div>
+                        <button onclick="window.logoutAdmin()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-xl transition-colors">Déconnexion</button>
                     </div>
                     <div id="admin-reservations-list" class="space-y-4">
                         <div class="text-center py-12 text-gray-400 text-xs">Chargement...</div>
@@ -246,25 +203,43 @@
                 </div>
             </div>
 
+            <div id="admin-subview-loyalty" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
+                <!-- Loyalty content -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+                    <div>
+                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">الزبائن الأوفياء / Fidélité</h4>
+                        <p class="text-xs text-gray-500">نظام البحث عن الزبائن الذين يحجزون أكثر.</p>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="loyalty-search" oninput="window.renderLoyalty()" placeholder="ابحث بالاسم أو الهاتف..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
+                    </div>
+                </div>
+                <div id="loyalty-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 hide-scrollbar"></div>
+            </div>
+
             <div id="admin-subview-settings" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
+                 <!-- Settings content -->
                 <div><h4 class="serif-title text-xl font-bold text-maldiva-dark">Gestion des Images</h4><p class="text-xs text-gray-500">Personnalisez les images de votre club.</p></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
                     <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-image"></i> Logo du Site</div><input type="url" id="setting-logo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
-                    <!-- باقي الإعدادات... -->
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-chair"></i> Chaise Longue</div><input type="url" id="setting-chaise-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-mattress-pillow"></i> Transat Bois</div><input type="url" id="setting-transat-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-hotel"></i> Baldaquin Royal</div><input type="url" id="setting-baldaquin-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ship"></i> Jet-Ski</div><input type="url" id="setting-jetski-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-bicycle"></i> Pédalo</div><input type="url" id="setting-pedalo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-anchor"></i> Kayak</div><input type="url" id="setting-kayak-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-life-ring"></i> Bouée Tractée</div><input type="url" id="setting-bouee-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ferry"></i> Bateau</div><input type="url" id="setting-bateau-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                    <button onclick="window.saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Sauvegarder les modifications</span></button>
+                    <button onclick="window.resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser par défaut</button>
                 </div>
             </div>
 
         </div>
     </main>
-
-    <script>
-        // دالة مساعدة لإنشاء صف معدات جديد عند الضغط على زر Ajouter في HTML
-        window.addEditItemRow = function() {
-            if(window.coreAddEditItemRow) {
-                window.coreAddEditItemRow();
-            }
-        };
-    </script>
 
     <script type="module" src="./js/firebase.js"></script>
     <script type="module" src="./js/ui.js"></script>

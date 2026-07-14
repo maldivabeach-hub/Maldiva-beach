@@ -4,6 +4,44 @@ import { getAdminReservations, updateReservationData, deleteReservation } from '
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
 // ========================================================
+// 0. إعدادات الأسعار (مطابقة تماماً لنظام الزبون)
+// ========================================================
+const BASE_PRICES = {
+    'Chaise Longue': 2000,
+    'Transat en Bois': 3000,
+    'Baldaquin Royal': 10000,
+    'Jet-Ski (15 Min)': 6000,
+    'Jet-Ski (30 Min)': 12000,
+    'Jet-Ski (1 Heure)': 20000,
+    'Pédalo (30 Min)': 1000,
+    'Pédalo (1 Heure)': 2000,
+    'Kayak (30 Min)': 1000,
+    'Kayak (1 Heure)': 2000,
+    'Bouée Tractée (2 pers)': 3000,
+    'Bouée Tractée (3 pers)': 4000,
+    'Bateau (+4 pers)': 4000,
+    
+    // دعم الأسماء القديمة إن وجدت في الحجوزات السابقة لتجنب الأخطاء
+    'Chaise longue': 2000,
+    'Transat': 3000,
+    'Baldaquin': 10000,
+    'Jet-Ski': 6000,
+    'Pédalo': 1000,
+    'Kayak': 1000,
+    'Bouée tractée': 3000,
+    'Bateau': 4000
+};
+
+const STANDARD_ITEMS = [
+    'Chaise Longue', 'Transat en Bois', 'Baldaquin Royal', 
+    'Jet-Ski (15 Min)', 'Jet-Ski (30 Min)', 'Jet-Ski (1 Heure)', 
+    'Pédalo (30 Min)', 'Pédalo (1 Heure)', 
+    'Kayak (30 Min)', 'Kayak (1 Heure)', 
+    'Bouée Tractée (2 pers)', 'Bouée Tractée (3 pers)', 
+    'Bateau (+4 pers)'
+];
+
+// ========================================================
 // 1. المتغيرات العامة (Global State)
 // ========================================================
 let adminAuthorized = false;
@@ -289,13 +327,9 @@ export const openEditModal = async (trackingCode) => {
     document.getElementById('edit-duration').value = res.duration || '1';
     document.getElementById('edit-notes').value = res.notes || '';
     document.getElementById('edit-total-price').innerText = res.totalPrice || '0 DA';
-
-    const standardItems = [
-        'Chaise longue', 'Transat', 'Baldaquin', 
-        'Jet-Ski', 'Bateau', 'Bouée tractée', 'Kayak', 'Pédalo'
-    ];
+    
     const currentItemsKeys = res.items ? Object.keys(res.items) : [];
-    const itemsToDisplay = [...new Set([...standardItems, ...currentItemsKeys])];
+    const itemsToDisplay = [...new Set([...STANDARD_ITEMS, ...currentItemsKeys])];
 
     let itemsHTML = '';
     itemsToDisplay.forEach((item, index) => {
@@ -314,14 +348,12 @@ export const openEditModal = async (trackingCode) => {
 
     document.getElementById('edit-items-container').innerHTML = itemsHTML;
     
-    // إصلاح مشكلة ظهور النافذة
+    // إظهار النافذة
     const modal = document.getElementById('edit-modal');
     modal.classList.remove('hidden');
     
     setTimeout(() => {
-        // إزالة الشفافية من الخلفية
         modal.classList.remove('opacity-0');
-        // تحريك صندوق النافذة للأعلى (إزالة الانزياح للأسفل)
         modal.querySelector('div').classList.remove('translate-y-4');
     }, 10);
 };
@@ -332,19 +364,88 @@ export const updateEditItemQty = (id, change) => {
         let newQty = parseInt(el.innerText) + change;
         if (newQty < 0) newQty = 0;
         el.innerText = newQty;
+        calculateEditTotal(); // إعادة حساب السعر مباشرة عند تغيير أي رقم
     }
+};
+
+// الدالة المسؤولة عن حساب الأسعار وتطبيق نفس قواعد التخفيض الموجودة للزبون
+export const calculateEditTotal = () => {
+    let subtotalEquip = 0;
+    let subtotalAct = 0;
+    
+    let qtyChaise = 0;
+    let qtyTransat = 0;
+    let qtyBaldaquin = 0;
+
+    // المرور على جميع العناصر لاستخراج الكميات
+    document.querySelectorAll('.edit-item-qty').forEach(el => {
+        const qty = parseInt(el.innerText) || 0;
+        const name = el.getAttribute('data-name');
+        
+        if (name === 'Chaise Longue' || name === 'Chaise longue') {
+            qtyChaise += qty;
+        } else if (name === 'Transat en Bois' || name === 'Transat') {
+            qtyTransat += qty;
+        } else if (name === 'Baldaquin Royal' || name === 'Baldaquin') {
+            qtyBaldaquin += qty;
+        } else {
+            // بقية العناصر تعتبر نشاطات بحرية
+            subtotalAct += qty * (BASE_PRICES[name] || 0);
+        }
+    });
+
+    // ==========================================
+    // حساب أسعار مستلزمات الشاطئ (بمنطق العروض)
+    // ==========================================
+    
+    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
+    if (qtyChaise === 2 && qtyTransat === 0) {
+        subtotalEquip += 5000;
+    } 
+    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
+    else if (qtyTransat === 2 && qtyChaise === 0) {
+        subtotalEquip += 7000;
+    } 
+    // الحالة الثالثة: حساب عادي بالأسعار الأساسية
+    else {
+        subtotalEquip += (qtyChaise * BASE_PRICES['Chaise Longue']);
+        subtotalEquip += (qtyTransat * BASE_PRICES['Transat en Bois']);
+    }
+
+    // إضافة البالداكين (لا تدخل في العروض)
+    subtotalEquip += (qtyBaldaquin * BASE_PRICES['Baldaquin Royal']);
+
+    // ==========================================
+    // حساب المدة الزمنية والتخفيضات 
+    // ==========================================
+    const durationStr = document.getElementById('edit-duration').value;
+    const duration = parseInt(durationStr) || 1;
+    
+    // الأيام تُضرب في المستلزمات فقط
+    let totalEquip = subtotalEquip * duration;
+    
+    // تطبيق الخصم على المستلزمات فقط (10% لـ 5 أيام، و 15% لأسبوع)
+    if (duration === 5) {
+        totalEquip = totalEquip * 0.90;
+    } else if (duration === 7) {
+        totalEquip = totalEquip * 0.85;
+    }
+    
+    // المجموع النهائي = (سعر المعدات بعد خصم الأيام) + (سعر الأنشطة)
+    const finalTotal = totalEquip + subtotalAct;
+    
+    document.getElementById('edit-total-price').innerText = Math.round(finalTotal).toLocaleString('fr-FR') + ' DA';
 };
 
 export const closeEditModal = () => {
     const modal = document.getElementById('edit-modal');
     
-    // إعادة الشفافية والانزياح للأسفل عند الإغلاق
     modal.classList.add('opacity-0');
     modal.querySelector('div').classList.add('translate-y-4');
     
     setTimeout(() => {
         modal.classList.add('hidden');
-    }, 300); // الانتظار حتى تنتهي الحركة (0.3 ثانية)
+    }, 300); 
 };
 
 export const saveEditedReservation = async () => {
@@ -364,6 +465,7 @@ export const saveEditedReservation = async () => {
         visitDate: document.getElementById('edit-date').value,
         duration: document.getElementById('edit-duration').value,
         notes: document.getElementById('edit-notes').value,
+        totalPrice: document.getElementById('edit-total-price').innerText,
         items: newItems
     };
 
@@ -449,4 +551,5 @@ window.dispatchWhatsAppMessage = dispatchWhatsAppMessage;
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.updateEditItemQty = updateEditItemQty;
+window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;

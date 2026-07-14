@@ -10,25 +10,6 @@ let adminAuthorized = false;
 let currentStatusFilter = 'all';
 let filterNautique = false;
 let pendingDeleteId = null;
-let currentEditId = null; 
-let currentRenderedList = []; 
-
-// تم تحديث الأسعار لتتناسب مع نظام الحزم (Packs):
-// 2 Chaise longue = 5000 (يعني الواحد بـ 2500)
-// 2 Transat = 7000 (يعني الواحد بـ 3500)
-const ITEM_PRICES = {
-    // Équipements Plage
-    'Chaise longue': 2500, // 2x = 5000 DA
-    'Transat': 3500,       // 2x = 7000 DA
-    'Baldaquin': 5000,
-    
-    // Activités Nautiques
-    'Jet-Ski': 4000,
-    'Pédalo': 1500,
-    'Kayak': 1000,
-    'Bouée': 2000,
-    'Bateau': 8000
-};
 
 // ========================================================
 // 2. نظام تسجيل الدخول (Authentication)
@@ -113,23 +94,28 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     let allReservationsList = await getAdminReservations(forceRefresh);
     let totalRevenue = 0;
     
+    // فلترة القائمة حسب البحث والتاريخ
     let matchingList = allReservationsList.filter(res => {
         if (filterDate && res.visitDate !== filterDate) return false;
+        
         if (searchInput) {
             const matchCode = res.trackingCode.toLowerCase().includes(searchInput);
             const matchName = res.clientName.toLowerCase().includes(searchInput);
             const matchPhone = res.clientPhone.includes(searchInput);
             if (!matchCode && !matchName && !matchPhone) return false;
         }
+
+        if (filterNautique) {
+            const hasNautique = Object.keys(res.items || {}).some(item => 
+                item.includes('Jet-Ski') || item.includes('Pédalo') || 
+                item.includes('Kayak') || item.includes('Bouée') || item.includes('Bateau')
+            );
+            if (!hasNautique) return false;
+        }
         return true;
     });
 
-    matchingList.sort((a, b) => {
-        const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-        const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-        return dateB - dateA;
-    });
-
+    // حساب المداخيل
     matchingList.forEach(res => {
         if (res.status === 'approved' || res.status === 'pending') {
             totalRevenue += (parseInt(res.totalPrice.replace(/[^\d]/g, '')) || 0);
@@ -138,6 +124,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     
     document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString() + ' DA';
 
+    // تصنيف الحجوزات
     let activeList = matchingList.filter(res => !res.isArchived);
     let archivedList = matchingList.filter(res => res.isArchived);
 
@@ -147,6 +134,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     document.getElementById('stat-declined').innerText = activeList.filter(i => i.status === 'declined').length;
     document.getElementById('stat-archived').innerText = archivedList.length;
 
+    // تحديد القائمة التي سيتم عرضها
     let viewList = activeList;
     if (currentStatusFilter === 'archived') {
         viewList = archivedList;
@@ -154,8 +142,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         viewList = activeList.filter(res => res.status === currentStatusFilter);
     }
 
-    currentRenderedList = viewList;
-
+    // تحديث شكل أزرار الإحصائيات (الألوان)
     const setBtnStyle = (id, isActive, activeColors, inactiveColors) => {
         const btn = document.getElementById(id);
         if(!btn) return;
@@ -168,6 +155,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     setBtnStyle('filter-btn-declined', currentStatusFilter === 'declined', 'bg-red-200 border-red-300', 'bg-red-50 border-red-100 hover:bg-red-100');
     setBtnStyle('filter-btn-archived', currentStatusFilter === 'archived', 'bg-purple-200 border-purple-300', 'bg-purple-50 border-purple-100 hover:bg-purple-100');
     
+    // بناء بطاقات الحجز
     const container = document.getElementById('admin-reservations-list');
     if (viewList.length === 0) {
         container.innerHTML = `<div class="text-center py-12 text-gray-400 text-xs">Aucune réservation trouvée.</div>`; 
@@ -175,17 +163,10 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     }
 
     let html = '';
-    const todayStr = new Date().toISOString().split('T')[0];
-
     viewList.forEach(res => {
         let itemsHTML = '';
         for (let [name, qty] of Object.entries(res.items || {})) {
-            // تجاهل الطاولة والمظلة لو كانت موجودة بالخطأ في قاعدة البيانات القديمة لكي لا نربك الشاشة
-            if (name === 'Parasol' || name === 'Table') continue; 
-            
-            let isNautique = ['Jet-Ski', 'Pédalo', 'Kayak', 'Bouée', 'Bateau'].some(n => name.includes(n));
-            let badgeClass = isNautique ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-teal-50 text-teal-800 border-teal-100';
-            itemsHTML += `<span class="${badgeClass} text-[10px] px-2 py-0.5 rounded border font-semibold mb-1 mr-1 inline-block">${qty} x ${name}</span> `;
+            itemsHTML += `<span class="bg-teal-50 text-teal-800 text-[10px] px-2 py-0.5 rounded border border-teal-100 font-semibold mb-1 mr-1 inline-block">${qty} x ${name}</span> `;
         }
         
         const statusStyles = { 
@@ -201,21 +182,22 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         let borderClass = res.isArchived ? 'border-purple-200' : 'border-gray-100';
         let archivedBadge = res.isArchived ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-600"><i class="fa-solid fa-box-archive"></i> Archivé</span>` : '';
 
-        let isNew = false;
-        if(res.createdAt && res.status === 'pending') {
-            let resDateStr = new Date(res.createdAt).toISOString().split('T')[0];
-            if(resDateStr === todayStr) isNew = true;
+        // استخراج تاريخ ووقت الحجز إن وجد
+        let timeStr = '';
+        if (res.timestamp || res.createdAt) {
+            const dateObj = new Date(res.timestamp || res.createdAt);
+            if (!isNaN(dateObj.getTime())) {
+                const formatedDate = dateObj.toLocaleDateString('fr-FR');
+                const formatedTime = dateObj.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+                timeStr = `<span class="text-[9px] text-gray-400 font-mono ml-2 block sm:inline mt-1 sm:mt-0 bg-gray-100 px-2 py-0.5 rounded"><i class="fa-regular fa-clock"></i> Reçu le: ${formatedDate} à ${formatedTime}</span>`;
+            }
         }
-        let newBadgeHTML = isNew ? `<span class="absolute -top-3 -right-2 bg-red-500 text-white text-[9px] font-bold px-2.5 py-1 rounded-full animate-pulse shadow-md z-10">NOUVEAU / جديد</span>` : '';
-
-        let arrivalHtml = res.arrivalTime ? `<span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-clock-rotate-left"></i> Arr: ${res.arrivalTime}</span>` : '';
 
         html += `
-            <div class="bg-gray-50 border ${borderClass} rounded-2xl p-4 relative hover:border-maldiva-teal transition-all mt-2">
-                ${newBadgeHTML}
+            <div class="bg-gray-50 border ${borderClass} rounded-2xl p-4 relative hover:border-maldiva-teal transition-all">
                 <div class="flex justify-between items-start gap-2 flex-wrap sm:flex-nowrap">
                     <div>
-                        <h5 class="font-bold text-sm text-gray-800">${res.clientName} <span class="text-xs text-gray-400 font-mono">#${res.trackingCode}</span></h5>
+                        <h5 class="font-bold text-sm text-gray-800">${res.clientName} <span class="text-xs text-gray-400 font-mono">#${res.trackingCode}</span> ${timeStr}</h5>
                         <a href="tel:${res.clientPhone}" class="text-xs text-maldiva-teal hover:underline font-semibold flex items-center gap-1 mt-0.5"><i class="fa-solid fa-phone"></i> ${res.clientPhone}</a>
                     </div>
                     <div class="flex flex-col items-end gap-1">
@@ -227,21 +209,22 @@ export const renderAdminReservations = async (forceRefresh = false) => {
                 <div class="text-xs text-gray-600 space-y-1 my-3 border-t border-b border-gray-100 py-2">
                     <div class="flex items-center gap-2">
                         <strong class="text-maldiva-dark"><i class="fa-regular fa-calendar"></i> ${res.visitDate}</strong>
-                        ${arrivalHtml}
                         <span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded font-bold ml-auto"><i class="fa-solid fa-clock"></i> ${res.duration || 1} Jour(s)</span>
                     </div>
                     <div class="pt-1">${itemsHTML}</div>
+                    ${res.notes ? `<div class="text-[10px] mt-1 text-gray-500"><i class="fa-solid fa-note-sticky"></i> <b>Notes:</b> ${res.notes}</div>` : ''}
                 </div>
                 
                 <div class="flex justify-between items-center gap-2 flex-wrap">
                     <span class="text-sm font-extrabold text-maldiva-dark">${res.totalPrice}</span>
                     <div class="flex items-center gap-1">
-                        <button onclick="window.printReservation('${res.trackingCode}')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1" title="Imprimer le ticket"><i class="fa-solid fa-print"></i></button>
-
-                        <button onclick="window.setReservationStatus('${res.trackingCode}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded">Accepter</button>
-                        <button onclick="window.openEditModal('${res.trackingCode}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1" title="Modifier"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="window.setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded">Refuser</button>
-                        <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="window.setReservationStatus('${res.trackingCode}', 'approved')" class="bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold px-2 py-1.5 rounded" title="Accepter"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="window.setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded" title="Refuser"><i class="fa-solid fa-xmark"></i></button>
+                        
+                        <!-- زر التعديل الجديد -->
+                        <button onclick="window.openEditModal('${res.trackingCode}')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-pen"></i> Modifier</button>
+                        
+                        <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
                         ${archiveBtn}
                         <button onclick="window.prepareDelete('${res.trackingCode}')" class="bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded text-[10px]" title="Suppression"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
@@ -252,178 +235,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
 };
 
 // ========================================================
-// 5. نافذة تعديل الحجوزات (Edit Modal) وتفاصيل المعدات
-// ========================================================
-export const openEditModal = (trackingCode) => {
-    const res = currentRenderedList.find(r => r.trackingCode === trackingCode);
-    if (!res) return;
-    
-    currentEditId = trackingCode;
-
-    document.getElementById('edit-modal-code').innerText = `Code: #${res.trackingCode}`;
-
-    let timestampText = "--/--/---- --:--";
-    if (res.createdAt) {
-        const d = new Date(res.createdAt);
-        timestampText = d.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-    }
-    document.getElementById('edit-modal-timestamp').innerText = timestampText;
-
-    document.getElementById('edit-name').value = res.clientName || '';
-    document.getElementById('edit-phone').value = res.clientPhone || '';
-    document.getElementById('edit-date').value = res.visitDate || '';
-    document.getElementById('edit-time').value = res.arrivalTime || ''; 
-    document.getElementById('edit-duration').value = res.duration || '1';
-
-    const container = document.getElementById('edit-items-container');
-    container.innerHTML = ''; 
-    
-    if (res.items && Object.keys(res.items).length > 0) {
-        for (let [name, qty] of Object.entries(res.items)) {
-            let lowerName = name.toLowerCase();
-            let val = 'Chaise longue';
-            
-            // تجاهل إدراج الطاولة والمظلة في واجهة التعديل الجديدة لأنهما ضمنيتان
-            if(lowerName.includes('parasol') || lowerName.includes('table')) continue;
-
-            if(lowerName.includes('transat')) val = 'Transat';
-            else if(lowerName.includes('chaise longue') || lowerName.includes('chaise')) val = 'Chaise longue';
-            else if(lowerName.includes('baldaquin') || lowerName.includes('lit')) val = 'Baldaquin';
-            else if(lowerName.includes('jet') || lowerName.includes('jet-ski')) val = 'Jet-Ski';
-            else if(lowerName.includes('pédalo') || lowerName.includes('pedalo')) val = 'Pédalo';
-            else if(lowerName.includes('kayak')) val = 'Kayak';
-            else if(lowerName.includes('bouée') || lowerName.includes('bouee')) val = 'Bouée';
-            else if(lowerName.includes('bateau') || lowerName.includes('balade')) val = 'Bateau';
-
-            coreAddEditItemRow(val, qty);
-        }
-    } 
-    
-    // إذا كانت القائمة فارغة بعد تجاهل المظلة والطاولة، نضع كرسياً افتراضياً
-    if (container.children.length === 0) {
-        coreAddEditItemRow('Chaise longue', 2); // افتراضي: 2 كراسي
-    }
-
-    calcEditTotal();
-
-    const modal = document.getElementById('edit-modal');
-    modal.classList.remove('hidden');
-    setTimeout(() => modal.classList.remove('opacity-0'), 10);
-};
-
-export const closeEditModal = () => {
-    const modal = document.getElementById('edit-modal');
-    modal.classList.add('opacity-0');
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        currentEditId = null;
-    }, 300);
-};
-
-// إنشاء صف جديد بالمعدات والأنشطة المحدثة فقط
-export const coreAddEditItemRow = (typeVal = 'Chaise longue', qty = 1) => {
-    const container = document.getElementById('edit-items-container');
-    const newRow = document.createElement('div');
-    newRow.className = 'flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-100 shadow-sm edit-item-row';
-    
-    newRow.innerHTML = `
-        <select class="flex-grow bg-transparent text-xs outline-none border-none focus:ring-0 edit-item-select font-semibold" onchange="window.calcEditTotal()">
-            <optgroup label="Équipements Plage (avec Parasol & Table)">
-                <option value="Chaise longue" ${typeVal === 'Chaise longue' ? 'selected' : ''}>Chaise longue (كرسي بلاستيك)</option>
-                <option value="Transat" ${typeVal === 'Transat' ? 'selected' : ''}>Transat (كرسي خشب)</option>
-                <option value="Baldaquin" ${typeVal === 'Baldaquin' ? 'selected' : ''}>Baldaquin (خيمة/سرير)</option>
-            </optgroup>
-            <optgroup label="Activités Nautiques">
-                <option value="Jet-Ski" ${typeVal === 'Jet-Ski' ? 'selected' : ''}>Jet-Ski</option>
-                <option value="Pédalo" ${typeVal === 'Pédalo' ? 'selected' : ''}>Pédalo</option>
-                <option value="Kayak" ${typeVal === 'Kayak' ? 'selected' : ''}>Kayak</option>
-                <option value="Bouée" ${typeVal === 'Bouée' ? 'selected' : ''}>Bouée Tractée</option>
-                <option value="Bateau" ${typeVal === 'Bateau' ? 'selected' : ''}>Balade en Bateau</option>
-            </optgroup>
-        </select>
-        <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-            <button type="button" onclick="this.nextElementSibling.stepDown(); window.calcEditTotal()" class="px-2 py-1 text-gray-500 hover:bg-gray-200">-</button>
-            <input type="number" min="1" value="${qty}" class="w-10 text-center text-xs bg-transparent border-none focus:ring-0 edit-item-qty" onchange="window.calcEditTotal()">
-            <button type="button" onclick="this.previousElementSibling.stepUp(); window.calcEditTotal()" class="px-2 py-1 text-gray-500 hover:bg-gray-200">+</button>
-        </div>
-        <button type="button" class="text-red-400 hover:text-red-600 w-6 h-6 flex items-center justify-center rounded-md hover:bg-red-50 transition-colors" onclick="this.parentElement.remove(); window.calcEditTotal()">
-            <i class="fa-solid fa-trash text-xs"></i>
-        </button>
-    `;
-    container.appendChild(newRow);
-    calcEditTotal();
-};
-
-export const calcEditTotal = () => {
-    const rows = document.querySelectorAll('.edit-item-row');
-    let baseTotal = 0;
-
-    rows.forEach(row => {
-        const select = row.querySelector('.edit-item-select');
-        const qtyInput = row.querySelector('.edit-item-qty');
-        if (select && qtyInput) {
-            const price = ITEM_PRICES[select.value] || 0;
-            // السعر سيحسب بناءً على الكمية. (مثلاً: 2 Chaise longue * 2500 = 5000)
-            baseTotal += price * parseInt(qtyInput.value || 1);
-        }
-    });
-
-    const duration = parseInt(document.getElementById('edit-duration').value || 1);
-    let total = baseTotal * duration;
-
-    // تطبيق التخفيضات للأيام المتعددة
-    if (duration === 5) total = total * 0.9;
-    if (duration === 7) total = total * 0.85;
-
-    document.getElementById('edit-total-price').innerText = Math.round(total) + ' DA';
-};
-
-export const saveEditedReservation = async () => {
-    if (!currentEditId) return;
-
-    const name = document.getElementById('edit-name').value.trim();
-    const phone = document.getElementById('edit-phone').value.trim();
-    const date = document.getElementById('edit-date').value;
-    const time = document.getElementById('edit-time').value;
-    const duration = document.getElementById('edit-duration').value;
-    const totalStr = document.getElementById('edit-total-price').innerText;
-
-    const items = {};
-    document.querySelectorAll('.edit-item-row').forEach(row => {
-        const itemType = row.querySelector('.edit-item-select').value;
-        const qty = parseInt(row.querySelector('.edit-item-qty').value || 1);
-        if (qty > 0) {
-            if (items[itemType]) items[itemType] += qty;
-            else items[itemType] = qty;
-        }
-    });
-
-    if (!name || !phone || !date) {
-        return showNotification("Veuillez remplir les champs obligatoires", "error");
-    }
-
-    try {
-        await updateReservationData(currentEditId, {
-            clientName: name,
-            clientPhone: phone,
-            visitDate: date,
-            arrivalTime: time,
-            duration: parseInt(duration),
-            items: items,
-            totalPrice: totalStr
-        });
-
-        showNotification("Réservation modifiée avec succès !", "success");
-        closeEditModal();
-        renderAdminReservations(); 
-    } catch (error) {
-        showNotification("Erreur lors de la modification", "error");
-    }
-};
-
-
-// ========================================================
-// 6. العمليات (قبول، رفض، أرشفة، حذف)
+// 5. العمليات الأساسية (قبول، رفض، أرشفة، حذف)
 // ========================================================
 export const setReservationStatus = async (trackingCode, newStatus) => {
     try {
@@ -464,13 +276,110 @@ export const executePendingDelete = async () => {
 };
 
 // ========================================================
-// 7. نظام رسائل الواتساب (WhatsApp)
+// 6. نظام التعديل الشامل (Edit System) 
+// ========================================================
+export const openEditModal = async (trackingCode) => {
+    const list = await getAdminReservations();
+    const res = list.find(item => item.trackingCode === trackingCode);
+    if (!res) return;
+
+    document.getElementById('edit-modal-code').innerText = trackingCode;
+    document.getElementById('edit-name').value = res.clientName || '';
+    document.getElementById('edit-phone').value = res.clientPhone || '';
+    document.getElementById('edit-date').value = res.visitDate || '';
+    document.getElementById('edit-duration').value = res.duration || '1';
+    document.getElementById('edit-notes').value = res.notes || '';
+    document.getElementById('edit-total-price').innerText = res.totalPrice || '0 DA';
+
+    // نضمن توفر كل النشاطات الممكنة للتعديل، بالإضافة لما حجزه الزبون مسبقاً
+    const standardItems = [
+        'Chaise longue', 'Transat', 'Baldaquin', 
+        'Jet-Ski', 'Bateau', 'Bouée tractée', 'Kayak', 'Pédalo'
+    ];
+    const currentItemsKeys = res.items ? Object.keys(res.items) : [];
+    // دمج القائمتين وحذف التكرار لتكوين قائمة الأنشطة المتاحة للتعديل
+    const itemsToDisplay = [...new Set([...standardItems, ...currentItemsKeys])];
+
+    let itemsHTML = '';
+    itemsToDisplay.forEach((item, index) => {
+        const currentQty = (res.items && res.items[item]) ? res.items[item] : 0;
+        // استخدام index لإنشاء ID آمن بدون مسافات
+        itemsHTML += `
+            <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-gray-100">
+                <span class="text-xs font-semibold text-gray-700">${item}</span>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="window.updateEditItemQty('edit-qty-${index}', -1)" class="w-6 h-6 bg-gray-100 rounded-full text-maldiva-dark font-bold flex items-center justify-center hover:bg-gray-200">-</button>
+                    <span id="edit-qty-${index}" class="text-xs font-bold w-4 text-center edit-item-qty" data-name="${item}">${currentQty}</span>
+                    <button type="button" onclick="window.updateEditItemQty('edit-qty-${index}', 1)" class="w-6 h-6 bg-gray-100 rounded-full text-maldiva-dark font-bold flex items-center justify-center hover:bg-gray-200">+</button>
+                </div>
+            </div>
+        `;
+    });
+
+    document.getElementById('edit-items-container').innerHTML = itemsHTML;
+    
+    const modal = document.getElementById('edit-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.querySelector('div').classList.remove('translate-y-4', 'opacity-0'), 10);
+};
+
+export const updateEditItemQty = (id, change) => {
+    const el = document.getElementById(id);
+    if (el) {
+        let newQty = parseInt(el.innerText) + change;
+        if (newQty < 0) newQty = 0;
+        el.innerText = newQty;
+    }
+};
+
+export const closeEditModal = () => {
+    const modal = document.getElementById('edit-modal');
+    modal.querySelector('div').classList.add('translate-y-4', 'opacity-0');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+};
+
+export const saveEditedReservation = async () => {
+    const trackingCode = document.getElementById('edit-modal-code').innerText;
+    const newItems = {};
+
+    // تجميع النشاطات التي قيمتها أكبر من 0 فقط
+    document.querySelectorAll('.edit-item-qty').forEach(el => {
+        const qty = parseInt(el.innerText);
+        if (qty > 0) {
+            newItems[el.getAttribute('data-name')] = qty;
+        }
+    });
+
+    // تحديث البيانات (دون المساس بـ totalPrice إطلاقاً)
+    const updatedData = {
+        clientName: document.getElementById('edit-name').value,
+        clientPhone: document.getElementById('edit-phone').value,
+        visitDate: document.getElementById('edit-date').value,
+        duration: document.getElementById('edit-duration').value,
+        notes: document.getElementById('edit-notes').value,
+        items: newItems
+    };
+
+    try {
+        await updateReservationData(trackingCode, updatedData);
+        showNotification("Réservation modifiée avec succès !", "success");
+        closeEditModal();
+        renderAdminReservations(true); // إعادة التحميل لإظهار التعديلات الجديدة
+    } catch (error) {
+        showNotification("Erreur lors de la modification.", "error");
+    }
+};
+
+// ========================================================
+// 7. نظام رسائل الواتساب (WhatsApp) المنسق
 // ========================================================
 export const dispatchWhatsAppMessage = async (trackingCode) => {
-    const res = currentRenderedList.find(item => item.trackingCode === trackingCode);
+    const list = await getAdminReservations();
+    const res = list.find(item => item.trackingCode === trackingCode);
     
     if (!res) return showNotification("Réservation introuvable !", "error");
     
+    // تنظيف رقم الهاتف وإضافة رمز الدولة
     let cleanPhone = res.clientPhone.replace(/[^\d+]/g, '');
     if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
     if (cleanPhone.startsWith('00213')) cleanPhone = cleanPhone.substring(5); 
@@ -478,14 +387,7 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1); 
     cleanPhone = '213' + cleanPhone;
 
-    // تجهيز قائمة المعدات للرسالة وتجاهل المظلة والطاولة إن وجدتا
-    let itemsArray = [];
-    for (let [name, qty] of Object.entries(res.items || {})) {
-        if (name === 'Parasol' || name === 'Table') continue;
-        itemsArray.push(`• ${qty} x ${name}`);
-    }
-    let itemsStr = itemsArray.join('\n');
-
+    const itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
     let messageText = "";
 
     const arabicGreeting = `مرحباً ${res.clientName}!`;
@@ -494,24 +396,20 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
 
     if (res.status === 'approved') {
         messageText = 
-            `Bonjour *${res.clientName}*! 🏖️\n\n` +
+            `Bonjour ${res.clientName}! 🏖️\n\n` +
             `Votre demande chez *Maldiva Beach Club* a été *CONFIRMÉE* ✔️\n\n` +
-            `📝 *Détails de réservation :*\n` +
+            `📝 *Détails :*\n` +
             `• Code : #${res.trackingCode}\n` +
             `• Date : ${res.visitDate} (Pour ${res.duration || 1} Jours)\n` +
-            (res.arrivalTime ? `• Heure d'arrivée : ${res.arrivalTime}\n` : '') +
-            `• Équipements & Activités :\n${itemsStr}\n\n` +
-            `• *Total à payer : ${res.totalPrice}*\n\n` +
-            `📍 *Notre Position GPS (Localisation) :*\n` +
-            `https://maps.app.goo.gl/uXv7d38zM2wRbG2S8\n\n` +
-            `⚠️ *Important :* Veuillez vous présenter au club à l'heure convenue pour conserver vos places.\n\n` +
+            `• Équipements :\n${itemsStr}\n` +
+            `• Total : *${res.totalPrice}*\n\n` +
+            `⚠️ Important : Veuillez vous présenter au club avant 10h30.\n\n` +
             `--- \n` +
-            `${arabicGreeting} ${arabicAccepted}\n` +
-            `موقعنا على خرائط جوجل في الرابط أعلاه 📍`;
+            `${arabicGreeting} ${arabicAccepted}`;
             
     } else if (res.status === 'declined') {
         messageText = 
-            `Bonjour *${res.clientName}*,\n\n` +
+            `Bonjour ${res.clientName},\n\n` +
             `Nous sommes désolés, mais nous ne pouvons pas confirmer votre demande chez *Maldiva Beach Club* pour le ${res.visitDate} (places complètes). ❌\n\n` +
             `--- \n` +
             `${arabicGreeting} ${arabicDeclined}`;
@@ -527,126 +425,7 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
 };
 
 // ========================================================
-// 8. ميزة الطباعة (Print Ticket) مع وقت الوصول
-// ========================================================
-export const printReservation = (trackingCode) => {
-    const res = currentRenderedList.find(r => r.trackingCode === trackingCode);
-    if (!res) return showNotification("Réservation introuvable", "error");
-
-    let itemsHTML = '';
-    for (let [name, qty] of Object.entries(res.items || {})) {
-        // تجاهل طباعة المظلة والطاولة لأنهما ضمنيتان
-        if (name === 'Parasol' || name === 'Table') continue;
-        itemsHTML += `<div style="display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;"><span>${name}</span> <span>x${qty}</span></div>`;
-    }
-
-    // عرض وقت الوصول بشكل بارز في التذكرة
-    let timeHtml = res.arrivalTime ? `
-        <div style="background-color: #f0f0f0; padding: 5px; border-radius: 5px; margin: 5px 0;">
-            <strong>Heure d'arrivée:</strong> ${res.arrivalTime}
-        </div>` : '';
-
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>Ticket #${res.trackingCode}</title>
-            <style>
-                body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; text-align: center; }
-                .ticket { max-width: 300px; margin: 0 auto; border: 1px solid #000; padding: 15px; border-radius: 10px;}
-                .logo { font-size: 26px; font-weight: bold; margin-bottom: 5px; }
-                .subtitle { font-size: 12px; margin-bottom: 20px; }
-                .details { text-align: left; font-size: 14px; margin-bottom: 15px; }
-                .details p { margin: 5px 0; }
-                .total { font-size: 18px; font-weight: bold; border-top: 2px dashed #000; padding-top: 10px; margin-top: 10px; }
-                .footer { font-size: 12px; margin-top: 20px; font-weight: bold; }
-                @media print {
-                    body { padding: 0; }
-                    .ticket { border: none; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="ticket">
-                <div class="logo">MALDIVA</div>
-                <div class="subtitle">Beach Club - Tipaza</div>
-                <hr style="border-top: 1px dashed #000;">
-                <div class="details">
-                    <p><strong>Code:</strong> #${res.trackingCode}</p>
-                    <p><strong>Client:</strong> ${res.clientName}</p>
-                    <p><strong>Date:</strong> ${res.visitDate}</p>
-                    ${timeHtml} <!-- وقت الوصول يظهر هنا بوضوح -->
-                    <p><strong>Durée:</strong> ${res.duration || 1} Jour(s)</p>
-                </div>
-                <div style="text-align: left; margin-bottom: 10px; font-weight: bold;">Équipements & Activités :</div>
-                <div style="text-align: left; font-size: 13px;">
-                    ${itemsHTML}
-                </div>
-                <div class="total">
-                    Total: ${res.totalPrice}
-                </div>
-                <div class="footer">
-                    Merci de votre visite !<br><br>
-                    نتمنى لكم قضاء وقت ممتع
-                </div>
-            </div>
-            <script>
-                window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-            </script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-};
-
-// ========================================================
-// 9. ميزة تصدير البيانات إلى Excel/CSV
-// ========================================================
-export const exportToCSV = () => {
-    if (currentRenderedList.length === 0) {
-        return showNotification("Aucune donnée à exporter", "error");
-    }
-
-    let csvContent = "\uFEFF"; 
-    csvContent += "Code,Date Création,Client,Téléphone,Date de visite,Heure d'arrivée,Durée,Équipements,Total (DA),Statut\n";
-
-    currentRenderedList.forEach(res => {
-        let itemsStr = Object.entries(res.items || {})
-            .filter(([k, v]) => k !== 'Parasol' && k !== 'Table') // فلترة المظلة والطاولة
-            .map(([k, v]) => `${v}x ${k}`).join(" + ");
-        
-        let creationDate = res.createdAt ? new Date(res.createdAt).toLocaleString('fr-FR') : 'N/A';
-
-        let row = [
-            res.trackingCode,
-            `"${creationDate}"`,
-            `"${res.clientName}"`, 
-            `"${res.clientPhone}"`,
-            res.visitDate,
-            res.arrivalTime || '',
-            res.duration || 1,
-            `"${itemsStr}"`,
-            res.totalPrice.replace(/[^\d]/g, ''), 
-            res.status
-        ];
-        csvContent += row.join(",") + "\n";
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Maldiva_Reservations_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification("Fichier Excel/CSV téléchargé avec succès !", "success");
-};
-
-// ========================================================
-// 10. تصدير الدوال للاستخدام المباشر في HTML
+// 8. تصدير الدوال للاستخدام المباشر في HTML
 // ========================================================
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;
@@ -655,17 +434,14 @@ window.clearAdminDateFilter = clearAdminDateFilter;
 window.toggleNautiqueFilter = toggleNautiqueFilter;
 window.setStatusFilter = setStatusFilter;
 window.renderAdminReservations = renderAdminReservations;
-
-window.openEditModal = openEditModal;
-window.closeEditModal = closeEditModal;
-window.coreAddEditItemRow = coreAddEditItemRow;
-window.calcEditTotal = calcEditTotal;
-window.saveEditedReservation = saveEditedReservation;
-
 window.setReservationStatus = setReservationStatus;
 window.setArchiveStatus = setArchiveStatus;
 window.prepareDelete = prepareDelete;
 window.executePendingDelete = executePendingDelete;
 window.dispatchWhatsAppMessage = dispatchWhatsAppMessage;
-window.printReservation = printReservation;
-window.exportToCSV = exportToCSV;
+
+// دوال نظام التعديل الجديدة
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.updateEditItemQty = updateEditItemQty;
+window.saveEditedReservation = saveEditedReservation;

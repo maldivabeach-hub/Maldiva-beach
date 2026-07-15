@@ -3,8 +3,10 @@ import { initPublicAuth } from './firebase.js';
 import { submitNewReservation, getReservationByCode } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
+// 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
 
+// 2. الأسعار والأسماء كما هي في نظامك
 const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
 const actPrices = { 
     'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
@@ -22,6 +24,8 @@ const names = {
     'qty-bateau-standard': 'Bateau (+4 pers)' 
 };
 const allPrices = { ...equipPrices, ...actPrices };
+
+// متغير عام لحفظ ملاحظات العروض الخاصة
 let currentSpecialNotes = [];
 
 const setInitialDate = () => {
@@ -31,42 +35,6 @@ const setInitialDate = () => {
     if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
 };
 setInitialDate();
-
-// ========================================================
-// جدار الحماية: التحقق من الأيام المغلقة
-// ========================================================
-const checkBlockedDate = async (dateStr) => {
-    try {
-        const codeToCheck = 'BLK-' + dateStr;
-        const checkBlock = await getReservationByCode(codeToCheck);
-        // إذا وجد المستند الوهمي، فاليوم مغلق!
-        if (checkBlock) {
-            return checkBlock.notes || "Événement privé / Maintenance / Réservation complète";
-        }
-    } catch(e) { 
-        console.error("Erreur vérification date:", e);
-        return false; 
-    }
-    return false;
-};
-
-// التحقق الفوري بمجرد أن يختار الزبون التاريخ
-const dateInputEl = document.getElementById('visit-date');
-if (dateInputEl) {
-    dateInputEl.addEventListener('change', async (e) => {
-        const d = e.target.value;
-        if (!d) return;
-        
-        // التحقق من قاعدة البيانات مباشرة
-        const blockedReason = await checkBlockedDate(d);
-        if (blockedReason) {
-            showNotification(`Cette journée est fermée : ${blockedReason}`, "error");
-            e.target.value = ''; // إفراغ الحقل لمنعه من الاستمرار
-            calculateTotal();
-        }
-    });
-}
-// ========================================================
 
 const adjustQty = (elementId, amount) => {
     const span = document.getElementById(elementId);
@@ -80,32 +48,46 @@ const adjustQty = (elementId, amount) => {
 
 const calculateTotal = () => {
     let subtotalEquip = 0, subtotalAct = 0;
-    currentSpecialNotes = []; 
+    currentSpecialNotes = []; // تصفير الملاحظات مع كل حساب جديد
 
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
+    // ==========================================
+    // حساب أسعار مستلزمات الشاطئ (بالمنطق المصحح)
+    // ==========================================
+
+    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
     if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
         currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
     } 
+    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
     else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
         currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
     } 
+    // الحالة الثالثة: أي مزيج آخر (مثلا 2 كراسي و 1 خشب) أو كميات أخرى -> يحسب السعر العادي دون أي زيادات
     else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
         subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
 
+    // حساب البالداكين بشكل مستقل
     subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
 
+    // ==========================================
+    // حساب أسعار الأنشطة البحرية (بدون تغيير)
+    // ==========================================
     for (let id in actPrices) {
         const el = document.getElementById(id);
         if (el) subtotalAct += parseInt(el.innerText) * actPrices[id];
     }
     
+    // ==========================================
+    // حساب المدة الزمنية والتخفيضات الإضافية
+    // ==========================================
     const durationSelect = document.getElementById('duration');
     const duration = durationSelect ? parseInt(durationSelect.value) : 1;
     let totalEquip = subtotalEquip * duration;
@@ -120,6 +102,9 @@ const calculateTotal = () => {
         else discountBadge.classList.add('hidden');
     }
 
+    // ==========================================
+    // تحديث واجهة المستخدم وعرض الملاحظات
+    // ==========================================
     const notesContainer = document.getElementById('special-pricing-notes');
     if (notesContainer) {
         if (currentSpecialNotes.length > 0) {
@@ -148,13 +133,6 @@ const submitReservation = async () => {
 
     if (!clientName || !clientPhone || !visitDate) {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
-    }
-
-    // جدار الحماية النهائي (حتى لو تخطى الزبون التحقق الأول)
-    const blockedReason = await checkBlockedDate(visitDate);
-    if (blockedReason) {
-        document.getElementById('visit-date').value = '';
-        return showNotification(`Cette journée est fermée : ${blockedReason}`, "error");
     }
 
     let hasItems = false;
@@ -189,6 +167,7 @@ const submitReservation = async () => {
         createdAt: new Date().toISOString()
     };
 
+    // تحديث واجهة فاتورة النجاح
     document.getElementById('booking-success-code').innerText = '#' + trackingCode;
     document.getElementById('summary-items').innerHTML = `<div class="text-xs py-1 text-maldiva-teal font-bold mb-1 border-b border-gray-100"><i class="fa-solid fa-clock"></i> الأيام المحددة: ${duration} يوم / Jour(s)</div>` + 
         Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');
@@ -210,7 +189,6 @@ const submitReservation = async () => {
     }
 
     try {
-        // إرسال الحجز
         await submitNewReservation(reservationData);
         showSuccessModal();
         resetForm();

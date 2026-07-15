@@ -1,11 +1,10 @@
 // /js/reservationService.js
-import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
+import { db, appId } from './firebase.js'; 
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
-const SETTINGS_PATH = `artifacts/${appId}/public/data/settings`; // مسار جديد للإعدادات والأيام المغلقة
+const SETTINGS_PATH = `artifacts/${appId}/public/data/settings`; // مسار الإعدادات
 
-// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
@@ -62,18 +61,23 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// 🔴 ميزة الأيام المغلقة الجديدة
+// 🔴 دوال الأيام المغلقة (مع حماية من الأخطاء)
 // ==========================================
 export const getClosedDays = async () => {
-    const docRef = doc(db, SETTINGS_PATH, 'closedDays');
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-        return snap.data();
+    try {
+        const docRef = doc(db, SETTINGS_PATH, 'closedDays');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            return snap.data();
+        }
+        return {}; 
+    } catch (e) {
+        console.error("خطأ في جلب الأيام المغلقة:", e);
+        return {};
     }
-    return {}; 
 };
 
 export const updateClosedDays = async (newClosedDays) => {
     const docRef = doc(db, SETTINGS_PATH, 'closedDays');
-    await setDoc(docRef, newClosedDays); // نستخدم setDoc لإنشاء الملف إن لم يكن موجوداً
+    await setDoc(docRef, newClosedDays);
 };

@@ -1,10 +1,10 @@
 // /js/reservationService.js
-import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
+import { db, appId } from './firebase.js';
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
 
-// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
+// نظام التخزين المؤقت
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
@@ -12,6 +12,10 @@ const CACHE_DURATION = 60000;
 export const submitNewReservation = async (reservationData) => {
     const docRef = doc(db, COLLECTION_PATH, reservationData.trackingCode);
     await setDoc(docRef, reservationData);
+    
+    // تفريغ الذاكرة المؤقتة لضمان تحديث البيانات فوراً (مهم جداً لأيام الإغلاق)
+    cachedReservations = null; 
+    
     return reservationData.trackingCode;
 };
 
@@ -35,6 +39,7 @@ export const getAdminReservations = async (forceRefresh = false) => {
     snapshot.forEach(doc => {
         results.push({ id: doc.id, ...doc.data() });
     });
+    // ترتيب تنازلي (الأحدث أولاً)
     results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     cachedReservations = results;
     lastFetchTime = now;
@@ -44,18 +49,15 @@ export const getAdminReservations = async (forceRefresh = false) => {
 export const updateReservationData = async (trackingCode, newData) => {
     const docRef = doc(db, COLLECTION_PATH, trackingCode);
     await updateDoc(docRef, newData);
-    if (cachedReservations) {
-        const index = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
-        if (index > -1) {
-            cachedReservations[index] = { ...cachedReservations[index], ...newData };
-        }
-    }
+    
+    // تفريغ الذاكرة المؤقتة لضمان التحديث
+    cachedReservations = null;
 };
 
 export const deleteReservation = async (trackingCode) => {
     const docRef = doc(db, COLLECTION_PATH, trackingCode);
     await deleteDoc(docRef);
-    if (cachedReservations) {
-        cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
-    }
+    
+    // تفريغ الذاكرة المؤقتة لضمان التحديث (هذا ما كان يمنع إلغاء الأيام المغلقة)
+    cachedReservations = null;
 };

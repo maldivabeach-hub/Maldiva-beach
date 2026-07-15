@@ -1,6 +1,6 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode, checkIfDayIsClosed } from './reservationService.js';
+import { submitNewReservation, getReservationByCode, checkIfDateIsClosed } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
 // 1. تسجيل الدخول المجهول للزبون
@@ -25,6 +25,7 @@ const names = {
 };
 const allPrices = { ...equipPrices, ...actPrices };
 
+// متغير عام لحفظ ملاحظات العروض الخاصة
 let currentSpecialNotes = [];
 
 const setInitialDate = () => {
@@ -47,32 +48,46 @@ const adjustQty = (elementId, amount) => {
 
 const calculateTotal = () => {
     let subtotalEquip = 0, subtotalAct = 0;
-    currentSpecialNotes = []; 
+    currentSpecialNotes = []; // تصفير الملاحظات مع كل حساب جديد
 
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
+    // ==========================================
+    // حساب أسعار مستلزمات الشاطئ (بالمنطق المصحح)
+    // ==========================================
+
+    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
     if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
         currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
     } 
+    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
     else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
         currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
     } 
+    // الحالة الثالثة: أي مزيج آخر (مثلا 2 كراسي و 1 خشب) أو كميات أخرى -> يحسب السعر العادي دون أي زيادات
     else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
         subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
 
+    // حساب البالداكين بشكل مستقل
     subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
 
+    // ==========================================
+    // حساب أسعار الأنشطة البحرية (بدون تغيير)
+    // ==========================================
     for (let id in actPrices) {
         const el = document.getElementById(id);
         if (el) subtotalAct += parseInt(el.innerText) * actPrices[id];
     }
     
+    // ==========================================
+    // حساب المدة الزمنية والتخفيضات الإضافية
+    // ==========================================
     const durationSelect = document.getElementById('duration');
     const duration = durationSelect ? parseInt(durationSelect.value) : 1;
     let totalEquip = subtotalEquip * duration;
@@ -87,6 +102,9 @@ const calculateTotal = () => {
         else discountBadge.classList.add('hidden');
     }
 
+    // ==========================================
+    // تحديث واجهة المستخدم وعرض الملاحظات
+    // ==========================================
     const notesContainer = document.getElementById('special-pricing-notes');
     if (notesContainer) {
         if (currentSpecialNotes.length > 0) {
@@ -117,6 +135,17 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
+    // 🔴 التحقق مما إذا كان اليوم مغلقاً قبل إكمال الحجز
+    try {
+        const isClosed = await checkIfDateIsClosed(visitDate);
+        if (isClosed) {
+            return showNotification("Ce jour est fermé. Les réservations sont indisponibles.", "error");
+        }
+    } catch (error) {
+        console.error("Erreur vérification date:", error);
+        return showNotification("Une erreur s'est produite lors de la vérification de la date.", "error");
+    }
+
     let hasItems = false;
     let chosenItems = {};
     for (let id in allPrices) {
@@ -131,18 +160,6 @@ const submitReservation = async () => {
     }
     
     if (!hasItems) return showNotification("Veuillez choisir au moins un équipement ou activité.", "error");
-
-    // ==========================================
-    // التحقق من الأيام المغلقة
-    // ==========================================
-    try {
-        const isClosed = await checkIfDayIsClosed(visitDate);
-        if (isClosed) {
-            return showNotification("Ce jour est fermé. Les réservations sont indisponibles.", "error");
-        }
-    } catch (error) {
-        console.error("Error during closed day check:", error);
-    }
 
     const duration = parseInt(document.getElementById('duration').value);
     const totalStr = document.getElementById('total-price').innerText;
@@ -161,6 +178,7 @@ const submitReservation = async () => {
         createdAt: new Date().toISOString()
     };
 
+    // تحديث واجهة فاتورة النجاح
     document.getElementById('booking-success-code').innerText = '#' + trackingCode;
     document.getElementById('summary-items').innerHTML = `<div class="text-xs py-1 text-maldiva-teal font-bold mb-1 border-b border-gray-100"><i class="fa-solid fa-clock"></i> الأيام المحددة: ${duration} يوم / Jour(s)</div>` + 
         Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');

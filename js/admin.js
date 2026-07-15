@@ -1,11 +1,7 @@
 // /js/admin.js
-
 import { getAdminReservations, updateReservationData, deleteReservation, getClosedDays, addClosedDay, removeClosedDay } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
-// ========================================================
-// 0. إعدادات الأسعار (مطابقة تماماً لنظام الزبون)
-// ========================================================
 const BASE_PRICES = {
     'Chaise Longue': 2000,
     'Transat en Bois': 3000,
@@ -20,8 +16,6 @@ const BASE_PRICES = {
     'Bouée Tractée (2 pers)': 3000,
     'Bouée Tractée (3 pers)': 4000,
     'Bateau (+4 pers)': 4000,
-    
-    // دعم الأسماء القديمة إن وجدت في الحجوزات السابقة لتجنب الأخطاء
     'Chaise longue': 2000,
     'Transat': 3000,
     'Baldaquin': 10000,
@@ -41,18 +35,12 @@ const STANDARD_ITEMS = [
     'Bateau (+4 pers)'
 ];
 
-// ========================================================
-// 1. المتغيرات العامة (Global State)
-// ========================================================
 let adminAuthorized = false;
 let currentStatusFilter = 'all';
 let filterNautique = false;
 let pendingDeleteId = null;
-let closedDaysList = []; // متغير لتخزين قائمة الأيام المغلقة
+let closedDaysList = [];
 
-// ========================================================
-// 2. نظام تسجيل الدخول (Authentication)
-// ========================================================
 export const verifyAdminLogin = async () => {
     const pass = document.getElementById('admin-password').value;
     const error = document.getElementById('admin-login-error');
@@ -64,8 +52,8 @@ export const verifyAdminLogin = async () => {
         document.getElementById('admin-dashboard-view').classList.remove('hidden');
         
         showNotification("Bienvenue, Administrateur !", "success");
-        await renderAdminReservations(true); 
-        await renderClosedDays(); // تحميل الأيام المغلقة
+        try { await renderAdminReservations(true); } catch(e) { console.error(e); }
+        try { await renderClosedDays(); } catch(e) { console.error(e); }
     } else { 
         error.classList.remove('hidden'); 
     }
@@ -79,9 +67,6 @@ export const logoutAdmin = () => {
     showNotification("Déconnecté.", "info"); 
 };
 
-// ========================================================
-// 3. نظام الفلترة والبحث (Filters & Search)
-// ========================================================
 export const setAdminDateFilterToday = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
     const today = new Date(Date.now() - tzoffset).toISOString().split('T')[0];
@@ -122,9 +107,6 @@ export const setStatusFilter = (status) => {
     renderAdminReservations();
 };
 
-// ========================================================
-// 4. دالة عرض الحجوزات (Render Reservations)
-// ========================================================
 export const renderAdminReservations = async (forceRefresh = false) => {
     if (!adminAuthorized) return;
 
@@ -134,7 +116,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     let allReservationsList = await getAdminReservations(forceRefresh);
     let totalRevenue = 0;
     
-    // فلترة القائمة حسب البحث والتاريخ
     let matchingList = allReservationsList.filter(res => {
         if (filterDate && res.visitDate !== filterDate) return false;
         
@@ -155,7 +136,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         return true;
     });
 
-    // حساب المداخيل
     matchingList.forEach(res => {
         if (res.status === 'approved' || res.status === 'pending') {
             totalRevenue += (parseInt(res.totalPrice.replace(/[^\d]/g, '')) || 0);
@@ -164,7 +144,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     
     document.getElementById('stat-revenue').innerText = totalRevenue.toLocaleString() + ' DA';
 
-    // تصنيف الحجوزات
     let activeList = matchingList.filter(res => !res.isArchived);
     let archivedList = matchingList.filter(res => res.isArchived);
 
@@ -174,7 +153,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     document.getElementById('stat-declined').innerText = activeList.filter(i => i.status === 'declined').length;
     document.getElementById('stat-archived').innerText = archivedList.length;
 
-    // تحديد القائمة التي سيتم عرضها
     let viewList = activeList;
     if (currentStatusFilter === 'archived') {
         viewList = archivedList;
@@ -182,7 +160,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         viewList = activeList.filter(res => res.status === currentStatusFilter);
     }
 
-    // تحديث شكل أزرار الإحصائيات (الألوان)
     const setBtnStyle = (id, isActive, activeColors, inactiveColors) => {
         const btn = document.getElementById(id);
         if(!btn) return;
@@ -195,7 +172,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     setBtnStyle('filter-btn-declined', currentStatusFilter === 'declined', 'bg-red-200 border-red-300', 'bg-red-50 border-red-100 hover:bg-red-100');
     setBtnStyle('filter-btn-archived', currentStatusFilter === 'archived', 'bg-purple-200 border-purple-300', 'bg-purple-50 border-purple-100 hover:bg-purple-100');
     
-    // بناء بطاقات الحجز
     const container = document.getElementById('admin-reservations-list');
     if (viewList.length === 0) {
         container.innerHTML = `<div class="text-center py-12 text-gray-400 text-xs">Aucune réservation trouvée.</div>`; 
@@ -222,7 +198,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         let borderClass = res.isArchived ? 'border-purple-200' : 'border-gray-100';
         let archivedBadge = res.isArchived ? `<span class="text-[9px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-600"><i class="fa-solid fa-box-archive"></i> Archivé</span>` : '';
 
-        // استخراج تاريخ ووقت الحجز إن وجد
         let timeStr = '';
         if (res.timestamp || res.createdAt) {
             const dateObj = new Date(res.timestamp || res.createdAt);
@@ -262,8 +237,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
                         <button onclick="window.setReservationStatus('${res.trackingCode}', 'declined')" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded" title="Refuser"><i class="fa-solid fa-xmark"></i></button>
                         
                         <button onclick="window.openEditModal('${res.trackingCode}')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-pen"></i> Modifier</button>
-                        
-                        <!-- زر الطباعة الجديد -->
                         <button onclick="window.printReservation('${res.trackingCode}')" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-print"></i> Imprimer</button>
                         
                         <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
@@ -276,9 +249,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     container.innerHTML = html;
 };
 
-// ========================================================
-// 5. العمليات الأساسية (قبول، رفض، أرشفة، حذف)
-// ========================================================
 export const setReservationStatus = async (trackingCode, newStatus) => {
     try {
         await updateReservationData(trackingCode, { status: newStatus });
@@ -317,9 +287,6 @@ export const executePendingDelete = async () => {
     pendingDeleteId = null;
 };
 
-// ========================================================
-// 6. نظام التعديل الشامل (Edit System) 
-// ========================================================
 export const openEditModal = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
@@ -459,23 +426,18 @@ export const saveEditedReservation = async () => {
     }
 };
 
-// ========================================================
-// 7. نظام الطباعة (Print System) 
-// ========================================================
 export const printReservation = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
     
     if (!res) return showNotification("Réservation introuvable pour impression.", "error");
 
-    // ملء بيانات الحجز الأساسية
     document.getElementById('print-code').innerText = res.trackingCode;
     document.getElementById('print-name').innerText = res.clientName;
     document.getElementById('print-phone').innerText = res.clientPhone;
     document.getElementById('print-visit-date').innerText = res.visitDate;
     document.getElementById('print-duration').innerText = (res.duration || 1) + " Jour(s)";
     
-    // استخراج وتنسيق تاريخ إنشاء الحجز
     let creationDateFormatted = 'Non disponible';
     if (res.timestamp || res.createdAt) {
         const dateObj = new Date(res.timestamp || res.createdAt);
@@ -485,7 +447,6 @@ export const printReservation = async (trackingCode) => {
     }
     document.getElementById('print-created-at').innerText = creationDateFormatted;
 
-    // تنسيق حالة الحجز للطباعة
     const statusEl = document.getElementById('print-status');
     const statusMap = {
         'pending': { label: 'En attente', color: 'border-yellow-500 text-yellow-600' },
@@ -496,7 +457,6 @@ export const printReservation = async (trackingCode) => {
     statusEl.innerText = st.label;
     statusEl.className = `px-3 py-1 border-2 font-bold uppercase rounded-md inline-block mt-1 ${st.color}`;
 
-    // ملء الخدمات
     let itemsHTML = '';
     if (res.items) {
         for (let [name, qty] of Object.entries(res.items)) {
@@ -512,10 +472,8 @@ export const printReservation = async (trackingCode) => {
     }
     document.getElementById('print-items-body').innerHTML = itemsHTML;
 
-    // ملء السعر الإجمالي
     document.getElementById('print-total').innerText = res.totalPrice || '0 DA';
 
-    // الملاحظات
     const notesContainer = document.getElementById('print-notes-container');
     if (res.notes && res.notes.trim() !== "") {
         document.getElementById('print-notes').innerText = res.notes;
@@ -524,22 +482,15 @@ export const printReservation = async (trackingCode) => {
         notesContainer.classList.add('hidden');
     }
 
-    // معلومات الفوتر (تاريخ الطباعة)
     const now = new Date();
     document.getElementById('print-timestamp').innerText = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR');
-    // يمكن مستقبلاً ربط اسم المشرف بنظام تسجيل دخول حقيقي
     document.getElementById('print-admin-name').innerText = "Administrateur Principal";
 
-    // استدعاء نافذة الطباعة الخاصة بالمتصفح
-    // نعطي المتصفح مهلة قصيرة 100ms ليقوم بتحديث عناصر DOM قبل الطباعة
     setTimeout(() => {
         window.print();
     }, 100);
 };
 
-// ========================================================
-// 8. نظام رسائل الواتساب (WhatsApp) المنسق
-// ========================================================
 export const dispatchWhatsAppMessage = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
@@ -589,10 +540,6 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     anchor.target = '_blank'; 
     anchor.click();
 };
-
-// ========================================================
-// 10. نظام إغلاق الأيام (Closed Days System)
-// ========================================================
 
 export const renderClosedDays = async () => {
     try {
@@ -650,7 +597,7 @@ export const openSpecificDay = async (dateStr) => {
 
 
 // ========================================================
-// 11. تصدير الدوال للاستخدام المباشر في HTML
+// ربط الدوال بنافذة المتصفح (Window)
 // ========================================================
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;
@@ -670,7 +617,6 @@ window.updateEditItemQty = updateEditItemQty;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;
-// دوال إدارة الأيام المغلقة
 window.renderClosedDays = renderClosedDays;
 window.closeSpecificDay = closeSpecificDay;
 window.openSpecificDay = openSpecificDay;

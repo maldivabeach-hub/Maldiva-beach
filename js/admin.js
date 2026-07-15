@@ -1,11 +1,8 @@
 // /js/admin.js
 
-import { getAdminReservations, updateReservationData, deleteReservation, setDateClosedStatus, getClosedDays } from './reservationService.js';
+import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
-// ========================================================
-// 0. إعدادات الأسعار
-// ========================================================
 const BASE_PRICES = {
     'Chaise Longue': 2000, 'Transat en Bois': 3000, 'Baldaquin Royal': 10000,
     'Jet-Ski (15 Min)': 6000, 'Jet-Ski (30 Min)': 12000, 'Jet-Ski (1 Heure)': 20000,
@@ -33,7 +30,7 @@ let filterNautique = false;
 let pendingDeleteId = null;
 
 // ========================================================
-// نظام تسجيل الدخول (Authentication)
+// 1. نظام تسجيل الدخول (Authentication)
 // ========================================================
 export const verifyAdminLogin = async () => {
     const pass = document.getElementById('admin-password').value;
@@ -47,7 +44,7 @@ export const verifyAdminLogin = async () => {
         
         showNotification("Bienvenue, Administrateur !", "success");
         await renderAdminReservations(true); 
-        await renderClosedDays(); 
+        await renderClosedDays(); // تحميل الأيام المغلقة
     } else { 
         error.classList.remove('hidden'); 
     }
@@ -62,7 +59,7 @@ export const logoutAdmin = () => {
 };
 
 // ========================================================
-// نظام الفلترة
+// 2. نظام الفلترة
 // ========================================================
 export const setAdminDateFilterToday = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
@@ -105,7 +102,7 @@ export const setStatusFilter = (status) => {
 };
 
 // ========================================================
-// عرض الحجوزات
+// 3. عرض الحجوزات
 // ========================================================
 export const renderAdminReservations = async (forceRefresh = false) => {
     if (!adminAuthorized) return;
@@ -249,7 +246,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
 };
 
 // ========================================================
-// الإجراءات
+// 4. الإجراءات 
 // ========================================================
 export const setReservationStatus = async (trackingCode, newStatus) => {
     try {
@@ -290,7 +287,7 @@ export const executePendingDelete = async () => {
 };
 
 // ========================================================
-// التعديل و الواتساب والطباعة 
+// 5. التعديل و الواتساب والطباعة 
 // ========================================================
 export const openEditModal = async (trackingCode) => {
     const list = await getAdminReservations();
@@ -327,7 +324,6 @@ export const openEditModal = async (trackingCode) => {
     
     const modal = document.getElementById('edit-modal');
     modal.classList.remove('hidden');
-    
     setTimeout(() => {
         modal.classList.remove('opacity-0');
         modal.querySelector('div').classList.remove('translate-y-4');
@@ -499,43 +495,39 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
 };
 
 // ========================================================
-// 9. نظام إغلاق الأيام (Closed Days System) المُحسّن
+// 6. نظام إغلاق الأيام (الطريقة المضمونة بالملف الواحد)
 // ========================================================
-export const toggleDateClosure = async (isClosing) => {
+export const adminToggleDate = async (isClosing) => {
     const dateInput = document.getElementById('admin-close-date').value;
-    if (!dateInput) return showNotification("Veuillez sélectionner une date.", "error");
+    if (!dateInput) return showNotification("Sélectionnez une date d'abord.", "error");
 
     try {
-        await setDateClosedStatus(dateInput, isClosing);
-        showNotification(isClosing ? "Le jour a été fermé avec succès." : "Le jour a été ouvert avec succès.", "success");
-        await renderClosedDays(); // التحديث الفوري للقائمة
+        await toggleDateClosure(dateInput, isClosing);
+        showNotification(isClosing ? "Jour fermé !" : "Jour ouvert !", "success");
+        await renderClosedDays();
     } catch (e) {
-        showNotification("Erreur lors de la modification de la date.", "error");
         console.error(e);
+        showNotification("Erreur de sauvegarde.", "error");
     }
 };
 
 export const renderClosedDays = async () => {
     if (!adminAuthorized) return;
-    
     const container = document.getElementById('closed-days-list');
     if (!container) return;
 
     try {
-        const closedDays = await getClosedDays();
-        
-        if (closedDays.length === 0) {
-            container.innerHTML = `<span class="text-gray-400">Aucun jour n'est actuellement fermé.</span>`;
+        const days = await getClosedDays();
+        if (days.length === 0) {
+            container.innerHTML = `<span class="text-gray-400 italic">Aucun jour fermé.</span>`;
         } else {
-            container.innerHTML = closedDays.map(date => 
-                `<span class="bg-red-100 text-red-800 px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-1.5 font-bold shadow-sm">
-                    <i class="fa-solid fa-lock text-[10px]"></i> ${date}
-                </span>`
+            container.innerHTML = days.map(d => 
+                `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-bold border border-red-200 shadow-sm flex items-center gap-1"><i class="fa-solid fa-calendar-xmark text-[10px]"></i> ${d}</span>`
             ).join('');
         }
-    } catch (e) {
-        container.innerHTML = `<span class="text-red-500">Erreur lors du chargement des jours fermés.</span>`;
+    } catch(e) {
         console.error(e);
+        container.innerHTML = `<span class="text-red-500">Erreur de chargement.</span>`;
     }
 };
 
@@ -560,5 +552,5 @@ window.updateEditItemQty = updateEditItemQty;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;
-window.toggleDateClosure = toggleDateClosure;
-window.renderClosedDays = renderClosedDays; // للتحديث اليدوي إن لزم الأمر
+window.adminToggleDate = adminToggleDate;
+window.renderClosedDays = renderClosedDays;

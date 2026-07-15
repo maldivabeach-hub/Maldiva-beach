@@ -1,10 +1,11 @@
 // /js/reservationService.js
-import { db, appId } from './firebase.js'; 
+import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
-const SETTINGS_PATH = `artifacts/${appId}/public/data/settings`; // مسار الإعدادات
+const CLOSED_DAYS_PATH = `artifacts/${appId}/public/data/closedDays`; // مسار مجموعة الأيام المغلقة
 
+// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
@@ -61,23 +62,31 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// 🔴 دوال الأيام المغلقة (مع حماية من الأخطاء)
+// وظائف إدارة الأيام المغلقة (Closed Days)
 // ==========================================
+
 export const getClosedDays = async () => {
-    try {
-        const docRef = doc(db, SETTINGS_PATH, 'closedDays');
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-            return snap.data();
-        }
-        return {}; 
-    } catch (e) {
-        console.error("خطأ في جلب الأيام المغلقة:", e);
-        return {};
-    }
+    const q = query(collection(db, CLOSED_DAYS_PATH));
+    const snapshot = await getDocs(q);
+    const closed = [];
+    snapshot.forEach(docSnap => {
+        closed.push(docSnap.id);
+    });
+    return closed;
 };
 
-export const updateClosedDays = async (newClosedDays) => {
-    const docRef = doc(db, SETTINGS_PATH, 'closedDays');
-    await setDoc(docRef, newClosedDays);
+export const addClosedDay = async (dateStr) => {
+    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    await setDoc(docRef, { closedAt: new Date().toISOString(), date: dateStr });
+};
+
+export const removeClosedDay = async (dateStr) => {
+    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    await deleteDoc(docRef);
+};
+
+export const checkIfDayIsClosed = async (dateStr) => {
+    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    const snap = await getDoc(docRef);
+    return snap.exists();
 };

@@ -3,8 +3,10 @@ import { initPublicAuth } from './firebase.js';
 import { submitNewReservation, getReservationByCode, checkIfDateIsClosed } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
+// 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
 
+// 2. الأسعار والأسماء
 const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
 const actPrices = { 
     'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
@@ -115,15 +117,15 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
-    // 🔴 التحقق مما إذا كان اليوم مغلقاً
+    // 🔴 التحقق مما إذا كان اليوم مغلقاً قبل إنشاء الحجز
     try {
         const isClosed = await checkIfDateIsClosed(visitDate);
         if (isClosed) {
-            return showNotification("Ce jour est fermé. Les réservations sont indisponibles.", "error");
+            return showNotification("Ce jour est fermé. Les réservations sont indisponibles. / هذا اليوم مغلق، الحجز غير متاح.", "error");
         }
     } catch (error) {
         console.error("Erreur vérification date:", error);
-        return showNotification("Erreur de réseau. Veuillez réessayer.", "error");
+        return showNotification("Erreur lors de la vérification de la date.", "error");
     }
 
     let hasItems = false;

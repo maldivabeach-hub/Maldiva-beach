@@ -27,20 +27,75 @@
             }
         }
     </script>
+    <!-- كود CSS خاص بالطباعة فقط -->
+    <style>
+        @media print {
+            body > *:not(#print-section) { display: none !important; }
+            #print-section { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background-color: white; }
+            @page { size: A4; margin: 1.5cm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col bg-gray-50">
 
-    <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
-        <span id="toast-icon"></span>
-        <span id="toast-message" class="text-xs font-semibold"></span>
+    <!-- ========================================== -->
+    <!-- القسم المخفي المخصص للطباعة (Fiche de Réservation) -->
+    <!-- ========================================== -->
+    <div id="print-section" class="hidden font-sans bg-white text-black p-8">
+        <div class="text-center border-b-2 border-gray-800 pb-6 mb-6">
+            <img src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" alt="Maldiva Logo" class="w-24 h-24 mx-auto rounded-full border-2 border-gray-800 p-1 mb-3 grayscale">
+            <h1 class="font-serif text-3xl font-bold uppercase tracking-widest text-gray-900">Maldiva Beach Club</h1>
+            <h2 class="text-xl font-bold mt-2 bg-gray-100 py-2 rounded-lg uppercase tracking-widest border border-gray-300">Fiche de Réservation</h2>
+        </div>
+        <div class="grid grid-cols-2 gap-6 mb-8">
+            <div class="space-y-3">
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Code Réservation:</span><br><strong class="text-xl" id="print-code"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Nom du Client:</span><br><strong class="text-lg" id="print-name"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Numéro de Téléphone:</span><br><strong class="text-lg font-mono" id="print-phone"></strong></p>
+            </div>
+            <div class="space-y-3">
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Date de la Visite:</span><br><strong class="text-lg" id="print-visit-date"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Statut Actuel:</span><br><span id="print-status" class="px-3 py-1 border-2 font-bold uppercase rounded-md inline-block mt-1"></span></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Date de création du billet:</span><br><span class="text-sm" id="print-created-at"></span></p>
+            </div>
+        </div>
+        <div class="mb-8">
+            <h3 class="font-bold text-lg border-b border-gray-300 pb-2 mb-3 uppercase tracking-wide">Détails de la Réservation (Durée: <span id="print-duration"></span>)</h3>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-gray-300 p-3 font-bold uppercase text-xs w-3/4">Service / Équipement / Activité</th>
+                        <th class="border border-gray-300 p-3 font-bold uppercase text-xs text-center w-1/4">Quantité</th>
+                    </tr>
+                </thead>
+                <tbody id="print-items-body"></tbody>
+            </table>
+        </div>
+        <div id="print-notes-container" class="mb-8 hidden">
+            <h3 class="font-bold text-sm text-gray-500 uppercase mb-2">Notes & Remarques:</h3>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm font-semibold italic" id="print-notes"></div>
+        </div>
+        <div class="flex justify-end mb-12">
+            <div class="bg-gray-100 p-4 rounded-lg border-2 border-gray-800 min-w-[250px] text-center">
+                <span class="font-bold text-gray-500 uppercase text-xs block mb-1">Total à Payer (TTC)</span>
+                <span class="text-3xl font-extrabold" id="print-total"></span>
+            </div>
+        </div>
+        <div class="border-t border-gray-300 pt-4 flex justify-between items-end text-xs text-gray-500">
+            <div><p class="font-bold text-gray-800">MALDIVA BEACH CLUB - TIPAZA</p><p>Merci de votre visite et à très bientôt !</p></div>
+            <div class="text-right"><p>Édité par: <strong id="print-admin-name">Administrateur</strong></p><p>Imprimé le: <strong id="print-timestamp"></strong></p></div>
+        </div>
     </div>
+    <!-- ========================================== -->
 
+    <!-- Modals (Archive, Confirm) -->
+    <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]"><span id="toast-icon"></span><span id="toast-message" class="text-xs font-semibold"></span></div>
+    
     <div id="archive-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
             <div class="text-center space-y-3">
-                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
-                    <i class="fa-solid fa-broom"></i>
-                </div>
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-broom"></i></div>
                 <h3 class="serif-title text-xl font-bold text-maldiva-dark">تأكيد الأرشفة / المحو</h3>
                 <p class="text-xs text-gray-500 font-arabic" dir="rtl">هل أنت متأكد من أرشفة/محو جميع الحجوزات المعروضة حالياً؟<br><br><span class="text-maldiva-teal font-bold">ملاحظة:</span> سيتم إخفاؤها من القائمة، ولكن سيبقى مبلغها محسوباً في إجمالي المداخيل.</p>
                 <div class="flex gap-2 pt-2">
@@ -54,9 +109,7 @@
     <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
             <div class="text-center space-y-3">
-                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
-                    <i class="fa-solid fa-trash"></i>
-                </div>
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-trash"></i></div>
                 <h3 class="serif-title text-xl font-bold text-maldiva-dark">Confirmer la suppression</h3>
                 <p class="text-xs text-gray-500">Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
                 <div class="flex gap-2 pt-2">
@@ -67,17 +120,38 @@
         </div>
     </div>
 
+    <!-- نافذة إغلاق يوم جديد -->
+    <div id="block-date-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="serif-title text-xl font-bold text-maldiva-dark">Bloquer une journée</h3>
+                <button onclick="window.closeBlockDateModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-xs text-gray-500 font-arabic" dir="rtl">سيمنع هذا الإجراء أي زبون من الحجز في هذا اليوم. لن يتم حذف الحجوزات الموجودة مسبقاً.</p>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Date à bloquer (التاريخ) *</label>
+                    <input type="date" id="block-date-input" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-400">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase block mb-1">Raison / السبب (Optionnel)</label>
+                    <input type="text" id="block-reason-input" placeholder="Ex: Événement privé / Maintenance..." class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-400">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-4 border-t border-gray-100 mt-4">
+                <button onclick="window.closeBlockDateModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs">Annuler</button>
+                <button onclick="window.saveBlockDate()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5"><i class="fa-solid fa-lock"></i> Bloquer</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
-                <div>
-                    <h3 class="serif-title text-xl font-bold text-maldiva-dark">Modifier / تعديل الحجز</h3>
-                    <p class="text-[10px] text-gray-500 mt-0.5" id="edit-modal-code"></p>
-                </div>
+                <div><h3 class="serif-title text-xl font-bold text-maldiva-dark">Modifier / تعديل الحجز</h3><p class="text-[10px] text-gray-500 mt-0.5" id="edit-modal-code"></p></div>
                 <button onclick="window.closeEditModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
             <div class="overflow-y-auto hide-scrollbar space-y-4 pr-1 flex-grow">
                 <div class="space-y-2 bg-maldiva-sand/50 p-3 rounded-2xl">
                     <input type="text" id="edit-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Nom">
@@ -85,62 +159,41 @@
                     <div class="flex gap-2">
                         <input type="date" id="edit-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
                         <select id="edit-duration" onchange="window.calculateEditTotal()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
-                            <option value="1">1 Jour</option>
-                            <option value="2">2 Jours</option>
-                            <option value="3">3 Jours</option>
-                            <option value="5">5 Jours (-10%)</option>
-                            <option value="7">1 Semaine (-15%)</option>
+                            <option value="1">1 Jour</option><option value="2">2 Jours</option><option value="3">3 Jours</option><option value="5">5 Jours (-10%)</option><option value="7">1 Semaine (-15%)</option>
                         </select>
                     </div>
                     <textarea id="edit-notes" rows="2" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Notes (ex: avec parasol, vue mer...)"></textarea>
                 </div>
-
                 <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><i class="fa-solid fa-list-check"></i> Équipements & Activités</div>
-                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50">
-                    <!-- يتم توليد القائمة عبر JS -->
-                </div>
+                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50"></div>
             </div>
-
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center bg-white">
-                <div>
-                    <div class="text-[10px] text-gray-500 uppercase font-bold">Nouveau Total</div>
-                    <div class="font-extrabold text-maldiva-orange text-xl" id="edit-total-price">0 DA</div>
-                </div>
-                <button onclick="window.saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider">
-                    Enregistrer
-                </button>
+                <div><div class="text-[10px] text-gray-500 uppercase font-bold">Nouveau Total</div><div class="font-extrabold text-maldiva-orange text-xl" id="edit-total-price">0 DA</div></div>
+                <button onclick="window.saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider">Enregistrer</button>
             </div>
         </div>
     </div>
 
+    <!-- Top Navbar -->
     <div class="bg-maldiva-dark text-white py-3 px-6 flex justify-between items-center shadow-md">
-        <div class="font-bold tracking-wider text-maldiva-orange text-sm flex items-center gap-2">
-            <i class="fa-solid fa-shield-halved"></i> Espace Admin
-        </div>
-        <a href="index.html" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors">
-            <i class="fa-solid fa-arrow-left"></i> Retour au site
-        </a>
+        <div class="font-bold tracking-wider text-maldiva-orange text-sm flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> Espace Admin</div>
+        <a href="index.html" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors"><i class="fa-solid fa-arrow-left"></i> Retour au site</a>
     </div>
 
     <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        
+        <!-- Login -->
         <div id="admin-login-view" class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4 mt-10">
             <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto"><i class="fa-solid fa-lock"></i></div>
-            <div>
-                <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur</h3>
-                <p class="text-xs text-gray-500 mt-1">Accès réservé au gérant du club</p>
-            </div>
+            <div><h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur</h3><p class="text-xs text-gray-500 mt-1">Accès réservé au gérant du club</p></div>
             <div>
                 <input type="password" id="admin-password" placeholder="Mot de passe" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
                 <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Mot de passe incorrect!</span>
             </div>
-            <button onclick="window.verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors">
-                Se Connecter
-            </button>
+            <button onclick="window.verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors">Se Connecter</button>
         </div>
 
+        <!-- Dashboard -->
         <div id="admin-dashboard-view" class="hidden space-y-6">
-            
             <div class="flex overflow-x-auto hide-scrollbar border-b border-gray-200 bg-white rounded-t-2xl px-2 pt-2">
                 <button onclick="window.switchAdminSubTab('reservations')" id="admin-subtab-btn-res" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-list-check"></i><span>Demandes</span></button>
                 <button onclick="window.switchAdminSubTab('loyalty')" id="admin-subtab-btn-loyalty" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star"></i><span>Fidélité / زبائن أوفياء</span></button>
@@ -148,6 +201,7 @@
                 <a href="orders.html" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-maldiva-teal flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-utensils"></i><span>Restaurant (Externe)</span></a>
             </div>
 
+            <!-- Tab 1: Réservations -->
             <div id="admin-subview-reservations" class="space-y-6">
                 <div class="bg-white rounded-b-2xl rounded-tr-2xl p-6 shadow-sm border border-gray-100 space-y-4">
                     <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-gray-100 pb-4">
@@ -156,6 +210,9 @@
                             <p class="text-xs text-gray-500">Cliquez sur les cases pour filtrer / إضغط على المربعات للفرز</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                            <!-- زر إغلاق يوم -->
+                            <button onclick="window.openBlockDateModal()" class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-red-200 flex items-center gap-1.5 whitespace-nowrap order-last sm:order-none"><i class="fa-solid fa-lock"></i> Bloquer une journée</button>
+                            
                             <div class="relative flex-grow max-w-[220px]">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
                                 <input type="text" id="admin-search-mld" oninput="window.renderAdminReservations()" placeholder="Chercher code, nom, tél..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
@@ -163,28 +220,17 @@
                             <button onclick="window.setAdminDateFilterToday()" class="bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-teal/20">Aujourd'hui</button>
                             <input type="date" id="admin-filter-date" onchange="window.renderAdminReservations()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none w-[130px]">
                             <button onclick="window.clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs transition-all">Tout</button>
-                            <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5" title="Afficher uniquement les activités nautiques"><i class="fa-solid fa-water"></i> Activités</button>
+                            <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5"><i class="fa-solid fa-water"></i> Activités</button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                        <div onclick="window.setStatusFilter('all')" class="cursor-pointer bg-gray-50 hover:bg-gray-100 p-3 rounded-2xl border border-gray-200 shadow-sm text-center transition-all" id="filter-btn-all">
-                            <div class="text-[10px] text-gray-400 uppercase font-bold">Total</div><span id="stat-total" class="text-xl font-extrabold text-maldiva-dark">0</span>
-                        </div>
-                        <div onclick="window.setStatusFilter('pending')" class="cursor-pointer bg-yellow-50 hover:bg-yellow-100 p-3 rounded-2xl border border-yellow-100 shadow-sm text-center transition-all" id="filter-btn-pending">
-                            <div class="text-[10px] text-yellow-600 uppercase font-bold">En attente ⏳</div><span id="stat-pending" class="text-xl font-extrabold text-yellow-600">0</span>
-                        </div>
-                        <div onclick="window.setStatusFilter('approved')" class="cursor-pointer bg-green-50 hover:bg-green-100 p-3 rounded-2xl border border-green-100 shadow-sm text-center transition-all" id="filter-btn-approved">
-                            <div class="text-[10px] text-green-600 uppercase font-bold">Confirmés ✔️</div><span id="stat-approved" class="text-xl font-extrabold text-green-600">0</span>
-                        </div>
-                        <div onclick="window.setStatusFilter('declined')" class="cursor-pointer bg-red-50 hover:bg-red-100 p-3 rounded-2xl border border-red-100 shadow-sm text-center transition-all" id="filter-btn-declined">
-                            <div class="text-[10px] text-red-600 uppercase font-bold">Refusés ❌</div><span id="stat-declined" class="text-xl font-extrabold text-red-600">0</span>
-                        </div>
-                        <div onclick="window.setStatusFilter('archived')" class="cursor-pointer bg-purple-50 hover:bg-purple-100 p-3 rounded-2xl border border-purple-100 shadow-sm text-center transition-all" id="filter-btn-archived">
-                            <div class="text-[10px] text-purple-600 uppercase font-bold">Archivés 🗃️</div><span id="stat-archived" class="text-xl font-extrabold text-purple-600">0</span>
-                        </div>
+                        <div onclick="window.setStatusFilter('all')" class="cursor-pointer bg-gray-50 hover:bg-gray-100 p-3 rounded-2xl border border-gray-200 shadow-sm text-center transition-all" id="filter-btn-all"><div class="text-[10px] text-gray-400 uppercase font-bold">Total</div><span id="stat-total" class="text-xl font-extrabold text-maldiva-dark">0</span></div>
+                        <div onclick="window.setStatusFilter('pending')" class="cursor-pointer bg-yellow-50 hover:bg-yellow-100 p-3 rounded-2xl border border-yellow-100 shadow-sm text-center transition-all" id="filter-btn-pending"><div class="text-[10px] text-yellow-600 uppercase font-bold">En attente ⏳</div><span id="stat-pending" class="text-xl font-extrabold text-yellow-600">0</span></div>
+                        <div onclick="window.setStatusFilter('approved')" class="cursor-pointer bg-green-50 hover:bg-green-100 p-3 rounded-2xl border border-green-100 shadow-sm text-center transition-all" id="filter-btn-approved"><div class="text-[10px] text-green-600 uppercase font-bold">Confirmés ✔️</div><span id="stat-approved" class="text-xl font-extrabold text-green-600">0</span></div>
+                        <div onclick="window.setStatusFilter('declined')" class="cursor-pointer bg-red-50 hover:bg-red-100 p-3 rounded-2xl border border-red-100 shadow-sm text-center transition-all" id="filter-btn-declined"><div class="text-[10px] text-red-600 uppercase font-bold">Refusés ❌</div><span id="stat-declined" class="text-xl font-extrabold text-red-600">0</span></div>
+                        <div onclick="window.setStatusFilter('archived')" class="cursor-pointer bg-purple-50 hover:bg-purple-100 p-3 rounded-2xl border border-purple-100 shadow-sm text-center transition-all" id="filter-btn-archived"><div class="text-[10px] text-purple-600 uppercase font-bold">Archivés 🗃️</div><span id="stat-archived" class="text-xl font-extrabold text-purple-600">0</span></div>
                     </div>
-
                     <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 rounded-2xl shadow-md flex justify-between items-center text-white mt-2">
                         <div><div class="text-xs uppercase font-bold text-maldiva-accent">Revenu Estimé / المداخيل المقدرة</div><div class="text-[10px] text-gray-300 mt-0.5">N'inclut pas les refusés (Inclus les archivés)</div></div>
                         <span id="stat-revenue" class="text-3xl font-extrabold text-maldiva-orange">0 DA</span>
@@ -202,20 +248,16 @@
                 </div>
             </div>
 
+            <!-- Tab 2: Loyalty -->
             <div id="admin-subview-loyalty" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
-                    <div>
-                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">الزبائن الأوفياء / Fidélité</h4>
-                        <p class="text-xs text-gray-500">نظام البحث عن الزبائن الذين يحجزون أكثر.</p>
-                    </div>
-                    <div class="relative w-full md:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input type="text" id="loyalty-search" oninput="window.renderLoyalty()" placeholder="ابحث بالاسم أو الهاتف..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
-                    </div>
+                    <div><h4 class="serif-title text-xl font-bold text-maldiva-dark">الزبائن الأوفياء / Fidélité</h4><p class="text-xs text-gray-500">نظام البحث عن الزبائن الذين يحجزون أكثر.</p></div>
+                    <div class="relative w-full md:w-64"><i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="loyalty-search" oninput="window.renderLoyalty()" placeholder="ابحث بالاسم أو الهاتف..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal"></div>
                 </div>
                 <div id="loyalty-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 hide-scrollbar"></div>
             </div>
 
+            <!-- Tab 3: Settings & Blocked Days -->
             <div id="admin-subview-settings" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
                 <div><h4 class="serif-title text-xl font-bold text-maldiva-dark">Gestion des Images</h4><p class="text-xs text-gray-500">Personnalisez les images de votre club.</p></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
@@ -229,9 +271,18 @@
                     <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-life-ring"></i> Bouée Tractée</div><input type="url" id="setting-bouee-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
                     <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ferry"></i> Bateau</div><input type="url" id="setting-bateau-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                    <button onclick="window.saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Sauvegarder les modifications</span></button>
-                    <button onclick="window.resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser par défaut</button>
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button onclick="window.saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Sauvegarder</span></button>
+                    <button onclick="window.resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser</button>
+                </div>
+
+                <!-- قسم إدارة الأيام المغلقة -->
+                <div class="mt-8 border-t border-gray-100 pt-6">
+                    <h4 class="serif-title text-xl font-bold text-maldiva-dark mb-1">Jours Bloqués (Fermetures)</h4>
+                    <p class="text-xs text-gray-500 mb-4 font-arabic" dir="rtl">الأيام التي تم منع الزبائن من الحجز فيها.</p>
+                    <div id="blocked-dates-list" class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- سيتم تعبئتها عبر الجافاسكريبت -->
+                    </div>
                 </div>
             </div>
 

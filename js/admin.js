@@ -261,6 +261,9 @@ export const renderAdminReservations = async (forceRefresh = false) => {
                         
                         <button onclick="window.openEditModal('${res.trackingCode}')" class="bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-pen"></i> Modifier</button>
                         
+                        <!-- زر الطباعة الجديد -->
+                        <button onclick="window.printReservation('${res.trackingCode}')" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-print"></i> Imprimer</button>
+                        
                         <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
                         ${archiveBtn}
                         <button onclick="window.prepareDelete('${res.trackingCode}')" class="bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded text-[10px]" title="Suppression"><i class="fa-solid fa-trash-can"></i></button>
@@ -348,7 +351,6 @@ export const openEditModal = async (trackingCode) => {
 
     document.getElementById('edit-items-container').innerHTML = itemsHTML;
     
-    // إظهار النافذة
     const modal = document.getElementById('edit-modal');
     modal.classList.remove('hidden');
     
@@ -364,11 +366,10 @@ export const updateEditItemQty = (id, change) => {
         let newQty = parseInt(el.innerText) + change;
         if (newQty < 0) newQty = 0;
         el.innerText = newQty;
-        calculateEditTotal(); // إعادة حساب السعر مباشرة عند تغيير أي رقم
+        calculateEditTotal(); 
     }
 };
 
-// الدالة المسؤولة عن حساب الأسعار وتطبيق نفس قواعد التخفيض الموجودة للزبون
 export const calculateEditTotal = () => {
     let subtotalEquip = 0;
     let subtotalAct = 0;
@@ -377,7 +378,6 @@ export const calculateEditTotal = () => {
     let qtyTransat = 0;
     let qtyBaldaquin = 0;
 
-    // المرور على جميع العناصر لاستخراج الكميات
     document.querySelectorAll('.edit-item-qty').forEach(el => {
         const qty = parseInt(el.innerText) || 0;
         const name = el.getAttribute('data-name');
@@ -389,63 +389,41 @@ export const calculateEditTotal = () => {
         } else if (name === 'Baldaquin Royal' || name === 'Baldaquin') {
             qtyBaldaquin += qty;
         } else {
-            // بقية العناصر تعتبر نشاطات بحرية
             subtotalAct += qty * (BASE_PRICES[name] || 0);
         }
     });
 
-    // ==========================================
-    // حساب أسعار مستلزمات الشاطئ (بمنطق العروض)
-    // ==========================================
-    
-    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
     if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
-    } 
-    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
-    else if (qtyTransat === 2 && qtyChaise === 0) {
+    } else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
-    } 
-    // الحالة الثالثة: حساب عادي بالأسعار الأساسية
-    else {
+    } else {
         subtotalEquip += (qtyChaise * BASE_PRICES['Chaise Longue']);
         subtotalEquip += (qtyTransat * BASE_PRICES['Transat en Bois']);
     }
 
-    // إضافة البالداكين (لا تدخل في العروض)
     subtotalEquip += (qtyBaldaquin * BASE_PRICES['Baldaquin Royal']);
 
-    // ==========================================
-    // حساب المدة الزمنية والتخفيضات 
-    // ==========================================
     const durationStr = document.getElementById('edit-duration').value;
     const duration = parseInt(durationStr) || 1;
     
-    // الأيام تُضرب في المستلزمات فقط
     let totalEquip = subtotalEquip * duration;
     
-    // تطبيق الخصم على المستلزمات فقط (10% لـ 5 أيام، و 15% لأسبوع)
     if (duration === 5) {
         totalEquip = totalEquip * 0.90;
     } else if (duration === 7) {
         totalEquip = totalEquip * 0.85;
     }
     
-    // المجموع النهائي = (سعر المعدات بعد خصم الأيام) + (سعر الأنشطة)
     const finalTotal = totalEquip + subtotalAct;
-    
     document.getElementById('edit-total-price').innerText = Math.round(finalTotal).toLocaleString('fr-FR') + ' DA';
 };
 
 export const closeEditModal = () => {
     const modal = document.getElementById('edit-modal');
-    
     modal.classList.add('opacity-0');
     modal.querySelector('div').classList.add('translate-y-4');
-    
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300); 
+    setTimeout(() => { modal.classList.add('hidden'); }, 300); 
 };
 
 export const saveEditedReservation = async () => {
@@ -480,7 +458,85 @@ export const saveEditedReservation = async () => {
 };
 
 // ========================================================
-// 7. نظام رسائل الواتساب (WhatsApp) المنسق
+// 7. نظام الطباعة (Print System) 
+// ========================================================
+export const printReservation = async (trackingCode) => {
+    const list = await getAdminReservations();
+    const res = list.find(item => item.trackingCode === trackingCode);
+    
+    if (!res) return showNotification("Réservation introuvable pour impression.", "error");
+
+    // ملء بيانات الحجز الأساسية
+    document.getElementById('print-code').innerText = res.trackingCode;
+    document.getElementById('print-name').innerText = res.clientName;
+    document.getElementById('print-phone').innerText = res.clientPhone;
+    document.getElementById('print-visit-date').innerText = res.visitDate;
+    document.getElementById('print-duration').innerText = (res.duration || 1) + " Jour(s)";
+    
+    // استخراج وتنسيق تاريخ إنشاء الحجز
+    let creationDateFormatted = 'Non disponible';
+    if (res.timestamp || res.createdAt) {
+        const dateObj = new Date(res.timestamp || res.createdAt);
+        if (!isNaN(dateObj.getTime())) {
+            creationDateFormatted = dateObj.toLocaleDateString('fr-FR') + ' à ' + dateObj.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'});
+        }
+    }
+    document.getElementById('print-created-at').innerText = creationDateFormatted;
+
+    // تنسيق حالة الحجز للطباعة
+    const statusEl = document.getElementById('print-status');
+    const statusMap = {
+        'pending': { label: 'En attente', color: 'border-yellow-500 text-yellow-600' },
+        'approved': { label: 'Confirmé', color: 'border-green-500 text-green-600' },
+        'declined': { label: 'Refusé', color: 'border-red-500 text-red-600' }
+    };
+    const st = statusMap[res.status || 'pending'];
+    statusEl.innerText = st.label;
+    statusEl.className = `px-3 py-1 border-2 font-bold uppercase rounded-md inline-block mt-1 ${st.color}`;
+
+    // ملء الخدمات
+    let itemsHTML = '';
+    if (res.items) {
+        for (let [name, qty] of Object.entries(res.items)) {
+            itemsHTML += `
+                <tr class="border-b border-gray-200">
+                    <td class="p-3 border-r border-gray-200 font-semibold text-gray-800">${name}</td>
+                    <td class="p-3 text-center font-bold text-lg">${qty}</td>
+                </tr>
+            `;
+        }
+    } else {
+        itemsHTML = '<tr><td colspan="2" class="p-3 text-center text-gray-500">Aucun service</td></tr>';
+    }
+    document.getElementById('print-items-body').innerHTML = itemsHTML;
+
+    // ملء السعر الإجمالي
+    document.getElementById('print-total').innerText = res.totalPrice || '0 DA';
+
+    // الملاحظات
+    const notesContainer = document.getElementById('print-notes-container');
+    if (res.notes && res.notes.trim() !== "") {
+        document.getElementById('print-notes').innerText = res.notes;
+        notesContainer.classList.remove('hidden');
+    } else {
+        notesContainer.classList.add('hidden');
+    }
+
+    // معلومات الفوتر (تاريخ الطباعة)
+    const now = new Date();
+    document.getElementById('print-timestamp').innerText = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR');
+    // يمكن مستقبلاً ربط اسم المشرف بنظام تسجيل دخول حقيقي
+    document.getElementById('print-admin-name').innerText = "Administrateur Principal";
+
+    // استدعاء نافذة الطباعة الخاصة بالمتصفح
+    // نعطي المتصفح مهلة قصيرة 100ms ليقوم بتحديث عناصر DOM قبل الطباعة
+    setTimeout(() => {
+        window.print();
+    }, 100);
+};
+
+// ========================================================
+// 8. نظام رسائل الواتساب (WhatsApp) المنسق
 // ========================================================
 export const dispatchWhatsAppMessage = async (trackingCode) => {
     const list = await getAdminReservations();
@@ -533,7 +589,7 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
 };
 
 // ========================================================
-// 8. تصدير الدوال للاستخدام المباشر في HTML
+// 9. تصدير الدوال للاستخدام المباشر في HTML
 // ========================================================
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;
@@ -547,9 +603,9 @@ window.setArchiveStatus = setArchiveStatus;
 window.prepareDelete = prepareDelete;
 window.executePendingDelete = executePendingDelete;
 window.dispatchWhatsAppMessage = dispatchWhatsAppMessage;
-
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.updateEditItemQty = updateEditItemQty;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
+window.printReservation = printReservation;

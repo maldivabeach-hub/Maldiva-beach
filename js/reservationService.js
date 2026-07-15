@@ -2,22 +2,22 @@
 import { db, appId } from './firebase.js'; 
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// 💡 التحسين: تعريف المسارات كدوال لضمان تحميل appId بشكل صحيح وقت الاستدعاء
-const getReservationsPath = () => `artifacts/${appId}/public/data/reservations`;
-const getClosedDaysPath = () => `artifacts/${appId}/public/data/closedDays`;
+const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
+// مسار جديد آمن لحفظ الإعدادات في ملف واحد
+const SETTINGS_PATH = `artifacts/${appId}/public/data/settings`;
 
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
 
 export const submitNewReservation = async (reservationData) => {
-    const docRef = doc(db, getReservationsPath(), reservationData.trackingCode);
+    const docRef = doc(db, COLLECTION_PATH, reservationData.trackingCode);
     await setDoc(docRef, reservationData);
     return reservationData.trackingCode;
 };
 
 export const getReservationByCode = async (trackingCode) => {
-    const docRef = doc(db, getReservationsPath(), trackingCode);
+    const docRef = doc(db, COLLECTION_PATH, trackingCode);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
         return snap.data();
@@ -30,7 +30,7 @@ export const getAdminReservations = async (forceRefresh = false) => {
     if (!forceRefresh && cachedReservations && (now - lastFetchTime < CACHE_DURATION)) {
         return cachedReservations;
     }
-    const q = query(collection(db, getReservationsPath()));
+    const q = query(collection(db, COLLECTION_PATH));
     const snapshot = await getDocs(q);
     const results = [];
     snapshot.forEach(doc => {
@@ -43,7 +43,7 @@ export const getAdminReservations = async (forceRefresh = false) => {
 };
 
 export const updateReservationData = async (trackingCode, newData) => {
-    const docRef = doc(db, getReservationsPath(), trackingCode);
+    const docRef = doc(db, COLLECTION_PATH, trackingCode);
     await updateDoc(docRef, newData);
     if (cachedReservations) {
         const index = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
@@ -54,7 +54,7 @@ export const updateReservationData = async (trackingCode, newData) => {
 };
 
 export const deleteReservation = async (trackingCode) => {
-    const docRef = doc(db, getReservationsPath(), trackingCode);
+    const docRef = doc(db, COLLECTION_PATH, trackingCode);
     await deleteDoc(docRef);
     if (cachedReservations) {
         cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
@@ -62,33 +62,48 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// دوال إدارة الأيام المغلقة (Closed Days) المحدثة
+// الطريقة الجديدة الآمنة لإغلاق الأيام (في ملف واحد)
 // ==========================================
 
 export const checkIfDateIsClosed = async (dateStr) => {
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'closedDays', dateStr);
-    const snap = await getDoc(docRef);
-    return snap.exists();
-};
-
-export const setDateClosedStatus = async (dateStr, isClosed) => {
-    // نستخدم الطريقة المباشرة والأكثر أماناً لمسار Firestore
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'closedDays', dateStr);
-    if (isClosed) {
-        await setDoc(docRef, { closedAt: new Date().toISOString() });
-    } else {
-        await deleteDoc(docRef);
+    try {
+        const docRef = doc(db, SETTINGS_PATH, "closedDaysDoc");
+        const snap = await getDoc(docRef);
+        if (snap.exists() && snap.data().days) {
+            return snap.data().days.includes(dateStr);
+        }
+        return false;
+    } catch (e) {
+        console.error("Erreur checkIfDateIsClosed:", e);
+        return false; 
     }
 };
 
+export const toggleDateClosure = async (dateStr, isClosing) => {
+    const docRef = doc(db, SETTINGS_PATH, "closedDaysDoc");
+    const snap = await getDoc(docRef);
+    
+    let days = [];
+    if (snap.exists() && snap.data().days) {
+        days = snap.data().days;
+    }
+    
+    if (isClosing) {
+        if (!days.includes(dateStr)) days.push(dateStr);
+    } else {
+        days = days.filter(d => d !== dateStr);
+    }
+    
+    // حفظ المصفوفة المحدثة
+    await setDoc(docRef, { days: days });
+};
+
 export const getClosedDays = async () => {
-    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'closedDays');
-    const q = query(collRef);
-    const snapshot = await getDocs(q);
-    const results = [];
-    snapshot.forEach(doc => {
-        results.push(doc.id); 
-    });
-    results.sort((a, b) => new Date(a) - new Date(b));
-    return results;
+    const docRef = doc(db, SETTINGS_PATH, "closedDaysDoc");
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data().days) {
+        // ترتيب التواريخ من الأقدم للأحدث
+        return snap.data().days.sort();
+    }
+    return [];
 };

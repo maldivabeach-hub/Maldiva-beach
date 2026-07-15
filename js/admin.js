@@ -1,7 +1,12 @@
 // /js/admin.js
 
+// 🔴 إضافة initPublicAuth هنا ضرورية جداً للسماح للأدمن بالاتصال بقاعدة البيانات
+import { initPublicAuth } from './firebase.js'; 
 import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
+
+// تهيئة الاتصال فور تحميل الملف
+initPublicAuth();
 
 const BASE_PRICES = {
     'Chaise Longue': 2000, 'Transat en Bois': 3000, 'Baldaquin Royal': 10000,
@@ -29,9 +34,6 @@ let currentStatusFilter = 'all';
 let filterNautique = false;
 let pendingDeleteId = null;
 
-// ========================================================
-// 1. نظام تسجيل الدخول (Authentication)
-// ========================================================
 export const verifyAdminLogin = async () => {
     const pass = document.getElementById('admin-password').value;
     const error = document.getElementById('admin-login-error');
@@ -44,7 +46,7 @@ export const verifyAdminLogin = async () => {
         
         showNotification("Bienvenue, Administrateur !", "success");
         await renderAdminReservations(true); 
-        await renderClosedDays(); // تحميل الأيام المغلقة
+        await renderClosedDays(); // تحميل قائمة الأيام المغلقة
     } else { 
         error.classList.remove('hidden'); 
     }
@@ -58,9 +60,6 @@ export const logoutAdmin = () => {
     showNotification("Déconnecté.", "info"); 
 };
 
-// ========================================================
-// 2. نظام الفلترة
-// ========================================================
 export const setAdminDateFilterToday = () => {
     const tzoffset = (new Date()).getTimezoneOffset() * 60000;
     const today = new Date(Date.now() - tzoffset).toISOString().split('T')[0];
@@ -101,9 +100,6 @@ export const setStatusFilter = (status) => {
     renderAdminReservations();
 };
 
-// ========================================================
-// 3. عرض الحجوزات
-// ========================================================
 export const renderAdminReservations = async (forceRefresh = false) => {
     if (!adminAuthorized) return;
 
@@ -245,9 +241,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     container.innerHTML = html;
 };
 
-// ========================================================
-// 4. الإجراءات 
-// ========================================================
 export const setReservationStatus = async (trackingCode, newStatus) => {
     try {
         await updateReservationData(trackingCode, { status: newStatus });
@@ -286,9 +279,6 @@ export const executePendingDelete = async () => {
     pendingDeleteId = null;
 };
 
-// ========================================================
-// 5. التعديل و الواتساب والطباعة 
-// ========================================================
 export const openEditModal = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
@@ -495,7 +485,7 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
 };
 
 // ========================================================
-// 6. نظام إغلاق الأيام (الطريقة المضمونة بالملف الواحد)
+// 6. نظام إغلاق الأيام 
 // ========================================================
 export const adminToggleDate = async (isClosing) => {
     const dateInput = document.getElementById('admin-close-date').value;
@@ -532,7 +522,7 @@ export const renderClosedDays = async () => {
 };
 
 // ========================================================
-// ربط جميع الدوال بالـ Window
+// ربط جميع الدوال
 // ========================================================
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;

@@ -1,6 +1,7 @@
 // /js/admin.js
 
-import { getAdminReservations, updateReservationData, deleteReservation } from './reservationService.js';
+// تم إضافة دوال الأيام المغلقة في الاستيراد
+import { getAdminReservations, updateReservationData, deleteReservation, getClosedDays, updateClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
 // ========================================================
@@ -49,6 +50,8 @@ let currentStatusFilter = 'all';
 let filterNautique = false;
 let pendingDeleteId = null;
 
+let adminClosedDates = {}; // متغير لحفظ الأيام المغلقة في لوحة التحكم
+
 // ========================================================
 // 2. نظام تسجيل الدخول (Authentication)
 // ========================================================
@@ -64,6 +67,7 @@ export const verifyAdminLogin = async () => {
         
         showNotification("Bienvenue, Administrateur !", "success");
         await renderAdminReservations(true); 
+        await loadClosedDaysUI(); // تحميل الأيام المغلقة عند الدخول
     } else { 
         error.classList.remove('hidden'); 
     }
@@ -76,6 +80,77 @@ export const logoutAdmin = () => {
     document.getElementById('admin-dashboard-view').classList.add('hidden'); 
     showNotification("Déconnecté.", "info"); 
 };
+
+// ========================================================
+// 🔴 2.5 نظام إدارة الأيام المغلقة
+// ========================================================
+export const loadClosedDaysUI = async () => {
+    try {
+        adminClosedDates = await getClosedDays();
+        renderClosedDaysList();
+    } catch(e) {
+        console.error("Error loading closed days", e);
+    }
+};
+
+export const renderClosedDaysList = () => {
+    const container = document.getElementById('closed-days-list');
+    if (!container) return;
+    
+    let html = '';
+    const dates = Object.keys(adminClosedDates).sort((a,b) => new Date(a) - new Date(b));
+    
+    if (dates.length === 0) {
+        container.innerHTML = `<div class="text-xs text-gray-400 text-center py-4">لا توجد أيام مغلقة حالياً.</div>`;
+        return;
+    }
+
+    dates.forEach(date => {
+        const msg = adminClosedDates[date];
+        html += `
+            <div class="flex justify-between items-center bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                <div>
+                    <span class="font-bold text-red-600 text-sm"><i class="fa-regular fa-calendar-xmark"></i> ${date}</span>
+                    <p class="text-[10px] text-gray-500 mt-1">الرسالة: ${msg}</p>
+                </div>
+                <button onclick="window.removeClosedDay('${date}')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg text-xs" title="فتح اليوم مجدداً"><i class="fa-solid fa-unlock"></i> فتح</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+export const addClosedDay = async () => {
+    const dateInput = document.getElementById('close-date-input').value;
+    let messageInput = document.getElementById('close-message-input').value.trim();
+    
+    if (!dateInput) return showNotification("الرجاء اختيار التاريخ أولاً", "error");
+    if (!messageInput) messageInput = "نعتذر، لا توجد أماكن شاغرة في هذا اليوم."; // رسالة افتراضية
+    
+    adminClosedDates[dateInput] = messageInput;
+    
+    try {
+        await updateClosedDays(adminClosedDates);
+        showNotification(`تم إغلاق يوم ${dateInput} بنجاح`, "success");
+        document.getElementById('close-date-input').value = '';
+        document.getElementById('close-message-input').value = '';
+        renderClosedDaysList();
+    } catch(e) {
+        showNotification("حدث خطأ أثناء حفظ الإعدادات", "error");
+    }
+};
+
+export const removeClosedDay = async (date) => {
+    delete adminClosedDates[date];
+    try {
+        await updateClosedDays(adminClosedDates);
+        showNotification(`تم فتح يوم ${date} للحجز مجدداً`, "success");
+        renderClosedDaysList();
+    } catch(e) {
+        showNotification("حدث خطأ أثناء حفظ الإعدادات", "error");
+    }
+};
+
 
 // ========================================================
 // 3. نظام الفلترة والبحث (Filters & Search)
@@ -609,3 +684,5 @@ window.updateEditItemQty = updateEditItemQty;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;
+window.addClosedDay = addClosedDay; // تصدير الدوال الجديدة
+window.removeClosedDay = removeClosedDay;

@@ -1,63 +1,57 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode, getClosedDays } from './reservationService.js'; // استدعاء دالة الأيام المغلقة
+import { submitNewReservation, getReservationByCode, getClosedDays } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
-// 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
 
 // ==========================================
-// 🔴 جلب الأيام المغلقة عند تحميل الصفحة
+// 🔴 حماية الأيام المغلقة
 // ==========================================
 let closedDates = {};
 const initClosedDays = async () => {
     try {
-        closedDates = await getClosedDays();
-        
-        // التحقق عند تغيير التاريخ من قبل الزبون
-        const dateInput = document.getElementById('visit-date');
-        if (dateInput) {
-            dateInput.addEventListener('change', (e) => {
-                const selectedDate = e.target.value;
-                if (closedDates[selectedDate]) {
-                    showNotification(closedDates[selectedDate], "error");
-                    e.target.value = ''; // تفريغ الحقل إذا كان اليوم مغلقاً
-                }
-            });
-        }
+        const data = await getClosedDays();
+        closedDates = data || {};
     } catch (error) {
-        console.error("خطأ في جلب الأيام المغلقة", error);
+        console.warn("لم يتمكن من جلب الأيام المغلقة", error);
     }
 };
 initClosedDays();
+
+// تفعيل المستمع على حقل التاريخ مباشرة
+const dateInput = document.getElementById('visit-date');
+if (dateInput) {
+    dateInput.addEventListener('change', (e) => {
+        const selectedDate = e.target.value;
+        if (closedDates && closedDates[selectedDate]) {
+            showNotification(closedDates[selectedDate], "error");
+            e.target.value = ''; // إفراغ التاريخ لكي لا يحجز
+        }
+    });
+}
 // ==========================================
 
-// 2. الأسعار والأسماء كما هي في نظامك
 const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
 const actPrices = { 
     'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
-    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 
-    'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
-    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 
-    'qty-bateau-standard': 4000 
+    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
+    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 'qty-bateau-standard': 4000 
 };
 const names = { 
     'qty-chaise': 'Chaise Longue', 'qty-transat': 'Transat en Bois', 'qty-baldaquin': 'Baldaquin Royal', 
     'qty-jetski-15': 'Jet-Ski (15 Min)', 'qty-jetski-30': 'Jet-Ski (30 Min)', 'qty-jetski-60': 'Jet-Ski (1 Heure)', 
     'qty-pedalo-30': 'Pédalo (30 Min)', 'qty-pedalo-60': 'Pédalo (1 Heure)', 
     'qty-kayak-30': 'Kayak (30 Min)', 'qty-kayak-60': 'Kayak (1 Heure)', 
-    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 
-    'qty-bateau-standard': 'Bateau (+4 pers)' 
+    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 'qty-bateau-standard': 'Bateau (+4 pers)' 
 };
 const allPrices = { ...equipPrices, ...actPrices };
 
-// متغير عام لحفظ ملاحظات العروض الخاصة
 let currentSpecialNotes = [];
 
 const setInitialDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateInput = document.getElementById('visit-date');
     if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
 };
 setInitialDate();
@@ -74,46 +68,30 @@ const adjustQty = (elementId, amount) => {
 
 const calculateTotal = () => {
     let subtotalEquip = 0, subtotalAct = 0;
-    currentSpecialNotes = []; // تصفير الملاحظات مع كل حساب جديد
+    currentSpecialNotes = []; 
 
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
-    // ==========================================
-    // حساب أسعار مستلزمات الشاطئ (بالمنطق المصحح)
-    // ==========================================
-
-    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
     if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
         currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
-    } 
-    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
-    else if (qtyTransat === 2 && qtyChaise === 0) {
+    } else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
         currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
-    } 
-    // الحالة الثالثة: أي مزيج آخر (مثلا 2 كراسي و 1 خشب) أو كميات أخرى -> يحسب السعر العادي دون أي زيادات
-    else {
+    } else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
         subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
 
-    // حساب البالداكين بشكل مستقل
     subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
 
-    // ==========================================
-    // حساب أسعار الأنشطة البحرية (بدون تغيير)
-    // ==========================================
     for (let id in actPrices) {
         const el = document.getElementById(id);
         if (el) subtotalAct += parseInt(el.innerText) * actPrices[id];
     }
     
-    // ==========================================
-    // حساب المدة الزمنية والتخفيضات الإضافية
-    // ==========================================
     const durationSelect = document.getElementById('duration');
     const duration = durationSelect ? parseInt(durationSelect.value) : 1;
     let totalEquip = subtotalEquip * duration;
@@ -128,17 +106,11 @@ const calculateTotal = () => {
         else discountBadge.classList.add('hidden');
     }
 
-    // ==========================================
-    // تحديث واجهة المستخدم وعرض الملاحظات
-    // ==========================================
     const notesContainer = document.getElementById('special-pricing-notes');
     if (notesContainer) {
         if (currentSpecialNotes.length > 0) {
             notesContainer.innerHTML = currentSpecialNotes.map(note => 
-                `<div class="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 p-2 rounded-lg font-bold flex items-center gap-1.5 transition-all">
-                    <i class="fa-solid fa-tags text-teal-600"></i>
-                    <span>${note}</span>
-                 </div>`
+                `<div class="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 p-2 rounded-lg font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-tags text-teal-600"></i><span>${note}</span></div>`
             ).join('');
             notesContainer.classList.remove('hidden');
         } else {
@@ -161,8 +133,8 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
-    // 🔴 حماية إضافية: التحقق من الأيام المغلقة عند الإرسال
-    if (closedDates[visitDate]) {
+    // 🔴 حماية إضافية للزر (تأكيد)
+    if (closedDates && closedDates[visitDate]) {
         return showNotification(closedDates[visitDate], "error");
     }
 
@@ -172,10 +144,7 @@ const submitReservation = async () => {
         const el = document.getElementById(id);
         if(el) {
             const qty = parseInt(el.innerText);
-            if (qty > 0) { 
-                hasItems = true; 
-                chosenItems[names[id]] = qty; 
-            }
+            if (qty > 0) { hasItems = true; chosenItems[names[id]] = qty; }
         }
     }
     
@@ -186,19 +155,12 @@ const submitReservation = async () => {
     const trackingCode = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
 
     const reservationData = {
-        clientName: clientName,
-        clientPhone: clientPhone,
-        visitDate: visitDate,
-        items: chosenItems,
-        duration: duration,
-        totalPrice: totalStr,
-        status: 'pending',
-        trackingCode: trackingCode,
-        isArchived: false,
+        clientName: clientName, clientPhone: clientPhone, visitDate: visitDate,
+        items: chosenItems, duration: duration, totalPrice: totalStr,
+        status: 'pending', trackingCode: trackingCode, isArchived: false,
         createdAt: new Date().toISOString()
     };
 
-    // تحديث واجهة فاتورة النجاح
     document.getElementById('booking-success-code').innerText = '#' + trackingCode;
     document.getElementById('summary-items').innerHTML = `<div class="text-xs py-1 text-maldiva-teal font-bold mb-1 border-b border-gray-100"><i class="fa-solid fa-clock"></i> الأيام المحددة: ${duration} يوم / Jour(s)</div>` + 
         Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');
@@ -208,9 +170,7 @@ const submitReservation = async () => {
     if (summaryNotesContainer) {
         if (currentSpecialNotes.length > 0) {
             summaryNotesContainer.innerHTML = currentSpecialNotes.map(note =>
-                `<div class="text-[11px] text-teal-800 font-bold flex items-center gap-1.5 mt-1.5">
-                    <i class="fa-solid fa-tags text-teal-600"></i> <span>${note}</span>
-                 </div>`
+                `<div class="text-[11px] text-teal-800 font-bold flex items-center gap-1.5 mt-1.5"><i class="fa-solid fa-tags text-teal-600"></i> <span>${note}</span></div>`
             ).join('');
             summaryNotesContainer.classList.remove('hidden');
         } else {
@@ -223,17 +183,14 @@ const submitReservation = async () => {
         await submitNewReservation(reservationData);
         showSuccessModal();
         resetForm();
-    } catch (error) {
-        console.error("خطأ أثناء الإرسال:", error);
-        showNotification("حدث خطأ في الاتصال، يرجى المحاولة مجدداً.", "error");
-    }
+    } catch (error) { showNotification("حدث خطأ في الاتصال.", "error"); }
 };
 
 const resetForm = () => {
     document.getElementById('client-name').value = ''; 
     document.getElementById('client-phone').value = ''; 
-    const dateInput = document.getElementById('visit-date');
-    if (dateInput) dateInput.value = ''; // تفريغ التاريخ لتجنب الاحتفاظ بيوم مغلق
+    const dInput = document.getElementById('visit-date');
+    if (dInput) dInput.value = ''; 
     for (let id in allPrices) { 
         const el = document.getElementById(id);
         if(el) el.innerText = '0'; 
@@ -278,9 +235,7 @@ const trackReservation = async () => {
         iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
         document.getElementById('track-status-arabic').innerText = current.ar;
 
-    } catch (error) {
-        showNotification("Erreur de connexion.", "error");
-    }
+    } catch (error) { showNotification("Erreur de connexion.", "error"); }
 };
 
 window.adjustQty = adjustQty;

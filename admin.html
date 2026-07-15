@@ -27,51 +27,24 @@
             }
         }
     </script>
-    <!-- كود CSS خاص بالطباعة فقط -->
     <style>
         @media print {
-            /* إخفاء كل محتوى الصفحة العادي أثناء الطباعة */
-            body > *:not(#print-section) {
-                display: none !important;
-            }
-            /* إظهار قسم الطباعة فقط */
-            #print-section {
-                display: block !important;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                background-color: white;
-            }
-            /* إعدادات حجم الورقة وإزالة الهوامش الافتراضية للمتصفح */
-            @page {
-                size: A4;
-                margin: 1.5cm;
-            }
-            /* تنسيقات إضافية لضمان ظهور الألوان أثناء الطباعة */
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
+            body > *:not(#print-section) { display: none !important; }
+            #print-section { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background-color: white; }
+            @page { size: A4; margin: 1.5cm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col bg-gray-50">
 
-    <!-- ========================================== -->
-    <!-- القسم المخفي المخصص للطباعة (Fiche de Réservation) -->
-    <!-- ========================================== -->
     <div id="print-section" class="hidden font-sans bg-white text-black p-8">
-        <!-- Header: Logo & Title -->
         <div class="text-center border-b-2 border-gray-800 pb-6 mb-6">
             <img src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" alt="Maldiva Logo" class="w-24 h-24 mx-auto rounded-full border-2 border-gray-800 p-1 mb-3 grayscale">
             <h1 class="font-serif text-3xl font-bold uppercase tracking-widest text-gray-900">Maldiva Beach Club</h1>
             <h2 class="text-xl font-bold mt-2 bg-gray-100 py-2 rounded-lg uppercase tracking-widest border border-gray-300">Fiche de Réservation</h2>
         </div>
 
-        <!-- Reservation Info Grid -->
         <div class="grid grid-cols-2 gap-6 mb-8">
             <div class="space-y-3">
                 <p><span class="font-bold text-gray-500 uppercase text-xs">Code Réservation:</span><br><strong class="text-xl" id="print-code"></strong></p>
@@ -85,7 +58,6 @@
             </div>
         </div>
 
-        <!-- Items Table -->
         <div class="mb-8">
             <h3 class="font-bold text-lg border-b border-gray-300 pb-2 mb-3 uppercase tracking-wide">Détails de la Réservation (Durée: <span id="print-duration"></span>)</h3>
             <table class="w-full text-left border-collapse">
@@ -95,19 +67,15 @@
                         <th class="border border-gray-300 p-3 font-bold uppercase text-xs text-center w-1/4">Quantité</th>
                     </tr>
                 </thead>
-                <tbody id="print-items-body">
-                    <!-- سيتم حقن الخدمات هنا -->
-                </tbody>
+                <tbody id="print-items-body"></tbody>
             </table>
         </div>
 
-        <!-- Notes -->
         <div id="print-notes-container" class="mb-8 hidden">
             <h3 class="font-bold text-sm text-gray-500 uppercase mb-2">Notes & Remarques:</h3>
             <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm font-semibold italic" id="print-notes"></div>
         </div>
 
-        <!-- Total -->
         <div class="flex justify-end mb-12">
             <div class="bg-gray-100 p-4 rounded-lg border-2 border-gray-800 min-w-[250px] text-center">
                 <span class="font-bold text-gray-500 uppercase text-xs block mb-1">Total à Payer (TTC)</span>
@@ -115,7 +83,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="border-t border-gray-300 pt-4 flex justify-between items-end text-xs text-gray-500">
             <div>
                 <p class="font-bold text-gray-800">MALDIVA BEACH CLUB - TIPAZA</p>
@@ -127,8 +94,6 @@
             </div>
         </div>
     </div>
-    <!-- ========================================== -->
-
 
     <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
         <span id="toast-icon"></span>
@@ -167,7 +132,6 @@
         </div>
     </div>
 
-    <!-- Edit Modal -->
     <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -196,9 +160,7 @@
                 </div>
 
                 <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><i class="fa-solid fa-list-check"></i> Équipements & Activités</div>
-                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50">
-                    <!-- يتم توليد القائمة عبر JS -->
-                </div>
+                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50"></div>
             </div>
 
             <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center bg-white">
@@ -334,11 +296,10 @@
                     <button onclick="window.resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser par défaut</button>
                 </div>
                 
-                <!-- NEW SECTION: إغلاق الأيام -->
                 <div class="mt-8 pt-6 border-t border-gray-200">
                     <div>
                         <h4 class="serif-title text-xl font-bold text-maldiva-dark">Fermeture des Jours / إغلاق الأيام</h4>
-                        <p class="text-xs text-gray-500">Sélectionnez une date pour bloquer les réservations. / اختر تاريخاً لمنع الحجوزات فيه.</p>
+                        <p class="text-xs text-gray-500">Sélectionnez une date pour bloquer les réservations.</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-4 pt-4 items-end">
                         <div class="flex-1">
@@ -354,11 +315,9 @@
                         <h5 class="text-[10px] font-bold text-gray-500 uppercase mb-3">Jours actuellement fermés</h5>
                         <div id="closed-days-list" class="flex flex-wrap gap-2">
                             <div class="text-xs text-gray-400">Chargement...</div>
-                            <!-- Populated via JS -->
                         </div>
                     </div>
                 </div>
-                <!-- END NEW SECTION -->
 
             </div>
 

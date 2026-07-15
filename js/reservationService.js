@@ -1,23 +1,23 @@
 // /js/reservationService.js
-import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
+import { db, appId } from './firebase.js'; 
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
-const CLOSED_DAYS_PATH = `artifacts/${appId}/public/data/closedDays`; // مسار مجموعة الأيام المغلقة
+// 💡 التحسين: تعريف المسارات كدوال لضمان تحميل appId بشكل صحيح وقت الاستدعاء
+const getReservationsPath = () => `artifacts/${appId}/public/data/reservations`;
+const getClosedDaysPath = () => `artifacts/${appId}/public/data/closedDays`;
 
-// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
 
 export const submitNewReservation = async (reservationData) => {
-    const docRef = doc(db, COLLECTION_PATH, reservationData.trackingCode);
+    const docRef = doc(db, getReservationsPath(), reservationData.trackingCode);
     await setDoc(docRef, reservationData);
     return reservationData.trackingCode;
 };
 
 export const getReservationByCode = async (trackingCode) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
+    const docRef = doc(db, getReservationsPath(), trackingCode);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
         return snap.data();
@@ -30,7 +30,7 @@ export const getAdminReservations = async (forceRefresh = false) => {
     if (!forceRefresh && cachedReservations && (now - lastFetchTime < CACHE_DURATION)) {
         return cachedReservations;
     }
-    const q = query(collection(db, COLLECTION_PATH));
+    const q = query(collection(db, getReservationsPath()));
     const snapshot = await getDocs(q);
     const results = [];
     snapshot.forEach(doc => {
@@ -43,7 +43,7 @@ export const getAdminReservations = async (forceRefresh = false) => {
 };
 
 export const updateReservationData = async (trackingCode, newData) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
+    const docRef = doc(db, getReservationsPath(), trackingCode);
     await updateDoc(docRef, newData);
     if (cachedReservations) {
         const index = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
@@ -54,7 +54,7 @@ export const updateReservationData = async (trackingCode, newData) => {
 };
 
 export const deleteReservation = async (trackingCode) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
+    const docRef = doc(db, getReservationsPath(), trackingCode);
     await deleteDoc(docRef);
     if (cachedReservations) {
         cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
@@ -62,37 +62,33 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// دوال إدارة الأيام المغلقة (Closed Days)
+// دوال إدارة الأيام المغلقة (Closed Days) المحدثة
 // ==========================================
 
-// التحقق مما إذا كان اليوم مغلقاً
 export const checkIfDateIsClosed = async (dateStr) => {
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'closedDays', dateStr);
     const snap = await getDoc(docRef);
     return snap.exists();
 };
 
-// إغلاق أو فتح يوم محدد
 export const setDateClosedStatus = async (dateStr, isClosed) => {
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    // نستخدم الطريقة المباشرة والأكثر أماناً لمسار Firestore
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'closedDays', dateStr);
     if (isClosed) {
-        // إذا كان إغلاق، نقوم بإنشاء المستند
         await setDoc(docRef, { closedAt: new Date().toISOString() });
     } else {
-        // إذا كان فتح، نقوم بحذف المستند
         await deleteDoc(docRef);
     }
 };
 
-// جلب قائمة بكل الأيام المغلقة لعرضها في لوحة التحكم
 export const getClosedDays = async () => {
-    const q = query(collection(db, CLOSED_DAYS_PATH));
+    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'closedDays');
+    const q = query(collRef);
     const snapshot = await getDocs(q);
     const results = [];
     snapshot.forEach(doc => {
-        results.push(doc.id); // المعرف هو التاريخ
+        results.push(doc.id); 
     });
-    // ترتيب الأيام تصاعدياً
     results.sort((a, b) => new Date(a) - new Date(b));
     return results;
 };

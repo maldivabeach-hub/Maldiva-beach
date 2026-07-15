@@ -31,7 +31,6 @@
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-8">
 
-    <!-- الإشعارات -->
     <div id="custom-toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
         <span id="toast-icon"></span>
         <span id="toast-message" class="text-xs font-semibold"></span>
@@ -48,13 +47,11 @@
 
     <header class="relative bg-gradient-to-b from-maldiva-accent to-maldiva-sand pt-6 pb-8 px-4 text-center">
         <div class="max-w-6xl mx-auto flex flex-col items-center">
-            <!-- الشعار -->
             <div class="w-48 h-48 md:w-52 md:h-52 mb-4 relative drop-shadow-xl hover:scale-105 transition-transform duration-500 flex items-center justify-center">
                 <div id="custom-logo-wrapper" class="w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
                     <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Maldiva Beach Club Logo">
                 </div>
             </div>
-            
             <h1 class="serif-title text-4xl md:text-5xl font-extrabold text-maldiva-dark mb-1">Maldiva Beach Club</h1>
             <p class="text-[11px] uppercase tracking-widest text-maldiva-teal font-bold mb-3">Équipements & Activités Nautiques • حجز المستلزمات والأنشطة البحرية</p>
             <div class="w-16 h-1 bg-gradient-to-r from-maldiva-teal to-maldiva-orange rounded-full"></div>
@@ -77,24 +74,15 @@
         <!-- Booking Tab -->
         <div id="tab-booking-form" class="space-y-8 block">
             
-            <!-- الزر الجديد التفاعلي لفتح القواعد (بدل المربع الأصفر القديم) -->
             <div onclick="window.openRulesModal()" class="cursor-pointer bg-gradient-to-r from-maldiva-dark to-teal-900 p-4 rounded-2xl shadow-md max-w-4xl mx-auto flex items-center justify-between text-white hover:shadow-lg transition-all transform hover:-translate-y-0.5 border border-teal-800 group">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm tracking-wide">Règlement et Infos Importantes</h4>
-                        <p class="text-[11px] opacity-80 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</p>
-                    </div>
+                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"><i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i></div>
+                    <div><h4 class="font-bold text-sm tracking-wide">Règlement et Infos Importantes</h4><p class="text-[11px] opacity-80 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</p></div>
                 </div>
-                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
-                    <i class="fa-solid fa-chevron-right text-xs"></i>
-                </div>
+                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center animate-pulse"><i class="fa-solid fa-chevron-right text-xs"></i></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
                 <div class="lg:col-span-7 xl:col-span-8 space-y-8">
                     <div class="space-y-4">
                         <div class="border-b border-gray-200 pb-3">
@@ -105,10 +93,7 @@
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0"><img id="img-item-chaise" src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Chaise]"></div>
                                 <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Chaise Longue</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي استلقاء</span>
-                                    </div>
+                                    <div class="flex justify-between items-baseline"><h4 class="font-bold text-gray-800 text-sm">Chaise Longue</h4><span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي استلقاء</span></div>
                                     <p class="text-[10px] text-gray-500 mt-0.5">À partir de 3 chaises longues, parasol & table inclus.</p>
                                     <span class="text-sm font-extrabold text-maldiva-teal block mt-1">2,000 DA <span class="text-[10px] font-normal text-gray-400">/ personne</span></span>
                                 </div>
@@ -117,10 +102,7 @@
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-teal-100 flex-shrink-0"><img id="img-item-transat" src="https://i.postimg.cc/zyG4KscT/IMG-8145.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Transat]"></div>
                                 <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Transat en Bois</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب</span>
-                                    </div>
+                                    <div class="flex justify-between items-baseline"><h4 class="font-bold text-gray-800 text-sm">Transat en Bois</h4><span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب</span></div>
                                     <p class="text-[10px] text-gray-500 mt-0.5">À partir de 3 transats Matelas épais, parasol & table ajustable.</p>
                                     <span class="text-sm font-extrabold text-maldiva-teal block mt-1">3,000 DA <span class="text-[10px] font-normal text-gray-400">/ personne</span></span>
                                 </div>
@@ -128,23 +110,10 @@
                             <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all md:col-span-2 relative">
                                 <div class="w-24 h-24 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0"><img id="img-item-baldaquin" src="https://i.postimg.cc/xX1BMw4H/IMG-8148.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Baldaquin]"></div>
                                 <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Baldaquin Royal</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">بالداكين ملكي</span>
-                                    </div>
+                                    <div class="flex justify-between items-baseline"><h4 class="font-bold text-gray-800 text-sm">Baldaquin Royal</h4><span class="text-xs text-gray-400 font-arabic" dir="rtl">بالداكين ملكي</span></div>
                                     <p class="text-xs text-gray-500 mt-1">Lit de plage double, rideaux & intimité complète.</p>
                                     <span class="text-sm font-extrabold text-maldiva-orange block mt-1.5">10,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-2xl p-6 border border-gray-100 mt-4">
-                            <h4 class="font-bold text-sm text-maldiva-dark mb-4 border-b pb-2">Inclus Gratuitement avec vos Réservations</h4>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                                <div class="space-y-1"><i class="fa-solid fa-square-parking text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Parking</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-shower text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Douches</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-child-reaching text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Jeux Enfants</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-glass-water text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Service</div></div>
                             </div>
                         </div>
                     </div>
@@ -159,10 +128,7 @@
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-jetski" src="https://i.postimg.cc/ykVK7WWh/IMG-8522.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Jet-ski]"></div>
                                 <div class="flex-grow space-y-1.5">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <h4 class="font-bold text-gray-800 text-sm">Jet-Ski</h4>
-                                        <span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">2 personnes</span>
-                                    </div>
+                                    <div class="flex justify-between items-baseline mb-1"><h4 class="font-bold text-gray-800 text-sm">Jet-Ski</h4><span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">2 pers</span></div>
                                     <div class="flex justify-between items-center text-xs"><span class="text-gray-500">15 Min :</span><span class="font-bold text-maldiva-dark">6,000 DA</span></div>
                                     <div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">12,000 DA</span></div>
                                     <div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">20,000 DA</span></div>
@@ -173,44 +139,29 @@
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-bateau" src="https://i.postimg.cc/grMpkmRj/IMG-8525.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Bateau]"></div>
                                 <div class="flex-grow space-y-2">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <h4 class="font-bold text-gray-800 text-sm">Bateau</h4>
-                                        <span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">+4 personnes</span>
-                                    </div>
+                                    <div class="flex justify-between items-baseline mb-1"><h4 class="font-bold text-gray-800 text-sm">Bateau</h4><span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">+4 pers</span></div>
                                     <p class="text-xs text-gray-500">Sortie en mer</p>
                                     <div class="flex justify-between items-center text-xs pt-1"><span class="text-gray-500">À partir de :</span><span class="font-bold text-maldiva-orange">4,000 DA</span></div>
                                 </div>
                             </div>
 
-                            <!-- BOUEE TRACTEE -->
+                            <!-- BOUEE -->
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-bouee" src="https://i.postimg.cc/TpRxThh9/IMG-8523.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Bouée]"></div>
                                 <div class="flex-grow space-y-2">
                                     <h4 class="font-bold text-gray-800 text-sm">Bouée tractée</h4>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">2 personnes :</span><span class="font-bold text-maldiva-dark">3,000 DA</span></div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">3 personnes :</span><span class="font-bold text-maldiva-dark">4,000 DA</span></div>
+                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">2 pers :</span><span class="font-bold text-maldiva-dark">3,000 DA</span></div>
+                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">3 pers :</span><span class="font-bold text-maldiva-dark">4,000 DA</span></div>
                                 </div>
                             </div>
 
-                            <!-- PEDALO -->
+                            <!-- PEDALO & KAYAK -->
                             <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
                                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-pedalo" src="https://i.postimg.cc/GHcRb99K/IMG-8524.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Pédalo]"></div>
                                 <div class="flex-grow space-y-2">
-                                    <h4 class="font-bold text-gray-800 text-sm">Pédalo</h4>
+                                    <h4 class="font-bold text-gray-800 text-sm">Pédalo / Kayak</h4>
                                     <div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">1,000 DA</span></div>
                                     <div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">2,000 DA</span></div>
-                                </div>
-                            </div>
-
-                            <!-- KAYAK -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all md:col-span-2">
-                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-kayak" src="https://i.postimg.cc/hfSnKhhM/IMG-8521.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Kayak]"></div>
-                                <div class="flex-grow space-y-2">
-                                    <h4 class="font-bold text-gray-800 text-sm">Kayak</h4>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">1,000 DA</span></div></div>
-                                        <div><div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">2,000 DA</span></div></div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -237,50 +188,19 @@
 
                             <div class="space-y-2 pt-2 border-t border-gray-100">
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase bg-gray-50 py-1.5 px-3 rounded-lg border border-gray-100"><i class="fa-solid fa-umbrella-beach text-maldiva-orange mr-1"></i> Équipements de plage</label>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
-                                    <span class="text-xs font-bold text-gray-700">Chaise Longue</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-chaise', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
-                                </div>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
-                                    <span class="text-xs font-bold text-gray-700">Transat en Bois</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-transat', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-transat" class="font-bold w-4 text-center text-xs text-maldiva-teal">0</span><button type="button" onclick="window.adjustQty('qty-transat', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
-                                </div>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl border border-maldiva-orange/20">
-                                    <span class="text-xs font-bold text-gray-700">Baldaquins</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-baldaquin', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
-                                </div>
+                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl"><span class="text-xs font-bold text-gray-700">Chaise Longue</span><div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-chaise', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl"><span class="text-xs font-bold text-gray-700">Transat en Bois</span><div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-transat', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-transat" class="font-bold w-4 text-center text-xs text-maldiva-teal">0</span><button type="button" onclick="window.adjustQty('qty-transat', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl border border-maldiva-orange/20"><span class="text-xs font-bold text-gray-700">Baldaquins</span><div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-baldaquin', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
                             </div>
 
                             <div class="space-y-2 pt-2 border-t border-gray-100">
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100 flex justify-between">
-                                    <span><i class="fa-solid fa-water text-maldiva-teal mr-1"></i> Activités Nautiques</span>
-                                </label>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100 flex justify-between"><span><i class="fa-solid fa-water text-maldiva-teal mr-1"></i> Activités Nautiques</span></label>
                                 <div class="h-40 overflow-y-auto pr-1 space-y-2 hide-scrollbar">
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Jet-Ski</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">15 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-15" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bouée Tractée</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">2 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-2" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">3 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-3" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-3', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bateau (Sortie)</div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">+4 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bateau-standard" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bateau-standard', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Pédalo</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Kayak</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
+                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl"><div class="text-[11px] font-bold text-gray-800 mb-1.5">Jet-Ski</div><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">15 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-15" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div><div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div></div>
+                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl"><div class="text-[11px] font-bold text-gray-800 mb-1.5">Bouée Tractée</div><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">2 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-2" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div><div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">3 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-3" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-3', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div></div>
+                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl"><div class="text-[11px] font-bold text-gray-800 mb-1.5">Bateau (Sortie)</div><div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">+4 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bateau-standard" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bateau-standard', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div></div>
+                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl"><div class="text-[11px] font-bold text-gray-800 mb-1.5">Pédalo</div><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div><div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div></div>
+                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl"><div class="text-[11px] font-bold text-gray-800 mb-1.5">Kayak</div><div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div><div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div></div>
                                 </div>
                             </div>
 
@@ -290,8 +210,8 @@
                                     <option value="1">1 Jour / يوم واحد</option>
                                     <option value="2">2 Jours / يومين</option>
                                     <option value="3">3 Jours / 3 أيام</option>
-                                    <option value="5">5 Jours (-10% Remise plage) / 5 أيام</option>
-                                    <option value="7">Une semaine (-15% Remise plage)</option>
+                                    <option value="5">5 Jours (-10% Remise) / 5 أيام</option>
+                                    <option value="7">Une semaine (-15%)</option>
                                 </select>
                             </div>
 
@@ -306,7 +226,6 @@
                                 </div>
                             </div>
 
-                            <!-- حاوية ملاحظات التسعير الخاصة -->
                             <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full mt-2"></div>
 
                             <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 uppercase text-xs tracking-wider">
@@ -315,7 +234,6 @@
                         </form>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -323,10 +241,7 @@
         <div id="tab-tracking-section" class="max-w-xl mx-auto space-y-6 hidden">
             <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4">
                 <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto"><i class="fa-solid fa-magnifying-glass"></i></div>
-                <div>
-                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Suivi de Réservation • تتبع الحجز</h3>
-                    <p class="text-xs text-gray-500 mt-1">Saisissez votre code pour vérifier si votre حجز a été validé</p>
-                </div>
+                <div><h3 class="serif-title text-2xl font-bold text-maldiva-dark">Suivi de Réservation</h3><p class="text-xs text-gray-500 mt-1">Saisissez votre code pour vérifier</p></div>
                 <div class="flex flex-col sm:flex-row gap-2 pt-2">
                     <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none uppercase">
                     <button onclick="window.trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
@@ -339,13 +254,6 @@
                     <h4 class="font-bold text-lg text-gray-800">Détails du الحجز</h4>
                     <span id="track-status-badge" class="px-3 py-1 rounded-full text-xs font-bold inline-block"></span>
                 </div>
-
-                <div id="track-res-parasol" class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center hidden animate-pulse">
-                    <div class="text-blue-800 font-bold text-sm uppercase tracking-wide"><i class="fa-solid fa-umbrella-beach mr-1"></i> Votre Parasol / رقم مظلتك</div>
-                    <div id="track-parasol-id" class="text-3xl font-extrabold text-blue-900 mt-1">--</div>
-                    <div class="text-[10px] text-blue-600 mt-1 font-arabic" dir="rtl">يرجى التوجه إلى هذه المظلة المخصصة لك.</div>
-                </div>
-
                 <div class="space-y-3 text-xs text-gray-600">
                     <div class="flex justify-between border-b pb-2"><span>Code:</span><strong id="track-res-code" class="text-maldiva-dark"></strong></div>
                     <div class="flex justify-between border-b pb-2"><span>Client:</span><strong id="track-res-name"></strong></div>
@@ -353,13 +261,6 @@
                     <div class="flex justify-between border-b pb-2"><span>Durée Plage:</span><strong id="track-res-dur"></strong></div>
                     <div id="track-res-items" class="bg-maldiva-sand p-3 rounded-xl space-y-1.5 font-semibold text-gray-700"></div>
                 </div>
-
-                <!-- رسالة التقاط الصورة -->
-                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse text-center mt-4">
-                    <p><i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code et le présenter lors de votre visite !</p>
-                    <p class="font-arabic mt-1" dir="rtl">هام: يرجى التقاط صورة لهذه الشاشة (Capture) وتقديمها عند زيارتك للنادي!</p>
-                </div>
-
                 <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed mt-2" dir="rtl"></div>
             </div>
         </div>
@@ -371,157 +272,55 @@
             <button onclick="window.hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             <div class="text-center space-y-4">
                 <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl"><i class="fa-solid fa-circle-check"></i></div>
-                <div>
-                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Demande envoyée !</h3>
-                    <p class="text-xs text-gray-500 mt-1">Notez bien votre code de suivi :</p>
-                </div>
+                <div><h3 class="serif-title text-2xl font-bold text-maldiva-dark">Demande envoyée !</h3></div>
                 <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">#MLD-0000</div>
-                
-                <!-- رسالة التنبيه لتتبع الحجز -->
-                <div class="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 shadow-md transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-center text-blue-700 mb-1">
-                        <i class="fa-solid fa-magnifying-glass text-lg mr-2 animate-bounce"></i>
-                        <span class="font-bold text-sm uppercase tracking-wider">Suivi de Réservation / تتبع الحجز</span>
-                    </div>
-                    <p class="text-blue-800 text-xs font-semibold">Conservez ce code ! Utilisez-le dans l'onglet "Suivi" pour vérifier l'état de votre réservation.</p>
-                    <p class="text-blue-800 text-xs font-bold font-arabic mt-1" dir="rtl">احتفظ بهذا الكود! واستخدمه في قسم "تتبع الحجز" لمعرفة هل تم قبول حجزك أم لا.</p>
-                </div>
-
                 <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">
                     <div class="font-bold text-maldiva-dark border-b border-gray-200 pb-1.5 mb-1.5">Résumé :</div>
                     <div id="summary-items" class="space-y-1 text-gray-600 max-h-32 overflow-y-auto"></div>
-                    <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between">
-                        <span>Total estimé :</span><span id="summary-total" class="text-sm">0 DA</span>
-                    </p>
-                    <!-- ملاحظات التسعير في الملخص -->
+                    <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between"><span>Total estimé :</span><span id="summary-total" class="text-sm">0 DA</span></p>
                     <div id="summary-special-notes" class="hidden pt-1.5 border-t border-gray-200"></div>
                 </div>
-                
-                <!-- الرسالة العربية -->
-                <p class="text-sm text-maldiva-dark font-arabic font-extrabold text-center mt-2" dir="rtl">تواصل معنا هاتفيا لتأكيد الحجز</p>
-                
                 <button type="button" onclick="window.hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange mt-2">Fermer / إغلاق</button>
             </div>
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- النافذة المنبثقة لقواعد ومعلومات النادي (الجديدة) -->
-    <!-- ============================================== -->
+    <!-- Rules Modal -->
     <div id="rules-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] transition-opacity duration-300 opacity-0 pointer-events-none">
         <div id="rules-modal-content" class="bg-maldiva-sand rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 transform translate-y-8 scale-95 transition-all duration-400 relative overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <!-- الهيدر -->
             <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 text-white text-center relative flex-shrink-0">
                 <button onclick="window.closeRulesModal()" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full hover:bg-white/40 transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-                <div class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
-                </div>
+                <div class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i></div>
                 <h3 class="serif-title text-xl font-bold tracking-wide">Règlement du Club</h3>
-                <p class="text-xs font-arabic mt-1 opacity-90" dir="rtl">القواعد والمعلومات الهامة</p>
             </div>
-
-            <!-- المحتوى (القواعد) قابل للتمرير -->
             <div class="p-5 md:p-6 space-y-4 overflow-y-auto flex-grow custom-scrollbar">
-                
-                <!-- القاعدة 1: ساعات العمل -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 border border-blue-100"><i class="fa-solid fa-clock text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Horaires d'Ouverture</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">La plage est ouverte tous les jours de <strong>08h00 à 22h00</strong>.</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الشاطئ مفتوح كل يوم من الساعة <strong>08:00 صباحاً إلى 22:00 ليلاً</strong>.</p>
-                    </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-clock text-lg"></i></div>
+                    <div class="flex-grow"><h4 class="font-bold text-sm text-maldiva-dark">Horaires</h4><p class="text-xs text-gray-600 mt-1">La plage est ouverte de 08h00 à 22h00.</p></div>
                 </div>
-
-                <!-- القاعدة 2: وقت الوصول -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-orange-50 text-maldiva-orange flex items-center justify-center flex-shrink-0 border border-orange-100"><i class="fa-solid fa-hourglass-end text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Délai d'Arrivée</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Toute réservation sans présentation avant <strong>13h00</strong> sera automatiquement annulée, sauf avis préalable.</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">سيتم إلغاء أي حجز لا يحضر أصحابه قبل الساعة <strong>13:00 (الواحدة زوالاً)</strong> تلقائياً، ما لم يتم إبلاغنا مسبقاً.</p>
-                    </div>
-                </div>
-
-                <!-- القاعدة 3: الكراسي -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-teal-50 text-maldiva-teal flex items-center justify-center flex-shrink-0 border border-teal-100"><i class="fa-solid fa-umbrella-beach text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Placement (Transats)</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Les 3 premières rangées sont réservées pour <strong>2 Transats en bois ou plus</strong>. Choix sur place (1er arrivé, 1er servi).</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الصفوف الـ 3 الأولى مخصصة لحجوزات <strong>كرسي خشب +2</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولاً).</p>
-                    </div>
-                </div>
-
-                <!-- القاعدة 4: سياسة الدخول -->
-                <div class="bg-red-50 p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-red-200">
-                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-ban text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-red-800">Politique d'Accès</h4>
-                        <p class="text-xs text-red-700 mt-1 font-semibold leading-relaxed">Les groupes composés uniquement d'hommes ne sont pas autorisés. Merci de votre compréhension.</p>
-                        <p class="text-[11px] text-red-700 mt-1.5 font-arabic font-semibold border-t border-red-200 pt-1.5" dir="rtl">عذراً، لا نقبل الحجوزات للمجموعات المكونة من الشباب (الرجال) فقط. نشكركم على تفهمكم.</p>
-                    </div>
-                </div>
-
             </div>
-
-            <!-- الفوتر (زر الإغلاق) -->
             <div class="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-                <button onclick="window.closeRulesModal()" class="w-full bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg uppercase tracking-wider text-xs flex justify-center items-center gap-2">
-                    <span>J'ai compris</span>
-                    <span class="opacity-50">|</span>
-                    <span class="font-arabic" dir="rtl">موافق، فهمت ذلك</span>
-                </button>
+                <button onclick="window.closeRulesModal()" class="w-full bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md uppercase text-xs flex justify-center items-center">J'ai compris</button>
             </div>
         </div>
     </div>
 
-    <footer class="bg-maldiva-dark text-white py-8 px-4 border-t-4 border-maldiva-orange mt-12">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-            <div><span class="serif-title text-2xl font-bold tracking-wider text-maldiva-orange">MALDIVA</span><p class="text-[10px] uppercase tracking-widest text-gray-300 mt-1">Plage Dorée, Tipaza, Algérie</p></div>
-            <p class="text-[10px] text-gray-400">&copy; 2026 Maldiva Beach Club. Tous droits réservés.</p>
-        </div>
-    </footer>
-
-    <!-- سكريبت التحكم في نافذة القواعد -->
     <script>
-        // دالة فتح النافذة
         window.openRulesModal = function() {
             const modal = document.getElementById('rules-modal');
             const content = document.getElementById('rules-modal-content');
             modal.classList.remove('opacity-0', 'pointer-events-none');
             content.classList.remove('translate-y-8', 'scale-95');
         };
-
-        // دالة إغلاق النافذة
         window.closeRulesModal = function() {
             const modal = document.getElementById('rules-modal');
             const content = document.getElementById('rules-modal-content');
             modal.classList.add('opacity-0', 'pointer-events-none');
             content.classList.add('translate-y-8', 'scale-95');
         };
-
-        // نظام الفتح التلقائي عند الزيارة الأولى
-        document.addEventListener('DOMContentLoaded', () => {
-            // نتحقق إذا كان المستخدم قد رأى القواعد من قبل
-            const hasSeenRules = localStorage.getItem('maldiva_rules_seen');
-            
-            if (!hasSeenRules) {
-                // إذا لم يرها، نفتحها بعد 1.5 ثانية من تحميل الصفحة
-                setTimeout(() => {
-                    window.openRulesModal();
-                    // نحفظ في المتصفح أنه قد رأى القواعد كي لا نزعجه في المرات القادمة
-                    localStorage.setItem('maldiva_rules_seen', 'true');
-                }, 1500);
-            }
-        });
     </script>
-
-    <!-- ربط السكريبتات بنظام Modular -->
     <script type="module" src="./js/firebase.js"></script>
     <script type="module" src="./js/ui.js"></script>
     <script type="module" src="./js/reservation.js"></script>
-
 </body>
 </html>

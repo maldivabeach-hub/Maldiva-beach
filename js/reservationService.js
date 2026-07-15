@@ -1,92 +1,269 @@
-// /js/reservationService.js
-import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
-import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// /js/reservation.js
+import { initPublicAuth } from './firebase.js';
+import { submitNewReservation, getReservationByCode, checkIfDayIsClosed } from './reservationService.js';
+import { showNotification, showSuccessModal } from './ui.js';
 
-const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
-const CLOSED_DAYS_PATH = `artifacts/${appId}/public/data/closedDays`; // مسار مجموعة الأيام المغلقة
+// 1. تسجيل الدخول المجهول للزبون
+initPublicAuth();
 
-// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
-let cachedReservations = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 60000;
+// 2. الأسعار والأسماء كما هي في نظامك
+const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
+const actPrices = { 
+    'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
+    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 
+    'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
+    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 
+    'qty-bateau-standard': 4000 
+};
+const names = { 
+    'qty-chaise': 'Chaise Longue', 'qty-transat': 'Transat en Bois', 'qty-baldaquin': 'Baldaquin Royal', 
+    'qty-jetski-15': 'Jet-Ski (15 Min)', 'qty-jetski-30': 'Jet-Ski (30 Min)', 'qty-jetski-60': 'Jet-Ski (1 Heure)', 
+    'qty-pedalo-30': 'Pédalo (30 Min)', 'qty-pedalo-60': 'Pédalo (1 Heure)', 
+    'qty-kayak-30': 'Kayak (30 Min)', 'qty-kayak-60': 'Kayak (1 Heure)', 
+    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 
+    'qty-bateau-standard': 'Bateau (+4 pers)' 
+};
+const allPrices = { ...equipPrices, ...actPrices };
 
-export const submitNewReservation = async (reservationData) => {
-    const docRef = doc(db, COLLECTION_PATH, reservationData.trackingCode);
-    await setDoc(docRef, reservationData);
-    return reservationData.trackingCode;
+// متغير عام لحفظ ملاحظات العروض الخاصة
+let currentSpecialNotes = [];
+
+const setInitialDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateInput = document.getElementById('visit-date');
+    if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
+};
+setInitialDate();
+
+const adjustQty = (elementId, amount) => {
+    const span = document.getElementById(elementId);
+    if (!span) return;
+    let current = parseInt(span.innerText);
+    current += amount;
+    if (current < 0) current = 0;
+    span.innerText = current;
+    calculateTotal();
 };
 
-export const getReservationByCode = async (trackingCode) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-        return snap.data();
+const calculateTotal = () => {
+    let subtotalEquip = 0, subtotalAct = 0;
+    currentSpecialNotes = []; // تصفير الملاحظات مع كل حساب جديد
+
+    const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
+    const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
+    const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
+
+    // ==========================================
+    // حساب أسعار مستلزمات الشاطئ (بالمنطق المصحح)
+    // ==========================================
+
+    // الحالة الأولى: اختار العميل بالضبط (2 Chaise Longue) وفقط!
+    if (qtyChaise === 2 && qtyTransat === 0) {
+        subtotalEquip += 5000;
+        currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
+    } 
+    // الحالة الثانية: اختار العميل بالضبط (2 Transat) وفقط!
+    else if (qtyTransat === 2 && qtyChaise === 0) {
+        subtotalEquip += 7000;
+        currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
+    } 
+    // الحالة الثالثة: أي مزيج آخر (مثلا 2 كراسي و 1 خشب) أو كميات أخرى -> يحسب السعر العادي دون أي زيادات
+    else {
+        subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
+        subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
-    return null; 
-};
 
-export const getAdminReservations = async (forceRefresh = false) => {
-    const now = Date.now();
-    if (!forceRefresh && cachedReservations && (now - lastFetchTime < CACHE_DURATION)) {
-        return cachedReservations;
+    // حساب البالداكين بشكل مستقل
+    subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
+
+    // ==========================================
+    // حساب أسعار الأنشطة البحرية (بدون تغيير)
+    // ==========================================
+    for (let id in actPrices) {
+        const el = document.getElementById(id);
+        if (el) subtotalAct += parseInt(el.innerText) * actPrices[id];
     }
-    const q = query(collection(db, COLLECTION_PATH));
-    const snapshot = await getDocs(q);
-    const results = [];
-    snapshot.forEach(doc => {
-        results.push({ id: doc.id, ...doc.data() });
-    });
-    results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    cachedReservations = results;
-    lastFetchTime = now;
-    return results;
-};
+    
+    // ==========================================
+    // حساب المدة الزمنية والتخفيضات الإضافية
+    // ==========================================
+    const durationSelect = document.getElementById('duration');
+    const duration = durationSelect ? parseInt(durationSelect.value) : 1;
+    let totalEquip = subtotalEquip * duration;
+    
+    let discountApplied = false;
+    if (duration === 5) { totalEquip *= 0.90; discountApplied = true; } 
+    else if (duration === 7) { totalEquip *= 0.85; discountApplied = true; }
 
-export const updateReservationData = async (trackingCode, newData) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
-    await updateDoc(docRef, newData);
-    if (cachedReservations) {
-        const index = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
-        if (index > -1) {
-            cachedReservations[index] = { ...cachedReservations[index], ...newData };
+    const discountBadge = document.getElementById('discount-badge');
+    if (discountBadge) {
+        if (discountApplied && subtotalEquip > 0) discountBadge.classList.remove('hidden');
+        else discountBadge.classList.add('hidden');
+    }
+
+    // ==========================================
+    // تحديث واجهة المستخدم وعرض الملاحظات
+    // ==========================================
+    const notesContainer = document.getElementById('special-pricing-notes');
+    if (notesContainer) {
+        if (currentSpecialNotes.length > 0) {
+            notesContainer.innerHTML = currentSpecialNotes.map(note => 
+                `<div class="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 p-2 rounded-lg font-bold flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-tags text-teal-600"></i>
+                    <span>${note}</span>
+                 </div>`
+            ).join('');
+            notesContainer.classList.remove('hidden');
+        } else {
+            notesContainer.innerHTML = '';
+            notesContainer.classList.add('hidden');
         }
     }
+
+    let finalTotal = totalEquip + subtotalAct;
+    document.getElementById('total-price').innerText = finalTotal.toLocaleString() + ' DA';
+    return finalTotal;
 };
 
-export const deleteReservation = async (trackingCode) => {
-    const docRef = doc(db, COLLECTION_PATH, trackingCode);
-    await deleteDoc(docRef);
-    if (cachedReservations) {
-        cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
+const submitReservation = async () => {
+    const clientName = document.getElementById('client-name').value.trim();
+    const clientPhone = document.getElementById('client-phone').value.trim();
+    const visitDate = document.getElementById('visit-date').value;
+
+    if (!clientName || !clientPhone || !visitDate) {
+        return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
+    }
+
+    let hasItems = false;
+    let chosenItems = {};
+    for (let id in allPrices) {
+        const el = document.getElementById(id);
+        if(el) {
+            const qty = parseInt(el.innerText);
+            if (qty > 0) { 
+                hasItems = true; 
+                chosenItems[names[id]] = qty; 
+            }
+        }
+    }
+    
+    if (!hasItems) return showNotification("Veuillez choisir au moins un équipement ou activité.", "error");
+
+    // ==========================================
+    // التحقق مما إذا كان اليوم مغلقاً (الميزة الجديدة)
+    // ==========================================
+    try {
+        const isClosed = await checkIfDayIsClosed(visitDate);
+        if (isClosed) {
+            return showNotification("Ce jour est fermé. Les réservations sont indisponibles.", "error");
+        }
+    } catch (error) {
+        console.error("Erreur de vérification des jours fermés:", error);
+        return showNotification("حدث خطأ أثناء التحقق من التاريخ، يرجى المحاولة مجدداً.", "error");
+    }
+
+    const duration = parseInt(document.getElementById('duration').value);
+    const totalStr = document.getElementById('total-price').innerText;
+    const trackingCode = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
+
+    const reservationData = {
+        clientName: clientName,
+        clientPhone: clientPhone,
+        visitDate: visitDate,
+        items: chosenItems,
+        duration: duration,
+        totalPrice: totalStr,
+        status: 'pending',
+        trackingCode: trackingCode,
+        isArchived: false,
+        createdAt: new Date().toISOString()
+    };
+
+    // تحديث واجهة فاتورة النجاح
+    document.getElementById('booking-success-code').innerText = '#' + trackingCode;
+    document.getElementById('summary-items').innerHTML = `<div class="text-xs py-1 text-maldiva-teal font-bold mb-1 border-b border-gray-100"><i class="fa-solid fa-clock"></i> الأيام المحددة: ${duration} يوم / Jour(s)</div>` + 
+        Object.entries(chosenItems).map(([name, qty]) => `<div class="text-xs py-0.5">• ${qty} x ${name}</div>`).join('');
+    document.getElementById('summary-total').innerText = totalStr;
+
+    const summaryNotesContainer = document.getElementById('summary-special-notes');
+    if (summaryNotesContainer) {
+        if (currentSpecialNotes.length > 0) {
+            summaryNotesContainer.innerHTML = currentSpecialNotes.map(note =>
+                `<div class="text-[11px] text-teal-800 font-bold flex items-center gap-1.5 mt-1.5">
+                    <i class="fa-solid fa-tags text-teal-600"></i> <span>${note}</span>
+                 </div>`
+            ).join('');
+            summaryNotesContainer.classList.remove('hidden');
+        } else {
+            summaryNotesContainer.innerHTML = '';
+            summaryNotesContainer.classList.add('hidden');
+        }
+    }
+
+    try {
+        await submitNewReservation(reservationData);
+        showSuccessModal();
+        resetForm();
+    } catch (error) {
+        console.error("خطأ أثناء الإرسال:", error);
+        showNotification("حدث خطأ في الاتصال، يرجى المحاولة مجدداً.", "error");
     }
 };
 
-// ==========================================
-// وظائف إدارة الأيام المغلقة (Closed Days)
-// ==========================================
-
-export const getClosedDays = async () => {
-    const q = query(collection(db, CLOSED_DAYS_PATH));
-    const snapshot = await getDocs(q);
-    const closed = [];
-    snapshot.forEach(docSnap => {
-        closed.push(docSnap.id);
-    });
-    return closed;
+const resetForm = () => {
+    document.getElementById('client-name').value = ''; 
+    document.getElementById('client-phone').value = ''; 
+    for (let id in allPrices) { 
+        const el = document.getElementById(id);
+        if(el) el.innerText = '0'; 
+    } 
+    calculateTotal();
 };
 
-export const addClosedDay = async (dateStr) => {
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-    await setDoc(docRef, { closedAt: new Date().toISOString(), date: dateStr });
+const trackReservation = async () => {
+    let code = document.getElementById('track-code-input').value.trim().toUpperCase();
+    if (!code) return showNotification("Entrez votre code", "error");
+    if (code.startsWith('#')) code = code.substring(1);
+    if (!code.startsWith('MLD-')) code = 'MLD-' + code; 
+
+    try {
+        const data = await getReservationByCode(code);
+        if (!data) return showNotification("Aucun حجز trouvé avec ce رمز !", "error");
+
+        document.getElementById('track-result-box').classList.remove('hidden');
+        document.getElementById('track-res-code').innerText = '#' + code;
+        document.getElementById('track-res-name').innerText = data.clientName;
+        document.getElementById('track-res-date').innerText = data.visitDate;
+        document.getElementById('track-res-dur').innerText = data.duration + " Jour(s)";
+        
+        let itemsHTML = '';
+        for (let [name, qty] of Object.entries(data.items || {})) itemsHTML += `<div>• ${qty} x ${name}</div>`;
+        itemsHTML += `<div class="pt-2 border-t font-bold text-maldiva-dark">Total : ${data.totalPrice}</div>`;
+        document.getElementById('track-res-items').innerHTML = itemsHTML;
+
+        const statusConfig = {
+            'pending': { label: 'En attente ⏳', class: 'bg-yellow-100 text-yellow-800', icon: 'bg-yellow-100 text-yellow-600', fa: 'fa-clock', ar: 'طلبك قيد المراجعة والدراسة حالياً.' },
+            'approved': { label: 'Confirmé ✔', class: 'bg-green-100 text-green-800', icon: 'bg-green-100 text-green-600', fa: 'fa-circle-check', ar: 'تهانينا! حجزك مقبول ومثبت بنجاح.' },
+            'declined': { label: 'Refusé ❌', class: 'bg-red-100 text-red-800', icon: 'bg-red-100 text-red-600', fa: 'fa-circle-xmark', ar: 'نعتذر، لم نتمكن من قبول حجزك نظراً لعدم توفر الأماكن.' }
+        };
+        const current = statusConfig[data.status || 'pending'];
+        
+        const badge = document.getElementById('track-status-badge');
+        badge.innerText = current.label; 
+        badge.className = `px-3 py-1 rounded-full text-xs font-bold inline-block ${current.class}`;
+        
+        const iconBox = document.getElementById('track-status-icon');
+        iconBox.className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl ${current.icon}`;
+        iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
+        document.getElementById('track-status-arabic').innerText = current.ar;
+
+    } catch (error) {
+        showNotification("Erreur de connexion.", "error");
+    }
 };
 
-export const removeClosedDay = async (dateStr) => {
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-    await deleteDoc(docRef);
-};
-
-export const checkIfDayIsClosed = async (dateStr) => {
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-    const snap = await getDoc(docRef);
-    return snap.exists();
-};
+window.adjustQty = adjustQty;
+window.calculateTotal = calculateTotal;
+window.submitReservation = submitReservation;
+window.trackReservation = trackReservation;

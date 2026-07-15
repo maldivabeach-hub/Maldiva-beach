@@ -1,49 +1,27 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode, getClosedDays } from './reservationService.js';
+import { submitNewReservation, getReservationByCode, checkIfDayIsClosed } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 
+// 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
 
-// ==========================================
-// 🔴 حماية الأيام المغلقة
-// ==========================================
-let closedDates = {};
-const initClosedDays = async () => {
-    try {
-        const data = await getClosedDays();
-        closedDates = data || {};
-    } catch (error) {
-        console.warn("لم يتمكن من جلب الأيام المغلقة", error);
-    }
-};
-initClosedDays();
-
-// تفعيل المستمع على حقل التاريخ مباشرة
-const dateInput = document.getElementById('visit-date');
-if (dateInput) {
-    dateInput.addEventListener('change', (e) => {
-        const selectedDate = e.target.value;
-        if (closedDates && closedDates[selectedDate]) {
-            showNotification(closedDates[selectedDate], "error");
-            e.target.value = ''; // إفراغ التاريخ لكي لا يحجز
-        }
-    });
-}
-// ==========================================
-
+// 2. الأسعار والأسماء كما هي في نظامك
 const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
 const actPrices = { 
     'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
-    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
-    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 'qty-bateau-standard': 4000 
+    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 
+    'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
+    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 
+    'qty-bateau-standard': 4000 
 };
 const names = { 
     'qty-chaise': 'Chaise Longue', 'qty-transat': 'Transat en Bois', 'qty-baldaquin': 'Baldaquin Royal', 
     'qty-jetski-15': 'Jet-Ski (15 Min)', 'qty-jetski-30': 'Jet-Ski (30 Min)', 'qty-jetski-60': 'Jet-Ski (1 Heure)', 
     'qty-pedalo-30': 'Pédalo (30 Min)', 'qty-pedalo-60': 'Pédalo (1 Heure)', 
     'qty-kayak-30': 'Kayak (30 Min)', 'qty-kayak-60': 'Kayak (1 Heure)', 
-    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 'qty-bateau-standard': 'Bateau (+4 pers)' 
+    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 
+    'qty-bateau-standard': 'Bateau (+4 pers)' 
 };
 const allPrices = { ...equipPrices, ...actPrices };
 
@@ -52,6 +30,7 @@ let currentSpecialNotes = [];
 const setInitialDate = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateInput = document.getElementById('visit-date');
     if (dateInput) dateInput.value = tomorrow.toISOString().split('T')[0];
 };
 setInitialDate();
@@ -77,10 +56,12 @@ const calculateTotal = () => {
     if (qtyChaise === 2 && qtyTransat === 0) {
         subtotalEquip += 5000;
         currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
-    } else if (qtyTransat === 2 && qtyChaise === 0) {
+    } 
+    else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += 7000;
         currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
-    } else {
+    } 
+    else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
         subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
@@ -110,7 +91,10 @@ const calculateTotal = () => {
     if (notesContainer) {
         if (currentSpecialNotes.length > 0) {
             notesContainer.innerHTML = currentSpecialNotes.map(note => 
-                `<div class="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 p-2 rounded-lg font-bold flex items-center gap-1.5 transition-all"><i class="fa-solid fa-tags text-teal-600"></i><span>${note}</span></div>`
+                `<div class="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 p-2 rounded-lg font-bold flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-tags text-teal-600"></i>
+                    <span>${note}</span>
+                 </div>`
             ).join('');
             notesContainer.classList.remove('hidden');
         } else {
@@ -133,31 +117,47 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
-    // 🔴 حماية إضافية للزر (تأكيد)
-    if (closedDates && closedDates[visitDate]) {
-        return showNotification(closedDates[visitDate], "error");
-    }
-
     let hasItems = false;
     let chosenItems = {};
     for (let id in allPrices) {
         const el = document.getElementById(id);
         if(el) {
             const qty = parseInt(el.innerText);
-            if (qty > 0) { hasItems = true; chosenItems[names[id]] = qty; }
+            if (qty > 0) { 
+                hasItems = true; 
+                chosenItems[names[id]] = qty; 
+            }
         }
     }
     
     if (!hasItems) return showNotification("Veuillez choisir au moins un équipement ou activité.", "error");
+
+    // ==========================================
+    // التحقق من الأيام المغلقة
+    // ==========================================
+    try {
+        const isClosed = await checkIfDayIsClosed(visitDate);
+        if (isClosed) {
+            return showNotification("Ce jour est fermé. Les réservations sont indisponibles.", "error");
+        }
+    } catch (error) {
+        console.error("Error during closed day check:", error);
+    }
 
     const duration = parseInt(document.getElementById('duration').value);
     const totalStr = document.getElementById('total-price').innerText;
     const trackingCode = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
 
     const reservationData = {
-        clientName: clientName, clientPhone: clientPhone, visitDate: visitDate,
-        items: chosenItems, duration: duration, totalPrice: totalStr,
-        status: 'pending', trackingCode: trackingCode, isArchived: false,
+        clientName: clientName,
+        clientPhone: clientPhone,
+        visitDate: visitDate,
+        items: chosenItems,
+        duration: duration,
+        totalPrice: totalStr,
+        status: 'pending',
+        trackingCode: trackingCode,
+        isArchived: false,
         createdAt: new Date().toISOString()
     };
 
@@ -170,7 +170,9 @@ const submitReservation = async () => {
     if (summaryNotesContainer) {
         if (currentSpecialNotes.length > 0) {
             summaryNotesContainer.innerHTML = currentSpecialNotes.map(note =>
-                `<div class="text-[11px] text-teal-800 font-bold flex items-center gap-1.5 mt-1.5"><i class="fa-solid fa-tags text-teal-600"></i> <span>${note}</span></div>`
+                `<div class="text-[11px] text-teal-800 font-bold flex items-center gap-1.5 mt-1.5">
+                    <i class="fa-solid fa-tags text-teal-600"></i> <span>${note}</span>
+                 </div>`
             ).join('');
             summaryNotesContainer.classList.remove('hidden');
         } else {
@@ -183,14 +185,15 @@ const submitReservation = async () => {
         await submitNewReservation(reservationData);
         showSuccessModal();
         resetForm();
-    } catch (error) { showNotification("حدث خطأ في الاتصال.", "error"); }
+    } catch (error) {
+        console.error("خطأ أثناء الإرسال:", error);
+        showNotification("حدث خطأ في الاتصال، يرجى المحاولة مجدداً.", "error");
+    }
 };
 
 const resetForm = () => {
     document.getElementById('client-name').value = ''; 
     document.getElementById('client-phone').value = ''; 
-    const dInput = document.getElementById('visit-date');
-    if (dInput) dInput.value = ''; 
     for (let id in allPrices) { 
         const el = document.getElementById(id);
         if(el) el.innerText = '0'; 
@@ -235,7 +238,9 @@ const trackReservation = async () => {
         iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
         document.getElementById('track-status-arabic').innerText = current.ar;
 
-    } catch (error) { showNotification("Erreur de connexion.", "error"); }
+    } catch (error) {
+        showNotification("Erreur de connexion.", "error");
+    }
 };
 
 window.adjustQty = adjustQty;

@@ -1,11 +1,10 @@
 // /js/admin.js
 
-// تم إضافة submitNewReservation لإنشاء أيام الإغلاق
 import { getAdminReservations, updateReservationData, deleteReservation, submitNewReservation } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
 // ========================================================
-// 0. إعدادات الأسعار (مطابقة تماماً لنظام الزبون)
+// 0. إعدادات الأسعار
 // ========================================================
 const BASE_PRICES = {
     'Chaise Longue': 2000, 'Transat en Bois': 3000, 'Baldaquin Royal': 10000,
@@ -21,9 +20,6 @@ const STANDARD_ITEMS = [
     'Pédalo (30 Min)', 'Pédalo (1 Heure)', 'Kayak (30 Min)', 'Kayak (1 Heure)', 'Bouée Tractée (2 pers)', 'Bouée Tractée (3 pers)', 'Bateau (+4 pers)'
 ];
 
-// ========================================================
-// 1. المتغيرات العامة
-// ========================================================
 let adminAuthorized = false;
 let currentStatusFilter = 'all';
 let filterNautique = false;
@@ -52,7 +48,7 @@ export const logoutAdmin = () => {
 };
 
 // ========================================================
-// 3. نظام الفلترة والبحث
+// 3. الفلترة
 // ========================================================
 export const setAdminDateFilterToday = () => {
     const today = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().split('T')[0];
@@ -75,7 +71,7 @@ export const toggleNautiqueFilter = () => {
 export const setStatusFilter = (status) => { currentStatusFilter = status; renderAdminReservations(); };
 
 // ========================================================
-// 4. دالة عرض الحجوزات 
+// 4. عرض الحجوزات 
 // ========================================================
 export const renderAdminReservations = async (forceRefresh = false) => {
     if (!adminAuthorized) return;
@@ -87,10 +83,10 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     let totalRevenue = 0;
     let blockedDaysList = [];
     
-    // فلترة القائمة وعزل أيام الإغلاق المخفية
+    // فلترة وعزل أيام الإغلاق
     let matchingList = allReservationsList.filter(res => {
-        // عزل الأيام المغلقة لكي لا تظهر في جدول الحجوزات
-        if (res.trackingCode && res.trackingCode.startsWith('BLK-') && res.status === 'blocked') {
+        // عزل الأيام المغلقة
+        if (res.trackingCode && res.trackingCode.startsWith('BLK-')) {
             blockedDaysList.push(res);
             return false;
         }
@@ -111,7 +107,6 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         return true;
     });
 
-    // تحديث واجهة الأيام المغلقة في قسم الإعدادات
     renderBlockedDaysUI(blockedDaysList);
 
     matchingList.forEach(res => {
@@ -214,13 +209,12 @@ export const renderAdminReservations = async (forceRefresh = false) => {
 };
 
 // ========================================================
-// ميزة أيام الإغلاق (Blocked Days) المانعة
+// ميزة الأيام المغلقة (إدارة واجهة المستخدم)
 // ========================================================
 export const renderBlockedDaysUI = (blockedDays) => {
     const container = document.getElementById('blocked-dates-list');
     if(!container) return;
     
-    // ترتيب الأيام المغلقة
     blockedDays.sort((a,b) => new Date(a.visitDate) - new Date(b.visitDate));
     
     if(blockedDays.length === 0) {
@@ -231,10 +225,10 @@ export const renderBlockedDaysUI = (blockedDays) => {
     container.innerHTML = blockedDays.map(b => `
         <div class="flex justify-between items-center bg-red-50/80 p-3 rounded-xl border border-red-100">
             <div>
-                <span class="font-extrabold text-red-800 text-sm"><i class="fa-solid fa-lock text-red-500 mr-2"></i>${b.visitDate}</span>
-                <p class="text-[10px] text-red-600 font-semibold mt-0.5">Raison / السبب: ${b.notes}</p>
+                <span class="font-extrabold text-red-800 text-sm"><i class="fa-solid fa-lock text-red-500 mr-2"></i> ${b.visitDate}</span>
+                <p class="text-[10px] text-red-600 font-semibold mt-0.5">Raison: ${b.notes}</p>
             </div>
-            <button onclick="window.unblockDate('${b.trackingCode}')" class="text-red-600 hover:bg-red-200 bg-red-100 p-2 rounded-lg transition-colors" title="Débloquer le jour / إلغاء الحظر"><i class="fa-solid fa-unlock"></i></button>
+            <button onclick="window.unblockDate('${b.trackingCode}')" class="text-red-600 hover:bg-red-200 bg-red-100 p-2 rounded-lg transition-colors" title="Débloquer"><i class="fa-solid fa-unlock"></i></button>
         </div>
     `).join('');
 };
@@ -263,13 +257,11 @@ export const saveBlockDate = async () => {
 
     const code = 'BLK-' + dateInput;
     
-    // التحقق من عدم وجود إغلاق مسبق لنفس اليوم
     const list = await getAdminReservations();
     if (list.some(r => r.trackingCode === code)) {
         return showNotification("Cette journée est déjà bloquée.", "error");
     }
 
-    // إنشاء "حجز وهمي مانع"
     const data = {
         clientName: 'FERMETURE',
         clientPhone: '0000000000',
@@ -277,7 +269,7 @@ export const saveBlockDate = async () => {
         status: 'blocked',
         trackingCode: code,
         notes: reasonInput,
-        isArchived: true, // لكي لا تؤثر على أي إحصائيات
+        isArchived: true, 
         totalPrice: '0 DA',
         items: {},
         createdAt: new Date().toISOString()
@@ -289,6 +281,7 @@ export const saveBlockDate = async () => {
         document.getElementById('block-date-input').value = '';
         document.getElementById('block-reason-input').value = '';
         closeBlockDateModal();
+        // إجبار النظام على جلب البيانات الجديدة
         renderAdminReservations(true);
     } catch(e) {
         showNotification("Erreur lors du blocage.", "error");
@@ -300,6 +293,7 @@ export const unblockDate = async (code) => {
     try {
         await deleteReservation(code);
         showNotification("Journée débloquée !", "success");
+        // إجبار النظام على جلب البيانات الجديدة (لتحديث القائمة فوراً)
         renderAdminReservations(true);
     } catch(e) {
         showNotification("Erreur de déblocage.", "error");
@@ -310,21 +304,21 @@ export const unblockDate = async (code) => {
 // العمليات الأخرى (حذف، تعديل، طباعة، رسائل...)
 // ========================================================
 export const setReservationStatus = async (trackingCode, newStatus) => {
-    try { await updateReservationData(trackingCode, { status: newStatus }); showNotification("Statut mis à jour !", "success"); renderAdminReservations(); } 
+    try { await updateReservationData(trackingCode, { status: newStatus }); showNotification("Statut mis à jour !", "success"); renderAdminReservations(true); } 
     catch (e) { showNotification("Erreur.", "error"); }
 };
 export const setArchiveStatus = async (trackingCode, isArchived) => {
-    try { await updateReservationData(trackingCode, { isArchived: isArchived }); showNotification(isArchived ? "Archivée !" : "Restaurée !", "success"); renderAdminReservations(); } 
+    try { await updateReservationData(trackingCode, { isArchived: isArchived }); showNotification(isArchived ? "Archivée !" : "Restaurée !", "success"); renderAdminReservations(true); } 
     catch(e) { showNotification("Erreur.", "error"); }
 };
 export const prepareDelete = (trackingCode) => { pendingDeleteId = trackingCode; openConfirmModal(); };
 export const executePendingDelete = async () => {
     if (!pendingDeleteId) return;
-    try { await deleteReservation(pendingDeleteId); showNotification("Supprimée !", "success"); closeConfirmModal(); renderAdminReservations(); } 
+    try { await deleteReservation(pendingDeleteId); showNotification("Supprimée !", "success"); closeConfirmModal(); renderAdminReservations(true); } 
     catch(e) { showNotification("Erreur.", "error"); } pendingDeleteId = null;
 };
 
-// ... التعديل 
+// التعديل 
 export const openEditModal = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
@@ -414,7 +408,7 @@ export const saveEditedReservation = async () => {
     catch (error) { showNotification("Erreur.", "error"); }
 };
 
-// ... الطباعة
+// الطباعة
 export const printReservation = async (trackingCode) => {
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
@@ -434,7 +428,7 @@ export const printReservation = async (trackingCode) => {
     document.getElementById('print-created-at').innerText = creationDateFormatted;
 
     const statusEl = document.getElementById('print-status');
-    const statusMap = { 'pending': { label: 'En attente', color: 'border-yellow-500 text-yellow-600' }, 'approved': { label: 'Confirmé', color: 'border-green-500 text-green-600' }, 'declined': { label: 'Refusé', color: 'border-red-500 text-red-600' } };
+    const statusMap = { 'pending': { label: 'En attente', color: 'border-yellow-500 text-yellow-600' }, 'approved': { label: 'Confirmé', color: 'border-green-500 text-green-600' }, 'declined': { label: 'Refusé', color: 'border-red-500 text-red-600' }, 'blocked': { label: 'Bloqué', color: 'border-red-500 text-red-600' } };
     const st = statusMap[res.status || 'pending'];
     statusEl.innerText = st.label; statusEl.className = `px-3 py-1 border-2 font-bold uppercase rounded-md inline-block mt-1 ${st.color}`;
 
@@ -459,7 +453,6 @@ export const printReservation = async (trackingCode) => {
 };
 
 export const dispatchWhatsAppMessage = async (trackingCode) => {
-    // ... [نفس كود الواتساب الموجود في الكود السابق]
     const list = await getAdminReservations();
     const res = list.find(item => item.trackingCode === trackingCode);
     if (!res) return showNotification("Réservation introuvable !", "error");
@@ -499,8 +492,6 @@ window.updateEditItemQty = updateEditItemQty;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;
-
-// دوال المنع الجديدة
 window.openBlockDateModal = openBlockDateModal;
 window.closeBlockDateModal = closeBlockDateModal;
 window.saveBlockDate = saveBlockDate;

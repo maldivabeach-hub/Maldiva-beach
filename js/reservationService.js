@@ -1,11 +1,11 @@
 // /js/reservationService.js
-console.log("Reservation Service Loaded - V2"); // للتحقق من تحديث الملف
-import { db, appId } from './firebase.js'; 
+import { db, appId } from './firebase.js'; // تم التعديل هنا لتصبح نقطة واحدة
 import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const COLLECTION_PATH = `artifacts/${appId}/public/data/reservations`;
 const CLOSED_DAYS_PATH = `artifacts/${appId}/public/data/closedDays`; // مسار مجموعة الأيام المغلقة
 
+// 💡 التحسين الأهم (Optimization): نظام التخزين المؤقت (Cache)
 let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
@@ -62,44 +62,37 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// وظائف إدارة الأيام المغلقة (Closed Days)
+// دوال إدارة الأيام المغلقة (Closed Days)
 // ==========================================
 
+// التحقق مما إذا كان اليوم مغلقاً
+export const checkIfDateIsClosed = async (dateStr) => {
+    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    const snap = await getDoc(docRef);
+    return snap.exists();
+};
+
+// إغلاق أو فتح يوم محدد
+export const setDateClosedStatus = async (dateStr, isClosed) => {
+    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
+    if (isClosed) {
+        // إذا كان إغلاق، نقوم بإنشاء المستند
+        await setDoc(docRef, { closedAt: new Date().toISOString() });
+    } else {
+        // إذا كان فتح، نقوم بحذف المستند
+        await deleteDoc(docRef);
+    }
+};
+
+// جلب قائمة بكل الأيام المغلقة لعرضها في لوحة التحكم
 export const getClosedDays = async () => {
-    try {
-        const q = query(collection(db, CLOSED_DAYS_PATH));
-        const snapshot = await getDocs(q);
-        const closed = [];
-        snapshot.forEach(docSnap => {
-            closed.push(docSnap.id);
-        });
-        return closed;
-    } catch (error) {
-        console.error("Error loading closed days:", error);
-        return [];
-    }
-};
-
-export const addClosedDay = async (dateStr) => {
-    if (!dateStr) return;
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-    await setDoc(docRef, { closedAt: new Date().toISOString(), date: dateStr });
-};
-
-export const removeClosedDay = async (dateStr) => {
-    if (!dateStr) return;
-    const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-    await deleteDoc(docRef);
-};
-
-export const checkIfDayIsClosed = async (dateStr) => {
-    try {
-        if (!dateStr) return false;
-        const docRef = doc(db, CLOSED_DAYS_PATH, dateStr);
-        const snap = await getDoc(docRef);
-        return snap.exists();
-    } catch (error) {
-        console.error("Error checking closed day:", error);
-        return false; // السماح بالحجز في حال فشل الاتصال بقاعدة البيانات لمنع تعطل الموقع كلياً
-    }
+    const q = query(collection(db, CLOSED_DAYS_PATH));
+    const snapshot = await getDocs(q);
+    const results = [];
+    snapshot.forEach(doc => {
+        results.push(doc.id); // المعرف هو التاريخ
+    });
+    // ترتيب الأيام تصاعدياً
+    results.sort((a, b) => new Date(a) - new Date(b));
+    return results;
 };

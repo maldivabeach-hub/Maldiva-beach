@@ -33,16 +33,20 @@ const setInitialDate = () => {
 setInitialDate();
 
 // ========================================================
-// نظام التحقق من الأيام المغلقة في واجهة الزبون (الجديد)
+// جدار الحماية: التحقق من الأيام المغلقة
 // ========================================================
 const checkBlockedDate = async (dateStr) => {
     try {
         const codeToCheck = 'BLK-' + dateStr;
         const checkBlock = await getReservationByCode(codeToCheck);
-        if (checkBlock && checkBlock.status === 'blocked') {
+        // إذا وجد المستند الوهمي، فاليوم مغلق!
+        if (checkBlock) {
             return checkBlock.notes || "Événement privé / Maintenance / Réservation complète";
         }
-    } catch(e) { return false; }
+    } catch(e) { 
+        console.error("Erreur vérification date:", e);
+        return false; 
+    }
     return false;
 };
 
@@ -52,10 +56,12 @@ if (dateInputEl) {
     dateInputEl.addEventListener('change', async (e) => {
         const d = e.target.value;
         if (!d) return;
+        
+        // التحقق من قاعدة البيانات مباشرة
         const blockedReason = await checkBlockedDate(d);
         if (blockedReason) {
             showNotification(`Cette journée est fermée : ${blockedReason}`, "error");
-            e.target.value = ''; // إفراغ الحقل لمنعه
+            e.target.value = ''; // إفراغ الحقل لمنعه من الاستمرار
             calculateTotal();
         }
     });
@@ -144,7 +150,7 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
-    // التحقق النهائي من أن اليوم غير مغلق (أمان إضافي قبل الإرسال)
+    // جدار الحماية النهائي (حتى لو تخطى الزبون التحقق الأول)
     const blockedReason = await checkBlockedDate(visitDate);
     if (blockedReason) {
         document.getElementById('visit-date').value = '';
@@ -204,6 +210,7 @@ const submitReservation = async () => {
     }
 
     try {
+        // إرسال الحجز
         await submitNewReservation(reservationData);
         showSuccessModal();
         resetForm();

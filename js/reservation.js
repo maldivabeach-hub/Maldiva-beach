@@ -1,10 +1,36 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode } from './reservationService.js';
+import { submitNewReservation, getReservationByCode, getClosedDays } from './reservationService.js'; // استدعاء دالة الأيام المغلقة
 import { showNotification, showSuccessModal } from './ui.js';
 
 // 1. تسجيل الدخول المجهول للزبون
 initPublicAuth();
+
+// ==========================================
+// 🔴 جلب الأيام المغلقة عند تحميل الصفحة
+// ==========================================
+let closedDates = {};
+const initClosedDays = async () => {
+    try {
+        closedDates = await getClosedDays();
+        
+        // التحقق عند تغيير التاريخ من قبل الزبون
+        const dateInput = document.getElementById('visit-date');
+        if (dateInput) {
+            dateInput.addEventListener('change', (e) => {
+                const selectedDate = e.target.value;
+                if (closedDates[selectedDate]) {
+                    showNotification(closedDates[selectedDate], "error");
+                    e.target.value = ''; // تفريغ الحقل إذا كان اليوم مغلقاً
+                }
+            });
+        }
+    } catch (error) {
+        console.error("خطأ في جلب الأيام المغلقة", error);
+    }
+};
+initClosedDays();
+// ==========================================
 
 // 2. الأسعار والأسماء كما هي في نظامك
 const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
@@ -135,6 +161,11 @@ const submitReservation = async () => {
         return showNotification("Veuillez remplir tous les champs obligatoires.", "error");
     }
 
+    // 🔴 حماية إضافية: التحقق من الأيام المغلقة عند الإرسال
+    if (closedDates[visitDate]) {
+        return showNotification(closedDates[visitDate], "error");
+    }
+
     let hasItems = false;
     let chosenItems = {};
     for (let id in allPrices) {
@@ -201,6 +232,8 @@ const submitReservation = async () => {
 const resetForm = () => {
     document.getElementById('client-name').value = ''; 
     document.getElementById('client-phone').value = ''; 
+    const dateInput = document.getElementById('visit-date');
+    if (dateInput) dateInput.value = ''; // تفريغ التاريخ لتجنب الاحتفاظ بيوم مغلق
     for (let id in allPrices) { 
         const el = document.getElementById(id);
         if(el) el.innerText = '0'; 

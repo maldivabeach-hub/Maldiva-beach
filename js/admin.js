@@ -1,11 +1,9 @@
 // /js/admin.js
 
-// 🔴 إضافة initPublicAuth هنا ضرورية جداً للسماح للأدمن بالاتصال بقاعدة البيانات
 import { initPublicAuth } from './firebase.js'; 
 import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 
-// تهيئة الاتصال فور تحميل الملف
 initPublicAuth();
 
 const BASE_PRICES = {
@@ -46,7 +44,7 @@ export const verifyAdminLogin = async () => {
         
         showNotification("Bienvenue, Administrateur !", "success");
         await renderAdminReservations(true); 
-        await renderClosedDays(); // تحميل قائمة الأيام المغلقة
+        await renderClosedDays(); 
     } else { 
         error.classList.remove('hidden'); 
     }
@@ -112,9 +110,9 @@ export const renderAdminReservations = async (forceRefresh = false) => {
     let matchingList = allReservationsList.filter(res => {
         if (filterDate && res.visitDate !== filterDate) return false;
         if (searchInput) {
-            const matchCode = res.trackingCode.toLowerCase().includes(searchInput);
-            const matchName = res.clientName.toLowerCase().includes(searchInput);
-            const matchPhone = res.clientPhone.includes(searchInput);
+            const matchCode = (res.trackingCode || '').toLowerCase().includes(searchInput);
+            const matchName = (res.clientName || '').toLowerCase().includes(searchInput);
+            const matchPhone = (res.clientPhone || '').includes(searchInput);
             if (!matchCode && !matchName && !matchPhone) return false;
         }
         if (filterNautique) {
@@ -129,7 +127,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
 
     matchingList.forEach(res => {
         if (res.status === 'approved' || res.status === 'pending') {
-            totalRevenue += (parseInt(res.totalPrice.replace(/[^\d]/g, '')) || 0);
+            totalRevenue += (parseInt((res.totalPrice || '').replace(/[^\d]/g, '')) || 0);
         }
     });
     
@@ -493,11 +491,11 @@ export const adminToggleDate = async (isClosing) => {
 
     try {
         await toggleDateClosure(dateInput, isClosing);
-        showNotification(isClosing ? "Jour fermé !" : "Jour ouvert !", "success");
+        showNotification(isClosing ? "Jour fermé avec succès!" : "Jour ouvert avec succès!", "success");
         await renderClosedDays();
     } catch (e) {
-        console.error(e);
-        showNotification("Erreur de sauvegarde.", "error");
+        console.error("Erreur toggle:", e);
+        showNotification("Erreur. Consultez la console.", "error");
     }
 };
 
@@ -516,7 +514,7 @@ export const renderClosedDays = async () => {
             ).join('');
         }
     } catch(e) {
-        console.error(e);
+        console.error("Erreur render:", e);
         container.innerHTML = `<span class="text-red-500">Erreur de chargement.</span>`;
     }
 };

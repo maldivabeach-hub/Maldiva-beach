@@ -43,6 +43,12 @@ export const verifyAdminLogin = async () => {
         document.getElementById('admin-dashboard-view').classList.remove('hidden');
         
         showNotification("Bienvenue, Administrateur !", "success");
+        
+        // 🔴 التعديل هنا: تعيين تاريخ اليوم افتراضياً عند الدخول
+        const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+        const today = new Date(Date.now() - tzoffset).toISOString().split('T')[0];
+        document.getElementById('admin-filter-date').value = today;
+
         await renderAdminReservations(true); 
         await renderClosedDays(); 
     } else { 
@@ -482,9 +488,6 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     anchor.click();
 };
 
-// ========================================================
-// 6. نظام إغلاق الأيام 
-// ========================================================
 export const adminToggleDate = async (isClosing) => {
     const dateInput = document.getElementById('admin-close-date').value;
     if (!dateInput) return showNotification("Sélectionnez une date d'abord.", "error");
@@ -519,9 +522,6 @@ export const renderClosedDays = async () => {
     }
 };
 
-// ========================================================
-// ربط جميع الدوال
-// ========================================================
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;
 window.setAdminDateFilterToday = setAdminDateFilterToday;

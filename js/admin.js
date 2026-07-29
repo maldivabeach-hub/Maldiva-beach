@@ -402,6 +402,16 @@ export const calculateEditTotal = () => {
     else if (qtyTransat === 2 && qtyChaise === 0) {
         subtotalEquip += comboPricing.transatOnly2;
     }
+    else if (qtyChaise === 1 && qtyTransat === 0) {
+        // كرسي استلقاء واحد بمفرده يحتاج مظلة وطاولة خاصة به
+        let soloTotal = BASE_PRICES['Chaise Longue'] + comboPricing.parasolTable;
+        if (qtyChaiseEnfant > 0) soloTotal -= (qtyChaiseEnfant * childRebate);
+        subtotalEquip += soloTotal;
+    }
+    else if (qtyTransat === 1 && qtyChaise === 0) {
+        // ترانزا واحد بمفرده يحتاج مظلة وطاولة خاصة به
+        subtotalEquip += BASE_PRICES['Transat en Bois'] + comboPricing.parasolTable;
+    }
     else {
         subtotalEquip += (qtyChaise * BASE_PRICES['Chaise Longue']);
         if (qtyChaiseEnfant > 0) subtotalEquip -= (qtyChaiseEnfant * childRebate);

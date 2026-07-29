@@ -50,8 +50,9 @@ for (const id in allPrices) {
 
 // عروض تركيبية خاصة (Combos) — أرخص من مجموع الأسعار الفردية
 export const comboPricing = {
-    chaiseOnly2: 5000,   // 2 Chaise Longues (بدون ترانزا) — يشمل مظلة + طاولة
-    transatOnly2: 7000   // 2 Transats en Bois (بدون كرسي استلقاء) — يشمل مظلة + طاولة
+    chaiseOnly2: 5000,    // 2 Chaise Longues (بدون ترانزا) — يشمل مظلة + طاولة
+    transatOnly2: 7000,   // 2 Transats en Bois (بدون كرسي استلقاء) — يشمل مظلة + طاولة
+    parasolTable: 1000    // + مظلة وطاولة عند حجز قطعة واحدة بمفردها (كرسي واحد أو ترانزا واحد فقط)
 };
 
 // تخفيضات حسب مدة الإقامة (على معدات الشاطئ فقط)

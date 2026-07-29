@@ -2,27 +2,10 @@
 import { initPublicAuth } from './firebase.js';
 import { submitNewReservation, getReservationByCode, checkIfDateIsClosed } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
+import { allPrices, equipPrices, actPrices, comboPricing, durationDiscounts, childPricing, names } from './prices.js';
 
 // 1. تسجيل الدخول
 initPublicAuth();
-
-const equipPrices = { 'qty-chaise': 2000, 'qty-transat': 3000, 'qty-baldaquin': 10000 };
-const actPrices = { 
-    'qty-jetski-15': 6000, 'qty-jetski-30': 12000, 'qty-jetski-60': 20000, 
-    'qty-pedalo-30': 1000, 'qty-pedalo-60': 2000, 
-    'qty-kayak-30': 1000, 'qty-kayak-60': 2000, 
-    'qty-bouee-2': 3000, 'qty-bouee-3': 4000, 
-    'qty-bateau-standard': 4000 
-};
-const names = { 
-    'qty-chaise': 'Chaise Longue', 'qty-transat': 'Transat en Bois', 'qty-baldaquin': 'Baldaquin Royal', 
-    'qty-jetski-15': 'Jet-Ski (15 Min)', 'qty-jetski-30': 'Jet-Ski (30 Min)', 'qty-jetski-60': 'Jet-Ski (1 Heure)', 
-    'qty-pedalo-30': 'Pédalo (30 Min)', 'qty-pedalo-60': 'Pédalo (1 Heure)', 
-    'qty-kayak-30': 'Kayak (30 Min)', 'qty-kayak-60': 'Kayak (1 Heure)', 
-    'qty-bouee-2': 'Bouée Tractée (2 pers)', 'qty-bouee-3': 'Bouée Tractée (3 pers)', 
-    'qty-bateau-standard': 'Bateau (+4 pers)' 
-};
-const allPrices = { ...equipPrices, ...actPrices };
 
 let currentSpecialNotes = [];
 
@@ -41,6 +24,28 @@ const adjustQty = (elementId, amount) => {
     current += amount;
     if (current < 0) current = 0;
     span.innerText = current;
+
+    // إذا نقصت كمية "Chaise Longue" عن عدد الأطفال المسجلين عليها، نصحح عدد الأطفال تلقائياً
+    if (elementId === 'qty-chaise') {
+        const childSpan = document.getElementById('qty-chaise-enfant');
+        if (childSpan && parseInt(childSpan.innerText) > current) {
+            childSpan.innerText = current;
+        }
+    }
+
+    calculateTotal();
+};
+
+// عداد "عدد الأطفال" من ضمن كراسي الاستلقاء (لا يمكن أن يتجاوز qty-chaise)
+const adjustChildChaise = (amount) => {
+    const span = document.getElementById('qty-chaise-enfant');
+    const chaiseSpan = document.getElementById('qty-chaise');
+    if (!span || !chaiseSpan) return;
+    const maxAllowed = parseInt(chaiseSpan.innerText) || 0;
+    let current = parseInt(span.innerText) + amount;
+    if (current < 0) current = 0;
+    if (current > maxAllowed) current = maxAllowed;
+    span.innerText = current;
     calculateTotal();
 };
 
@@ -49,19 +54,37 @@ const calculateTotal = () => {
     currentSpecialNotes = []; 
 
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
+    const qtyChaiseEnfant = Math.min(parseInt(document.getElementById('qty-chaise-enfant')?.innerText || 0), qtyChaise);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
+    // العرض التركيبي (Combo) يبقى فعّالاً حتى لو كان أحد الكرسيين لطفل، مع خصم ثابت لكل طفل من الإجمالي
     if (qtyChaise === 2 && qtyTransat === 0) {
-        subtotalEquip += 5000;
-        currentSpecialNotes.push("2 Chaise Longues = 5000 DA (Parasol + Table inclus)");
+        let comboTotal = comboPricing.chaiseOnly2;
+        currentSpecialNotes.push(`2 Chaise Longues = ${comboPricing.chaiseOnly2.toLocaleString()} DA (Parasol + Table inclus)`);
+
+        if (qtyChaiseEnfant > 0) {
+            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
+            comboTotal -= (qtyChaiseEnfant * childRebate);
+            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${(qtyChaiseEnfant * childRebate).toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        }
+
+        subtotalEquip += comboTotal;
     } 
     else if (qtyTransat === 2 && qtyChaise === 0) {
-        subtotalEquip += 7000;
-        currentSpecialNotes.push("2 Transats en bois = 7000 DA (Parasol + Table inclus)");
+        subtotalEquip += comboPricing.transatOnly2;
+        currentSpecialNotes.push(`2 Transats en bois = ${comboPricing.transatOnly2.toLocaleString()} DA (Parasol + Table inclus)`);
     } 
     else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
+
+        if (qtyChaiseEnfant > 0) {
+            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
+            const childRebateTotal = qtyChaiseEnfant * childRebate;
+            subtotalEquip -= childRebateTotal;
+            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${childRebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        }
+
         subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
     }
 
@@ -77,8 +100,10 @@ const calculateTotal = () => {
     let totalEquip = subtotalEquip * duration;
     
     let discountApplied = false;
-    if (duration === 5) { totalEquip *= 0.90; discountApplied = true; } 
-    else if (duration === 7) { totalEquip *= 0.85; discountApplied = true; }
+    if (durationDiscounts[duration]) {
+        totalEquip *= (1 - durationDiscounts[duration]);
+        discountApplied = true;
+    }
 
     const discountBadge = document.getElementById('discount-badge');
     if (discountBadge) {
@@ -142,6 +167,8 @@ const submitReservation = async () => {
     
     if (!hasItems) return showNotification("Veuillez choisir au moins un équipement ou activité.", "error");
 
+    const qtyChaiseEnfant = Math.min(parseInt(document.getElementById('qty-chaise-enfant')?.innerText || 0), parseInt(document.getElementById('qty-chaise')?.innerText || 0));
+
     const duration = parseInt(document.getElementById('duration').value);
     const totalStr = document.getElementById('total-price').innerText;
     const trackingCode = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
@@ -156,7 +183,8 @@ const submitReservation = async () => {
         status: 'pending',
         trackingCode: trackingCode,
         isArchived: false,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        childrenChaiseCount: qtyChaiseEnfant
     };
 
     document.getElementById('booking-success-code').innerText = '#' + trackingCode;
@@ -196,6 +224,8 @@ const resetForm = () => {
         const el = document.getElementById(id);
         if(el) el.innerText = '0'; 
     } 
+    const childChaiseEl = document.getElementById('qty-chaise-enfant');
+    if (childChaiseEl) childChaiseEl.innerText = '0';
     calculateTotal();
 };
 
@@ -242,6 +272,7 @@ const trackReservation = async () => {
 };
 
 window.adjustQty = adjustQty;
+window.adjustChildChaise = adjustChildChaise;
 window.calculateTotal = calculateTotal;
 window.submitReservation = submitReservation;
 window.trackReservation = trackReservation;

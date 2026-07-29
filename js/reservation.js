@@ -75,6 +75,24 @@ const calculateTotal = () => {
         subtotalEquip += comboPricing.transatOnly2;
         currentSpecialNotes.push(`2 Transats en bois = ${comboPricing.transatOnly2.toLocaleString()} DA (Parasol + Table inclus)`);
     } 
+    else if (qtyChaise === 1 && qtyTransat === 0) {
+        // كرسي استلقاء واحد بمفرده يحتاج مظلة وطاولة خاصة به
+        let soloTotal = equipPrices['qty-chaise'] + comboPricing.parasolTable;
+
+        if (qtyChaiseEnfant > 0) {
+            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
+            soloTotal -= (qtyChaiseEnfant * childRebate);
+            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${(qtyChaiseEnfant * childRebate).toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        }
+
+        subtotalEquip += soloTotal;
+        currentSpecialNotes.push(`+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`);
+    }
+    else if (qtyTransat === 1 && qtyChaise === 0) {
+        // ترانزا واحد بمفرده يحتاج مظلة وطاولة خاصة به
+        subtotalEquip += equipPrices['qty-transat'] + comboPricing.parasolTable;
+        currentSpecialNotes.push(`+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`);
+    }
     else {
         subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
 

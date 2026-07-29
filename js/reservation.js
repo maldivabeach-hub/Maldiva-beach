@@ -247,6 +247,9 @@ const trackReservation = async () => {
         
         let itemsHTML = '';
         for (let [name, qty] of Object.entries(data.items || {})) itemsHTML += `<div>• ${qty} x ${name}</div>`;
+        if (data.childrenChaiseCount > 0) {
+            itemsHTML += `<div class="text-purple-700 font-semibold"><i class="fa-solid fa-child-reaching"></i> ${data.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</div>`;
+        }
         itemsHTML += `<div class="pt-2 border-t font-bold text-maldiva-dark">Total : ${data.totalPrice}</div>`;
         document.getElementById('track-res-items').innerHTML = itemsHTML;
 

@@ -3,20 +3,24 @@
 import { initPublicAuth } from './firebase.js'; 
 import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
+import { pricesByName, comboPricing, durationDiscounts, childPricing } from './prices.js';
 
 initPublicAuth();
 
-const BASE_PRICES = {
-    'Chaise Longue': 2000, 'Transat en Bois': 3000, 'Baldaquin Royal': 10000,
-    'Jet-Ski (15 Min)': 6000, 'Jet-Ski (30 Min)': 12000, 'Jet-Ski (1 Heure)': 20000,
-    'Pédalo (30 Min)': 1000, 'Pédalo (1 Heure)': 2000,
-    'Kayak (30 Min)': 1000, 'Kayak (1 Heure)': 2000,
-    'Bouée Tractée (2 pers)': 3000, 'Bouée Tractée (3 pers)': 4000,
-    'Bateau (+4 pers)': 4000,
-    'Chaise longue': 2000, 'Transat': 3000, 'Baldaquin': 10000,
-    'Jet-Ski': 6000, 'Pédalo': 1000, 'Kayak': 1000,
-    'Bouée tractée': 3000, 'Bateau': 4000
+// أسماء قديمة/مختصرة استُخدمت في حجوزات سابقة قبل توحيد التسمية — للتوافق مع البيانات القديمة فقط
+const LEGACY_ALIASES = {
+    'Chaise longue': pricesByName['Chaise Longue'],
+    'Transat': pricesByName['Transat en Bois'],
+    'Baldaquin': pricesByName['Baldaquin Royal'],
+    'Jet-Ski': pricesByName['Jet-Ski (15 Min)'],
+    'Pédalo': pricesByName['Pédalo (30 Min)'],
+    'Kayak': pricesByName['Kayak (30 Min)'],
+    'Bouée tractée': pricesByName['Bouée Tractée (2 pers)'],
+    'Bateau': pricesByName['Bateau (+4 pers)']
 };
+
+// 💰 نفس مصدر الأسعار المستخدم في index.html (prices.js) + الأسماء القديمة أعلاه
+const BASE_PRICES = { ...pricesByName, ...LEGACY_ALIASES };
 
 const STANDARD_ITEMS = [
     'Chaise Longue', 'Transat en Bois', 'Baldaquin Royal', 
@@ -312,6 +316,20 @@ export const openEditModal = async (trackingCode) => {
                 </div>
             </div>
         `;
+
+        if (item === 'Chaise Longue') {
+            const childQty = Math.min(res.childrenChaiseCount || 0, currentQty);
+            itemsHTML += `
+                <div class="flex justify-between items-center bg-purple-50 p-2 rounded-xl border border-purple-100 ml-4">
+                    <span class="text-[11px] font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants (-40%)</span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="window.updateEditChildChaise(-1)" class="w-5 h-5 bg-white rounded-full text-purple-700 font-bold text-[10px] flex items-center justify-center shadow-sm">-</button>
+                        <span id="edit-qty-chaise-enfant" class="text-[10px] font-bold w-4 text-center text-purple-700">${childQty}</span>
+                        <button type="button" onclick="window.updateEditChildChaise(1)" class="w-5 h-5 bg-white rounded-full text-purple-700 font-bold text-[10px] flex items-center justify-center shadow-sm">+</button>
+                    </div>
+                </div>
+            `;
+        }
     });
 
     document.getElementById('edit-items-container').innerHTML = itemsHTML;
@@ -330,8 +348,30 @@ export const updateEditItemQty = (id, change) => {
         let newQty = parseInt(el.innerText) + change;
         if (newQty < 0) newQty = 0;
         el.innerText = newQty;
+
+        // إذا نقصت "Chaise Longue" عن عدد الأطفال المسجلين عليها، نصحح عدد الأطفال تلقائياً
+        if (el.getAttribute('data-name') === 'Chaise Longue') {
+            const childSpan = document.getElementById('edit-qty-chaise-enfant');
+            if (childSpan && parseInt(childSpan.innerText) > newQty) {
+                childSpan.innerText = newQty;
+            }
+        }
+
         calculateEditTotal(); 
     }
+};
+
+// عداد "عدد الأطفال" من ضمن كراسي الاستلقاء في نافذة التعديل (لا يتجاوز عدد Chaise Longue)
+export const updateEditChildChaise = (change) => {
+    const span = document.getElementById('edit-qty-chaise-enfant');
+    const chaiseSpan = document.querySelector('.edit-item-qty[data-name="Chaise Longue"]');
+    if (!span || !chaiseSpan) return;
+    const maxAllowed = parseInt(chaiseSpan.innerText) || 0;
+    let current = parseInt(span.innerText) + change;
+    if (current < 0) current = 0;
+    if (current > maxAllowed) current = maxAllowed;
+    span.innerText = current;
+    calculateEditTotal();
 };
 
 export const calculateEditTotal = () => {
@@ -347,10 +387,21 @@ export const calculateEditTotal = () => {
         else subtotalAct += qty * (BASE_PRICES[name] || 0);
     });
 
-    if (qtyChaise === 2 && qtyTransat === 0) subtotalEquip += 5000;
-    else if (qtyTransat === 2 && qtyChaise === 0) subtotalEquip += 7000;
+    const qtyChaiseEnfant = Math.min(parseInt(document.getElementById('edit-qty-chaise-enfant')?.innerText || 0), qtyChaise);
+    // خصم ثابت لكل طفل = 40% من سعر الكرسي الواحد، يُطبّق سواء بالسعر الفردي أو ضمن عرض الكومبو (نفس منطق reservation.js)
+    const childRebate = BASE_PRICES['Chaise Longue'] * childPricing.childWithChairDiscount;
+
+    if (qtyChaise === 2 && qtyTransat === 0) {
+        let comboTotal = comboPricing.chaiseOnly2;
+        if (qtyChaiseEnfant > 0) comboTotal -= (qtyChaiseEnfant * childRebate);
+        subtotalEquip += comboTotal;
+    }
+    else if (qtyTransat === 2 && qtyChaise === 0) {
+        subtotalEquip += comboPricing.transatOnly2;
+    }
     else {
         subtotalEquip += (qtyChaise * BASE_PRICES['Chaise Longue']);
+        if (qtyChaiseEnfant > 0) subtotalEquip -= (qtyChaiseEnfant * childRebate);
         subtotalEquip += (qtyTransat * BASE_PRICES['Transat en Bois']);
     }
 
@@ -359,8 +410,7 @@ export const calculateEditTotal = () => {
     const duration = parseInt(document.getElementById('edit-duration').value) || 1;
     let totalEquip = subtotalEquip * duration;
     
-    if (duration === 5) totalEquip = totalEquip * 0.90;
-    else if (duration === 7) totalEquip = totalEquip * 0.85;
+    if (durationDiscounts[duration]) totalEquip *= (1 - durationDiscounts[duration]);
     
     const finalTotal = totalEquip + subtotalAct;
     document.getElementById('edit-total-price').innerText = Math.round(finalTotal).toLocaleString('fr-FR') + ' DA';
@@ -382,6 +432,9 @@ export const saveEditedReservation = async () => {
         if (qty > 0) newItems[el.getAttribute('data-name')] = qty;
     });
 
+    const qtyChaiseInEdit = parseInt(document.querySelector('.edit-item-qty[data-name="Chaise Longue"]')?.innerText || 0);
+    const childrenChaiseCount = Math.min(parseInt(document.getElementById('edit-qty-chaise-enfant')?.innerText || 0), qtyChaiseInEdit);
+
     const updatedData = {
         clientName: document.getElementById('edit-name').value,
         clientPhone: document.getElementById('edit-phone').value,
@@ -389,7 +442,8 @@ export const saveEditedReservation = async () => {
         duration: document.getElementById('edit-duration').value,
         notes: document.getElementById('edit-notes').value,
         totalPrice: document.getElementById('edit-total-price').innerText,
-        items: newItems
+        items: newItems,
+        childrenChaiseCount: childrenChaiseCount
     };
 
     try {
@@ -537,6 +591,7 @@ window.dispatchWhatsAppMessage = dispatchWhatsAppMessage;
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.updateEditItemQty = updateEditItemQty;
+window.updateEditChildChaise = updateEditChildChaise;
 window.calculateEditTotal = calculateEditTotal;
 window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;

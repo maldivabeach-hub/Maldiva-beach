@@ -183,6 +183,9 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         for (let [name, qty] of Object.entries(res.items || {})) {
             itemsHTML += `<span class="bg-teal-50 text-teal-800 text-[10px] px-2 py-0.5 rounded border border-teal-100 font-semibold mb-1 mr-1 inline-block">${qty} x ${name}</span> `;
         }
+        if (res.childrenChaiseCount > 0) {
+            itemsHTML += `<span class="bg-purple-50 text-purple-700 text-[10px] px-2 py-0.5 rounded border border-purple-200 font-semibold mb-1 mr-1 inline-block"><i class="fa-solid fa-child-reaching"></i> ${res.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</span> `;
+        }
         
         const statusStyles = { 
             'pending': 'bg-yellow-100 text-yellow-800', 
@@ -495,6 +498,9 @@ export const printReservation = async (trackingCode) => {
     } else {
         itemsHTML = '<tr><td colspan="2" class="p-3 text-center text-gray-500">Aucun service</td></tr>';
     }
+    if (res.childrenChaiseCount > 0) {
+        itemsHTML += `<tr class="border-b border-gray-200 bg-purple-50"><td class="p-3 border-r border-gray-200 font-semibold text-purple-700"><i class="fa-solid fa-child-reaching"></i> Dont Enfants sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</td><td class="p-3 text-center font-bold text-lg text-purple-700">${res.childrenChaiseCount}</td></tr>`;
+    }
     document.getElementById('print-items-body').innerHTML = itemsHTML;
     document.getElementById('print-total').innerText = res.totalPrice || '0 DA';
 
@@ -525,7 +531,10 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     if (cleanPhone.startsWith('0')) cleanPhone = cleanPhone.substring(1); 
     cleanPhone = '213' + cleanPhone;
 
-    const itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
+    let itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
+    if (res.childrenChaiseCount > 0) {
+        itemsStr += `\n• ${res.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)`;
+    }
     let messageText = "";
 
     if (res.status === 'approved') {

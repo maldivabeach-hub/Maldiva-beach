@@ -1,11 +1,18 @@
 // /js/admin.js
 
-import { initPublicAuth } from './firebase.js'; 
+import { db, appId, signInAdmin, signOutAdmin } from './firebase.js'; 
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
 import { pricesByName, comboPricing, durationDiscounts, childPricing } from './prices.js';
 
-initPublicAuth();
+// يتحقق من أن المستخدم المسجل دخوله عبر Firebase Auth موجود فعلاً في مجموعة admins
+// هذا فقط لتجربة الاستخدام (إظهار/إخفاء اللوحة) — التحقق الحقيقي والملزم يكون داخل Firestore Security Rules
+const checkIsAdmin = async (uid) => {
+    const adminDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', uid);
+    const snap = await getDoc(adminDocRef);
+    return snap.exists();
+};
 
 // أسماء قديمة/مختصرة استُخدمت في حجوزات سابقة قبل توحيد التسمية — للتوافق مع البيانات القديمة فقط
 const LEGACY_ALIASES = {
@@ -37,12 +44,29 @@ let filterNautique = false;
 let pendingDeleteId = null;
 
 export const verifyAdminLogin = async () => {
+    const email = document.getElementById('admin-email').value.trim();
     const pass = document.getElementById('admin-password').value;
     const error = document.getElementById('admin-login-error');
-    
-    if (pass === 'mhdrb26') {
+    error.classList.add('hidden');
+
+    if (!email || !pass) {
+        error.textContent = "Veuillez entrer votre email et mot de passe.";
+        error.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const userCredential = await signInAdmin(email, pass);
+        const isAdmin = await checkIsAdmin(userCredential.user.uid);
+
+        if (!isAdmin) {
+            await signOutAdmin();
+            error.textContent = "Ce compte n'est pas autorisé à accéder à l'administration.";
+            error.classList.remove('hidden');
+            return;
+        }
+
         adminAuthorized = true;
-        error.classList.add('hidden'); 
         document.getElementById('admin-login-view').classList.add('hidden'); 
         document.getElementById('admin-dashboard-view').classList.remove('hidden');
         
@@ -55,13 +79,17 @@ export const verifyAdminLogin = async () => {
 
         await renderAdminReservations(true); 
         await renderClosedDays(); 
-    } else { 
-        error.classList.remove('hidden'); 
+    } catch (err) {
+        console.error("Erreur connexion admin:", err);
+        error.textContent = "Email ou mot de passe incorrect.";
+        error.classList.remove('hidden');
     }
 };
 
-export const logoutAdmin = () => {
+export const logoutAdmin = async () => {
     adminAuthorized = false;
+    await signOutAdmin();
+    document.getElementById('admin-email').value = '';
     document.getElementById('admin-password').value = ''; 
     document.getElementById('admin-login-view').classList.remove('hidden'); 
     document.getElementById('admin-dashboard-view').classList.add('hidden'); 

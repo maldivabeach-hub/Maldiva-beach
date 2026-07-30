@@ -1,6 +1,6 @@
 // /js/firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // إعدادات Firebase الخاصة بك
@@ -18,13 +18,23 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const appId = 'maldiva-beach-club-prod';
 
-// دالة لتسجيل الدخول المجهول للزبائن
+// دالة لتسجيل الدخول المجهول للزبائن (index.html فقط — لا تُستخدم للأدمن)
 export const initPublicAuth = async () => {
     try {
         await signInAnonymously(auth);
     } catch (error) {
         console.error("Auth failed", error);
     }
+};
+
+// 🔐 تسجيل دخول حقيقي للأدمن (إيميل + كلمة سر عبر Firebase Authentication)
+// يجب إنشاء هذا الحساب مسبقاً من Firebase Console → Authentication → Users
+export const signInAdmin = (email, password) => {
+    return signInWithEmailAndPassword(auth, email, password);
+};
+
+export const signOutAdmin = () => {
+    return signOut(auth);
 };
 
 // مراقبة حالة المستخدم

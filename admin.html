@@ -157,9 +157,10 @@
                 <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur</h3>
                 <p class="text-xs text-gray-500 mt-1">Accès réservé au gérant du club</p>
             </div>
-            <div>
-                <input type="password" id="admin-password" placeholder="Mot de passe" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
-                <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Mot de passe incorrect!</span>
+            <div class="space-y-3">
+                <input type="email" id="admin-email" placeholder="Email" autocomplete="username" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                <input type="password" id="admin-password" placeholder="Mot de passe" autocomplete="current-password" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Email ou mot de passe incorrect.</span>
             </div>
             <button onclick="window.verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors">
                 Se Connecter

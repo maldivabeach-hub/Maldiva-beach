@@ -48,11 +48,11 @@ for (const id in allPrices) {
     pricesByName[names[id]] = allPrices[id];
 }
 
-// عروض تركيبية خاصة (Combos) — أرخص من مجموع الأسعار الفردية
+// زيادة ثابتة لمظلة + طاولة — تُطبّق تلقائياً (انظر calculateEquipmentPricing) عندما يكون مجموع
+// (Chaise Longue + Transat en Bois) = 1 أو 2، بأي تركيبة. هذا يُغطي أيضاً القيم القديمة
+// 5000 DA (2 كراسي) و7000 DA (2 ترانزا) لأنها فعلياً = السعر الفردي × 2 + 1000
 export const comboPricing = {
-    chaiseOnly2: 5000,    // 2 Chaise Longues (بدون ترانزا) — يشمل مظلة + طاولة
-    transatOnly2: 7000,   // 2 Transats en Bois (بدون كرسي استلقاء) — يشمل مظلة + طاولة
-    parasolTable: 1000    // + مظلة وطاولة عند حجز قطعة واحدة بمفردها (كرسي واحد أو ترانزا واحد فقط)
+    parasolTable: 1000
 };
 
 // تخفيضات حسب مدة الإقامة (على معدات الشاطئ فقط)
@@ -68,3 +68,69 @@ export const childPricing = {
     childNoChairFree: true,       // أطفال بدون كرسي استلقاء: دخول مجاني
     childWithChairDiscount: 0.40  // أطفال على كرسي استلقاء: خصم ثابت = 40% من سعر الكرسي الواحد، يُطبّق حتى ضمن عرض 2 كراسي
 };
+
+// ==========================================================
+// 🧮 دالة الحساب المشتركة — المصدر الوحيد لمنطق تسعير
+// Chaise Longue / Transat en Bois / Baldaquin (كومبو، قطعة واحدة، أطفال)
+// يستخدمها reservation.js (index.html) و admin.js (تعديل حجز) معاً
+// أي تصحيح مستقبلي في هذا المنطق يكفي أن يصير هنا فقط
+// ==========================================================
+export function calculateEquipmentPricing({ qtyChaise = 0, qtyTransat = 0, qtyBaldaquin = 0, qtyChaiseEnfant = 0 }) {
+    qtyChaiseEnfant = Math.min(qtyChaiseEnfant || 0, qtyChaise || 0);
+    const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
+    let subtotal = 0;
+    const notes = [];
+
+    const totalLoungers = qtyChaise + qtyTransat;
+
+    // مجموع كرسي + ترانزا = 1 أو 2 (بأي تركيبة: كرسي فقط، ترانزا فقط، أو كرسي+ترانزا معاً)
+    // يحتاج مظلة وطاولة واحدة، بزيادة ثابتة 1000 DA — نفس الصيغة تُغطي كل هذه الحالات دفعة واحدة
+    if (totalLoungers >= 1 && totalLoungers <= 2) {
+        subtotal += (qtyChaise * equipPrices['qty-chaise']) + (qtyTransat * equipPrices['qty-transat']);
+
+        if (qtyChaiseEnfant > 0) {
+            const rebateTotal = qtyChaiseEnfant * childRebate;
+            subtotal -= rebateTotal;
+            notes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${rebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        }
+
+        subtotal += comboPricing.parasolTable;
+        notes.push(`+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`);
+    }
+    else {
+        subtotal += (qtyChaise * equipPrices['qty-chaise']);
+        if (qtyChaiseEnfant > 0) {
+            const rebateTotal = qtyChaiseEnfant * childRebate;
+            subtotal -= rebateTotal;
+            notes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${rebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        }
+        subtotal += (qtyTransat * equipPrices['qty-transat']);
+    }
+
+    subtotal += (qtyBaldaquin * equipPrices['qty-baldaquin']);
+
+    return { subtotal, notes };
+}
+
+// يطبّق تخفيض المدة (5 أيام / أسبوع) على مجموع المعدات
+export function applyDurationDiscount(subtotal, duration) {
+    let total = subtotal * (duration || 1);
+    let discountApplied = false;
+    if (durationDiscounts[duration]) {
+        total *= (1 - durationDiscounts[duration]);
+        discountApplied = true;
+    }
+    return { total, discountApplied };
+}
+
+// يتحقق إذا كان حجز مُسجَّل مسبقاً (قراءة قيم Chaise Longue / Transat en Bois من items) يستحق ملاحظة "زيادة مظلة وطاولة"
+// يُستخدم في العرض فقط (لوحة الأدمن، ورقة الطباعة، صفحة التتبع، رسالة واتساب) — الحساب نفسه يصير في calculateEquipmentPricing
+export function getParasolTableNote(items) {
+    const qtyChaise = (items && items['Chaise Longue']) || 0;
+    const qtyTransat = (items && items['Transat en Bois']) || 0;
+    const total = qtyChaise + qtyTransat;
+    if (total >= 1 && total <= 2) {
+        return `+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`;
+    }
+    return null;
+}

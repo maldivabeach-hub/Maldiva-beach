@@ -1,8 +1,8 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode, checkIfDateIsClosed } from './reservationService.js';
+import { submitNewReservation, getReservationByCode, checkIfDateIsClosed, isTrackingCodeTaken } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
-import { allPrices, equipPrices, actPrices, comboPricing, durationDiscounts, childPricing, names } from './prices.js';
+import { allPrices, actPrices, childPricing, names, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
 // 1. تسجيل الدخول
 initPublicAuth();
@@ -50,63 +50,16 @@ const adjustChildChaise = (amount) => {
 };
 
 const calculateTotal = () => {
-    let subtotalEquip = 0, subtotalAct = 0;
-    currentSpecialNotes = []; 
+    let subtotalAct = 0;
 
     const qtyChaise = parseInt(document.getElementById('qty-chaise')?.innerText || 0);
     const qtyChaiseEnfant = Math.min(parseInt(document.getElementById('qty-chaise-enfant')?.innerText || 0), qtyChaise);
     const qtyTransat = parseInt(document.getElementById('qty-transat')?.innerText || 0);
     const qtyBaldaquin = parseInt(document.getElementById('qty-baldaquin')?.innerText || 0);
 
-    // العرض التركيبي (Combo) يبقى فعّالاً حتى لو كان أحد الكرسيين لطفل، مع خصم ثابت لكل طفل من الإجمالي
-    if (qtyChaise === 2 && qtyTransat === 0) {
-        let comboTotal = comboPricing.chaiseOnly2;
-        currentSpecialNotes.push(`2 Chaise Longues = ${comboPricing.chaiseOnly2.toLocaleString()} DA (Parasol + Table inclus)`);
-
-        if (qtyChaiseEnfant > 0) {
-            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
-            comboTotal -= (qtyChaiseEnfant * childRebate);
-            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${(qtyChaiseEnfant * childRebate).toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
-        }
-
-        subtotalEquip += comboTotal;
-    } 
-    else if (qtyTransat === 2 && qtyChaise === 0) {
-        subtotalEquip += comboPricing.transatOnly2;
-        currentSpecialNotes.push(`2 Transats en bois = ${comboPricing.transatOnly2.toLocaleString()} DA (Parasol + Table inclus)`);
-    } 
-    else if (qtyChaise === 1 && qtyTransat === 0) {
-        // كرسي استلقاء واحد بمفرده يحتاج مظلة وطاولة خاصة به
-        let soloTotal = equipPrices['qty-chaise'] + comboPricing.parasolTable;
-
-        if (qtyChaiseEnfant > 0) {
-            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
-            soloTotal -= (qtyChaiseEnfant * childRebate);
-            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${(qtyChaiseEnfant * childRebate).toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
-        }
-
-        subtotalEquip += soloTotal;
-        currentSpecialNotes.push(`+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`);
-    }
-    else if (qtyTransat === 1 && qtyChaise === 0) {
-        // ترانزا واحد بمفرده يحتاج مظلة وطاولة خاصة به
-        subtotalEquip += equipPrices['qty-transat'] + comboPricing.parasolTable;
-        currentSpecialNotes.push(`+ ${comboPricing.parasolTable.toLocaleString()} DA pour Parasol + Table`);
-    }
-    else {
-        subtotalEquip += (qtyChaise * equipPrices['qty-chaise']);
-
-        if (qtyChaiseEnfant > 0) {
-            const childRebate = equipPrices['qty-chaise'] * childPricing.childWithChairDiscount;
-            const childRebateTotal = qtyChaiseEnfant * childRebate;
-            subtotalEquip -= childRebateTotal;
-            currentSpecialNotes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${childRebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
-        }
-
-        subtotalEquip += (qtyTransat * equipPrices['qty-transat']);
-    }
-
-    subtotalEquip += (qtyBaldaquin * equipPrices['qty-baldaquin']);
+    // 🧮 منطق حساب Chaise/Transat/Baldaquin (كومبو، قطعة واحدة، أطفال) موحّد في prices.js — يستخدمه admin.js أيضاً
+    const { subtotal: subtotalEquip, notes } = calculateEquipmentPricing({ qtyChaise, qtyTransat, qtyBaldaquin, qtyChaiseEnfant });
+    currentSpecialNotes = notes;
 
     for (let id in actPrices) {
         const el = document.getElementById(id);
@@ -115,13 +68,7 @@ const calculateTotal = () => {
     
     const durationSelect = document.getElementById('duration');
     const duration = durationSelect ? parseInt(durationSelect.value) : 1;
-    let totalEquip = subtotalEquip * duration;
-    
-    let discountApplied = false;
-    if (durationDiscounts[duration]) {
-        totalEquip *= (1 - durationDiscounts[duration]);
-        discountApplied = true;
-    }
+    const { total: totalEquip, discountApplied } = applyDurationDiscount(subtotalEquip, duration);
 
     const discountBadge = document.getElementById('discount-badge');
     if (discountBadge) {
@@ -148,6 +95,21 @@ const calculateTotal = () => {
     let finalTotal = totalEquip + subtotalAct;
     document.getElementById('total-price').innerText = finalTotal.toLocaleString() + ' DA';
     return finalTotal;
+};
+
+// 🆕 يولّد كود تتبع غير مستخدم — يتحقق من Firestore قبل اعتماده لتفادي مسح حجز موجود بالخطأ
+const generateUniqueTrackingCode = async () => {
+    let code, taken = true, attempts = 0;
+    while (taken && attempts < 20) {
+        code = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
+        taken = await isTrackingCodeTaken(code);
+        attempts++;
+    }
+    if (taken) {
+        // احتياطي شبه مستحيل الحدوث: لو تصادفت كل المحاولات، نضمن التفرّد عبر الوقت
+        code = 'MLD-' + Date.now().toString().slice(-6);
+    }
+    return code;
 };
 
 const submitReservation = async () => {
@@ -189,7 +151,7 @@ const submitReservation = async () => {
 
     const duration = parseInt(document.getElementById('duration').value);
     const totalStr = document.getElementById('total-price').innerText;
-    const trackingCode = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
+    const trackingCode = await generateUniqueTrackingCode();
 
     const reservationData = {
         clientName: clientName,
@@ -247,15 +209,24 @@ const resetForm = () => {
     calculateTotal();
 };
 
+// يقارن آخر 9 أرقام فقط لتفادي مشاكل تنسيق الهاتف (مع/بدون رمز الدولة أو الصفر الأول)
+const normalizePhone = (phone) => (phone || '').replace(/\D/g, '').slice(-9);
+
 const trackReservation = async () => {
     let code = document.getElementById('track-code-input').value.trim().toUpperCase();
+    const phoneInput = document.getElementById('track-phone-input').value.trim();
     if (!code) return showNotification("Entrez votre code", "error");
+    if (!phoneInput) return showNotification("Entrez votre numéro de téléphone", "error");
     if (code.startsWith('#')) code = code.substring(1);
     if (!code.startsWith('MLD-')) code = 'MLD-' + code; 
 
     try {
         const data = await getReservationByCode(code);
         if (!data) return showNotification("Aucun حجز trouvé avec ce رمز !", "error");
+
+        if (normalizePhone(phoneInput) !== normalizePhone(data.clientPhone)) {
+            return showNotification("Le numéro de téléphone ne correspond pas à ce code.", "error");
+        }
 
         document.getElementById('track-result-box').classList.remove('hidden');
         document.getElementById('track-res-code').innerText = '#' + code;
@@ -267,6 +238,10 @@ const trackReservation = async () => {
         for (let [name, qty] of Object.entries(data.items || {})) itemsHTML += `<div>• ${qty} x ${name}</div>`;
         if (data.childrenChaiseCount > 0) {
             itemsHTML += `<div class="text-purple-700 font-semibold"><i class="fa-solid fa-child-reaching"></i> ${data.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</div>`;
+        }
+        const parasolNote = getParasolTableNote(data.items);
+        if (parasolNote) {
+            itemsHTML += `<div class="text-orange-700 font-semibold"><i class="fa-solid fa-umbrella-beach"></i> ${parasolNote}</div>`;
         }
         itemsHTML += `<div class="pt-2 border-t font-bold text-maldiva-dark">Total : ${data.totalPrice}</div>`;
         document.getElementById('track-res-items').innerHTML = itemsHTML;

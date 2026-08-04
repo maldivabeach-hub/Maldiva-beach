@@ -4,7 +4,7 @@ import { db, appId, signInAdmin, signOutAdmin } from './firebase.js';
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
-import { pricesByName, comboPricing, durationDiscounts, childPricing } from './prices.js';
+import { pricesByName, childPricing, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
 // يتحقق من أن المستخدم المسجل دخوله عبر Firebase Auth موجود فعلاً في مجموعة admins
 // هذا فقط لتجربة الاستخدام (إظهار/إخفاء اللوحة) — التحقق الحقيقي والملزم يكون داخل Firestore Security Rules
@@ -214,6 +214,10 @@ export const renderAdminReservations = async (forceRefresh = false) => {
         if (res.childrenChaiseCount > 0) {
             itemsHTML += `<span class="bg-purple-50 text-purple-700 text-[10px] px-2 py-0.5 rounded border border-purple-200 font-semibold mb-1 mr-1 inline-block"><i class="fa-solid fa-child-reaching"></i> ${res.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</span> `;
         }
+        const parasolNote1 = getParasolTableNote(res.items);
+        if (parasolNote1) {
+            itemsHTML += `<span class="bg-orange-50 text-orange-700 text-[10px] px-2 py-0.5 rounded border border-orange-200 font-semibold mb-1 mr-1 inline-block"><i class="fa-solid fa-umbrella-beach"></i> ${parasolNote1}</span> `;
+        }
         
         const statusStyles = { 
             'pending': 'bg-yellow-100 text-yellow-800', 
@@ -406,7 +410,7 @@ export const updateEditChildChaise = (change) => {
 };
 
 export const calculateEditTotal = () => {
-    let subtotalEquip = 0, subtotalAct = 0, qtyChaise = 0, qtyTransat = 0, qtyBaldaquin = 0;
+    let subtotalAct = 0, qtyChaise = 0, qtyTransat = 0, qtyBaldaquin = 0;
 
     document.querySelectorAll('.edit-item-qty').forEach(el => {
         const qty = parseInt(el.innerText) || 0;
@@ -419,39 +423,12 @@ export const calculateEditTotal = () => {
     });
 
     const qtyChaiseEnfant = Math.min(parseInt(document.getElementById('edit-qty-chaise-enfant')?.innerText || 0), qtyChaise);
-    // خصم ثابت لكل طفل = 40% من سعر الكرسي الواحد، يُطبّق سواء بالسعر الفردي أو ضمن عرض الكومبو (نفس منطق reservation.js)
-    const childRebate = BASE_PRICES['Chaise Longue'] * childPricing.childWithChairDiscount;
 
-    if (qtyChaise === 2 && qtyTransat === 0) {
-        let comboTotal = comboPricing.chaiseOnly2;
-        if (qtyChaiseEnfant > 0) comboTotal -= (qtyChaiseEnfant * childRebate);
-        subtotalEquip += comboTotal;
-    }
-    else if (qtyTransat === 2 && qtyChaise === 0) {
-        subtotalEquip += comboPricing.transatOnly2;
-    }
-    else if (qtyChaise === 1 && qtyTransat === 0) {
-        // كرسي استلقاء واحد بمفرده يحتاج مظلة وطاولة خاصة به
-        let soloTotal = BASE_PRICES['Chaise Longue'] + comboPricing.parasolTable;
-        if (qtyChaiseEnfant > 0) soloTotal -= (qtyChaiseEnfant * childRebate);
-        subtotalEquip += soloTotal;
-    }
-    else if (qtyTransat === 1 && qtyChaise === 0) {
-        // ترانزا واحد بمفرده يحتاج مظلة وطاولة خاصة به
-        subtotalEquip += BASE_PRICES['Transat en Bois'] + comboPricing.parasolTable;
-    }
-    else {
-        subtotalEquip += (qtyChaise * BASE_PRICES['Chaise Longue']);
-        if (qtyChaiseEnfant > 0) subtotalEquip -= (qtyChaiseEnfant * childRebate);
-        subtotalEquip += (qtyTransat * BASE_PRICES['Transat en Bois']);
-    }
-
-    subtotalEquip += (qtyBaldaquin * BASE_PRICES['Baldaquin Royal']);
+    // 🧮 نفس دالة الحساب المستخدمة في reservation.js (prices.js) — مصدر واحد لمنطق Chaise/Transat/Baldaquin
+    const { subtotal: subtotalEquip } = calculateEquipmentPricing({ qtyChaise, qtyTransat, qtyBaldaquin, qtyChaiseEnfant });
 
     const duration = parseInt(document.getElementById('edit-duration').value) || 1;
-    let totalEquip = subtotalEquip * duration;
-    
-    if (durationDiscounts[duration]) totalEquip *= (1 - durationDiscounts[duration]);
+    const { total: totalEquip } = applyDurationDiscount(subtotalEquip, duration);
     
     const finalTotal = totalEquip + subtotalAct;
     document.getElementById('edit-total-price').innerText = Math.round(finalTotal).toLocaleString('fr-FR') + ' DA';
@@ -539,6 +516,10 @@ export const printReservation = async (trackingCode) => {
     if (res.childrenChaiseCount > 0) {
         itemsHTML += `<tr class="border-b border-gray-200 bg-purple-50"><td class="p-3 border-r border-gray-200 font-semibold text-purple-700"><i class="fa-solid fa-child-reaching"></i> Dont Enfants sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)</td><td class="p-3 text-center font-bold text-lg text-purple-700">${res.childrenChaiseCount}</td></tr>`;
     }
+    const parasolNote2 = getParasolTableNote(res.items);
+    if (parasolNote2) {
+        itemsHTML += `<tr class="border-b border-gray-200 bg-orange-50"><td class="p-3 border-r border-gray-200 font-semibold text-orange-700" colspan="2"><i class="fa-solid fa-umbrella-beach"></i> ${parasolNote2}</td></tr>`;
+    }
     document.getElementById('print-items-body').innerHTML = itemsHTML;
     document.getElementById('print-total').innerText = res.totalPrice || '0 DA';
 
@@ -572,6 +553,10 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     let itemsStr = Object.entries(res.items || {}).map(([name, qty]) => `• ${qty} x ${name}`).join('\n');
     if (res.childrenChaiseCount > 0) {
         itemsStr += `\n• ${res.childrenChaiseCount} enfant(s) sur Chaise Longue (-${childPricing.childWithChairDiscount * 100}%)`;
+    }
+    const parasolNote3 = getParasolTableNote(res.items);
+    if (parasolNote3) {
+        itemsStr += `\n• ${parasolNote3}`;
     }
     let messageText = "";
 

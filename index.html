@@ -331,9 +331,12 @@
                     <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Suivi de Réservation • تتبع الحجز</h3>
                     <p class="text-xs text-gray-500 mt-1">Saisissez votre code pour vérifier si votre حجز a été validé</p>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2 pt-2">
-                    <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none uppercase">
-                    <button onclick="window.trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
+                <div class="space-y-2 pt-2">
+                    <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none uppercase">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="tel" id="track-phone-input" placeholder="Numéro de téléphone / رقم الهاتف" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none">
+                        <button onclick="window.trackReservation()" class="bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
+                    </div>
                 </div>
             </div>
 

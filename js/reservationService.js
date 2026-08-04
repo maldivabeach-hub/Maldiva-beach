@@ -20,6 +20,13 @@ let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
 
+// 🆕 يتحقق إذا كان كود التتبع مستعملاً مسبقاً (لتفادي تصادم/مسح حجز موجود)
+export const isTrackingCodeTaken = async (code) => {
+    const docRef = getReservationDoc(code);
+    const snap = await getDoc(docRef);
+    return snap.exists();
+};
+
 export const submitNewReservation = async (reservationData) => {
     const docRef = getReservationDoc(reservationData.trackingCode);
     await setDoc(docRef, reservationData);

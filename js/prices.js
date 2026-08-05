@@ -64,6 +64,7 @@ export const durationDiscounts = {
 // تعرفة الأطفال والرضّع
 // ✅ مُفعّلة تلقائيًا في calculateTotal() (index.html) و calculateEditTotal() (admin.html)
 export const childPricing = {
+    maxAgeYears: 13,               // يُعتبر "طفلاً" كل من عمره أقل من هذا الرقم
     babyFree: true,               // الرضّع: دخول مجاني
     childNoChairFree: true,       // أطفال بدون كرسي استلقاء: دخول مجاني
     childWithChairDiscount: 0.40  // أطفال على كرسي استلقاء: خصم ثابت = 40% من سعر الكرسي الواحد، يُطبّق حتى ضمن عرض 2 كراسي
@@ -81,6 +82,13 @@ export function calculateEquipmentPricing({ qtyChaise = 0, qtyTransat = 0, qtyBa
     let subtotal = 0;
     const notes = [];
 
+    // يُضيف ملاحظة خصم الأطفال (مع تذكير بسن الأهلية) ويرجّع القيمة المخصومة
+    const applyChildRebate = (count) => {
+        const rebateTotal = count * childRebate;
+        notes.push(`${count} enfant(s) de moins de ${childPricing.maxAgeYears} ans sur Chaise Longue : -${rebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+        return rebateTotal;
+    };
+
     const totalLoungers = qtyChaise + qtyTransat;
 
     // مجموع كرسي + ترانزا = 1 أو 2 (بأي تركيبة: كرسي فقط، ترانزا فقط، أو كرسي+ترانزا معاً)
@@ -89,9 +97,7 @@ export function calculateEquipmentPricing({ qtyChaise = 0, qtyTransat = 0, qtyBa
         subtotal += (qtyChaise * equipPrices['qty-chaise']) + (qtyTransat * equipPrices['qty-transat']);
 
         if (qtyChaiseEnfant > 0) {
-            const rebateTotal = qtyChaiseEnfant * childRebate;
-            subtotal -= rebateTotal;
-            notes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${rebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+            subtotal -= applyChildRebate(qtyChaiseEnfant);
         }
 
         subtotal += comboPricing.parasolTable;
@@ -100,9 +106,7 @@ export function calculateEquipmentPricing({ qtyChaise = 0, qtyTransat = 0, qtyBa
     else {
         subtotal += (qtyChaise * equipPrices['qty-chaise']);
         if (qtyChaiseEnfant > 0) {
-            const rebateTotal = qtyChaiseEnfant * childRebate;
-            subtotal -= rebateTotal;
-            notes.push(`${qtyChaiseEnfant} enfant(s) sur Chaise Longue : -${rebateTotal.toLocaleString()} DA (-${childPricing.childWithChairDiscount * 100}% par enfant)`);
+            subtotal -= applyChildRebate(qtyChaiseEnfant);
         }
         subtotal += (qtyTransat * equipPrices['qty-transat']);
     }

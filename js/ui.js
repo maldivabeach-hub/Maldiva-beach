@@ -71,7 +71,13 @@ export const closeEditModal = () => closeModal('edit-modal');
 export const switchTab = (tabId) => {
     const tabs = ['booking-form', 'tracking-section'];
     const inactive = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
-    const active = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal";
+
+    // 🎨 لون مختلف لكل قسم حتى يعرف الزبون بوضوح وين هو: حجز = تركواز، تتبع = برتقالي
+    // (نفس اللونين الأساسيين للهوية البصرية للموقع، تمامًا كما يظهران معًا في تدرّج الهيدر)
+    const activeStyles = {
+        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal",
+        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange border-b-2 border-maldiva-orange transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange"
+    };
     
     tabs.forEach(id => {
         const el = document.getElementById(`tab-${id}`);
@@ -84,7 +90,7 @@ export const switchTab = (tabId) => {
     const activeBtn = document.getElementById(`btn-tab-${tabId.split('-')[0]}`);
     
     if (activeEl) activeEl.classList.remove('hidden');
-    if (activeBtn) activeBtn.className = active;
+    if (activeBtn) activeBtn.className = activeStyles[tabId] || activeStyles['booking-form'];
 };
 
 export const switchAdminSubTab = (subTabId) => {

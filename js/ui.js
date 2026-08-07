@@ -70,10 +70,13 @@ export const closeEditModal = () => closeModal('edit-modal');
 // --------------------------------------------------------
 export const switchTab = (tabId) => {
     const tabs = ['booking-form', 'tracking-section'];
-    const inactive = "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-gray-400 border-b-2 border-transparent transition-all flex flex-col items-center gap-1";
-
     // 🎨 لون مختلف لكل قسم حتى يعرف الزبون بوضوح وين هو: حجز = تركواز، تتبع = برتقالي
     // (نفس اللونين الأساسيين للهوية البصرية للموقع، تمامًا كما يظهران معًا في تدرّج الهيدر)
+    // اللون يبان حتى قبل الضغط (بشكل خافت)، ويصير كامل التشبّع + خط تحته عند التفعيل
+    const inactiveStyles = {
+        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal/40 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal/70",
+        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange/40 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange/70"
+    };
     const activeStyles = {
         'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal",
         'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange border-b-2 border-maldiva-orange transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange"
@@ -83,7 +86,7 @@ export const switchTab = (tabId) => {
         const el = document.getElementById(`tab-${id}`);
         const btn = document.getElementById(`btn-tab-${id.split('-')[0]}`);
         if (el) el.classList.add('hidden');
-        if (btn) btn.className = inactive;
+        if (btn) btn.className = inactiveStyles[id] || inactiveStyles['booking-form'];
     });
 
     const activeEl = document.getElementById(`tab-${tabId}`);

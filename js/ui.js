@@ -72,14 +72,14 @@ export const switchTab = (tabId) => {
     const tabs = ['booking-form', 'tracking-section'];
     // 🎨 لون مختلف لكل قسم حتى يعرف الزبون بوضوح وين هو: حجز = تركواز، تتبع = برتقالي
     // (نفس اللونين الأساسيين للهوية البصرية للموقع، تمامًا كما يظهران معًا في تدرّج الهيدر)
-    // اللون يبان حتى قبل الضغط (بشكل خافت)، ويصير كامل التشبّع + خط تحته عند التفعيل
+    // اللون (نص + خلفية) يبان حتى قبل الضغط (بشكل خافت)، ويصير أوضح + خط تحته عند التفعيل
     const inactiveStyles = {
-        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal/40 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal/70",
-        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange/40 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange/70"
+        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal/40 bg-maldiva-teal/5 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal/70 hover:bg-maldiva-teal/10",
+        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange/40 bg-maldiva-orange/5 border-b-2 border-transparent transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange/70 hover:bg-maldiva-orange/10"
     };
     const activeStyles = {
-        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal",
-        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange border-b-2 border-maldiva-orange transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange"
+        'booking-form': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-teal bg-maldiva-teal/10 border-b-2 border-maldiva-teal transition-all flex flex-col items-center gap-1 hover:text-maldiva-teal",
+        'tracking-section': "flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider text-maldiva-orange bg-maldiva-orange/10 border-b-2 border-maldiva-orange transition-all flex flex-col items-center gap-1 hover:text-maldiva-orange"
     };
     
     tabs.forEach(id => {

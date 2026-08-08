@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maldiva Beach Club - Réservation</title>
+    <meta name="theme-color" content="#0b4c53">
+    <meta name="description" content="Maldiva Beach Club — plage privée à Tipaza. Réservez transats, baldaquins et activités nautiques en quelques secondes.">
+    <title>Maldiva Beach Club — Plage privée à Tipaza</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- ربط ملف التصميم -->
     <link rel="stylesheet" href="./css/style.css">
 
@@ -17,7 +22,13 @@
                 extend: {
                     colors: {
                         maldiva: {
-                            dark: '#0b4c53', teal: '#24a19c', orange: '#ff7e67', sand: '#fbf7f0', accent: '#f4eee1'
+                            ink: '#052e33',      // الأغمق — للنصوص الأساسية
+                            dark: '#0b4c53',     // لون الهوية الأساسي
+                            teal: '#24a19c',
+                            orange: '#ff7e67',   // لون الحركة (CTA)
+                            sand: '#fbf7f0',
+                            accent: '#f4eee1',
+                            line: '#e8ded0'      // خط رفيع دافئ بدل الرمادي البارد
                         }
                     },
                     fontFamily: {
@@ -29,256 +40,300 @@
         }
     </script>
 
-    <style>
-        /* ===== مكوّنات نموذج الحجز =====
-           أزرار العدّاد موحّدة الحجم (هدف لمس مريح على الهاتف)،
-           والصف يُبرَز تلقائياً عندما تكون الكمية أكبر من صفر (عبر .is-selected من reservation.js) */
-        .qty-btn {
-            width: 2rem; height: 2rem; flex-shrink: 0;
-            border-radius: .5rem; background: #fff; border: 1px solid #e5e7eb;
-            color: #0b4c53; font-weight: 700; font-size: .9rem; line-height: 1;
-            display: flex; align-items: center; justify-content: center;
-            transition: border-color .15s, color .15s, transform .1s;
-        }
-        .qty-btn.qty-btn-sm { width: 1.75rem; height: 1.75rem; font-size: .8rem; }
-        .qty-btn:hover { border-color: #24a19c; color: #24a19c; }
-        .qty-btn:active { transform: scale(.92); }
-        .qty-btn:focus-visible { outline: 2px solid #24a19c; outline-offset: 1px; }
-
-        [data-qty-row] { transition: background-color .2s, border-color .2s, box-shadow .2s; }
-        [data-qty-row].is-selected { background: #fff; box-shadow: 0 1px 3px rgba(11, 76, 83, .09); }
-        [data-qty-row][data-accent="teal"].is-selected { border-color: rgba(36, 161, 156, .45); }
-        [data-qty-row][data-accent="orange"].is-selected { border-color: rgba(255, 126, 103, .5); }
-        [data-qty-row][data-accent="purple"].is-selected { background: #faf5ff; border-color: rgba(147, 51, 234, .35); }
-
-        .qty-value { color: #cbd5e1; transition: color .2s; font-variant-numeric: tabular-nums; }
-        .qty-value.is-selected { color: #0b4c53; }
-        [data-qty-row][data-accent="purple"] .qty-value.is-selected { color: #7e22ce; }
-
-        .field-label { display: block; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
-        .field-input { width: 100%; background: #fbf7f0; border: 1px solid #e5e7eb; border-radius: .75rem; padding: .625rem 1rem; font-size: .8125rem; transition: border-color .15s, box-shadow .15s; }
-        .field-input:focus { outline: none; border-color: #24a19c; box-shadow: 0 0 0 3px rgba(36, 161, 156, .15); }
-
-        @media (prefers-reduced-motion: reduce) {
-            .qty-btn, [data-qty-row], .qty-value, .field-input { transition: none; }
-            .qty-btn:active { transform: none; }
-        }
-    </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-8">
+<body class="text-maldiva-ink antialiased min-h-screen flex flex-col pb-24 lg:pb-0">
 
     <!-- الإشعارات -->
-    <div id="custom-toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
+    <div id="custom-toast" class="fixed bottom-28 lg:bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-maldiva-ink/95 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[92%]">
         <span id="toast-icon"></span>
-        <span id="toast-message" class="text-xs font-semibold"></span>
+        <span id="toast-message" class="t-body font-semibold"></span>
     </div>
 
-    <!-- Header & Navigation -->
-    <div class="bg-maldiva-dark text-white text-[11px] py-2 px-4 flex justify-between items-center z-30 shadow-sm">
+    <!-- شريط الحالة العلوي -->
+    <div class="bg-maldiva-ink text-white t-small py-2 px-4 flex justify-between items-center z-30">
         <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse"></span>
-            <span id="connection-status">Connexion en cours...</span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="connection-status" class="opacity-80">Connexion en cours...</span>
         </div>
-        <div class="font-bold tracking-wider text-maldiva-orange">MALDIVA BEACH CLUB</div>
+        <div class="t-label text-maldiva-orange">Tipaza • Algérie</div>
     </div>
 
-    <header class="relative bg-gradient-to-b from-maldiva-accent to-maldiva-sand pt-6 pb-8 px-4 text-center">
-        <div class="max-w-6xl mx-auto flex flex-col items-center">
-            <!-- الشعار -->
-            <div class="w-48 h-48 md:w-52 md:h-52 mb-4 relative drop-shadow-xl hover:scale-105 transition-transform duration-500 flex items-center justify-center">
-                <div id="custom-logo-wrapper" class="w-full h-full rounded-full border-4 border-white bg-white shadow-inner overflow-hidden">
-                    <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Maldiva Beach Club Logo">
+    <!-- ═══════════════════════════════════════════════
+         HERO
+         👇 لتغيير صورة الخلفية: بدّل الرابط في src أدناه فقط.
+            مقاس مقترح: 1600×1000 أو أكبر، أفقية.
+         ═══════════════════════════════════════════════ -->
+    <header class="hero">
+        <img id="hero-image" class="hero-img"
+             src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg"
+             alt="Plage privée Maldiva Beach Club à Tipaza">
+        <div class="hero-scrim"></div>
+
+        <div class="hero-body px-5 pb-8 pt-24">
+            <div class="max-w-5xl mx-auto text-white">
+
+                <div class="flex items-center gap-3 mb-6">
+                    <div id="custom-logo-wrapper" class="w-14 h-14 rounded-full border-2 border-white/70 overflow-hidden bg-white/95 shadow-lg flex-shrink-0">
+                        <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Logo Maldiva Beach Club">
+                    </div>
+                    <span class="t-label text-white/85">Plage privée · شاطئ خاص</span>
+                </div>
+
+                <h1 class="serif-title t-hero font-bold mb-4 max-w-2xl">Maldiva Beach&nbsp;Club</h1>
+
+                <p class="t-card text-white/90 max-w-lg mb-2 font-light">
+                    Une journée les pieds dans le sable, sur une plage privée de Tipaza — transats, baldaquins et sports nautiques.
+                </p>
+                <p class="t-body text-white/70 max-w-lg mb-7 font-arabic" dir="rtl">
+                    يوم كامل على شاطئ خاص في تيبازة — كراسي استلقاء، بالداكين، وأنشطة بحرية.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-3 max-w-md">
+                    <button type="button" onclick="window.goToBooking()" class="btn btn-primary flex-1">
+                        <span>Réserver maintenant</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </button>
+                    <button type="button" onclick="window.goToTracking()" class="btn btn-ghost flex-1">
+                        <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
+                        <span>Suivre ma réservation</span>
+                    </button>
+                </div>
+
+                <!-- معلومات سريعة -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-3 mt-8 pt-6 border-t border-white/15 t-small text-white/85">
+                    <div class="fact"><i class="fa-solid fa-clock"></i><span>Ouvert 8h – 19h</span></div>
+                    <div class="fact"><i class="fa-solid fa-square-parking"></i><span>Parking gratuit</span></div>
+                    <div class="fact"><i class="fa-solid fa-shower"></i><span>Douches &amp; vestiaires</span></div>
+                    <div class="fact"><i class="fa-solid fa-child-reaching"></i><span>Espace enfants</span></div>
                 </div>
             </div>
-            
-            <h1 class="serif-title text-4xl md:text-5xl font-extrabold text-maldiva-dark mb-1">Maldiva Beach Club</h1>
-            <p class="text-[11px] uppercase tracking-widest text-maldiva-teal font-bold mb-3">Équipements & Activités Nautiques • حجز المستلزمات والأنشطة البحرية</p>
-            <div class="w-16 h-1 bg-gradient-to-r from-maldiva-teal to-maldiva-orange rounded-full"></div>
         </div>
     </header>
 
-    <div class="bg-white border-y border-gray-100 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-2xl mx-auto flex justify-around">
+    <!-- التبويبات -->
+    <div id="tabs-bar" class="bg-white border-b border-maldiva-line sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto flex">
             <button onclick="window.switchTab('booking-form')" id="btn-tab-booking" class="flex-1 py-3.5 flex flex-col items-center gap-1.5 border-b-2 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maldiva-dark/30 border-maldiva-teal bg-maldiva-teal/5">
                 <span class="tab-chip w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all duration-200 bg-maldiva-teal text-white shadow-md shadow-maldiva-teal/25"><i class="fa-solid fa-umbrella-beach"></i></span>
-                <span class="tab-label text-[10px] font-bold uppercase tracking-wider transition-colors duration-200 text-maldiva-teal">Réserver / حجز</span>
+                <span class="tab-label t-label transition-colors duration-200 text-maldiva-teal">Réserver / حجز</span>
             </button>
             <button onclick="window.switchTab('tracking-section')" id="btn-tab-tracking" class="flex-1 py-3.5 flex flex-col items-center gap-1.5 border-b-2 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maldiva-dark/30 border-transparent hover:bg-maldiva-orange/5">
                 <span class="tab-chip w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all duration-200 bg-maldiva-orange/10 text-maldiva-orange"><i class="fa-solid fa-magnifying-glass"></i></span>
-                <span class="tab-label text-[10px] font-bold uppercase tracking-wider transition-colors duration-200 text-gray-400 group-hover:text-maldiva-orange">Suivi / تتبع الحجز</span>
+                <span class="tab-label t-label transition-colors duration-200 text-gray-400 group-hover:text-maldiva-orange">Suivi / تتبع الحجز</span>
             </button>
         </div>
     </div>
 
-    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
-        
-        <!-- Booking Tab -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8">
+
+        <!-- ══════════════ Booking Tab ══════════════ -->
         <div id="tab-booking-form" class="space-y-8 block">
-            
-            <!-- الزر الجديد التفاعلي لفتح القواعد (بدل المربع الأصفر القديم) -->
-            <div onclick="window.openRulesModal()" class="cursor-pointer bg-gradient-to-r from-maldiva-dark to-teal-900 p-4 rounded-2xl shadow-md max-w-4xl mx-auto flex items-center justify-between text-white hover:shadow-lg transition-all transform hover:-translate-y-0.5 border border-teal-800 group">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-sm tracking-wide">Règlement et Infos Importantes</h4>
-                        <p class="text-[11px] opacity-80 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</p>
-                    </div>
-                </div>
-                <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center animate-pulse">
-                    <i class="fa-solid fa-chevron-right text-xs"></i>
-                </div>
-            </div>
+
+            <!-- زر القواعد -->
+            <button type="button" onclick="window.openRulesModal()" class="reveal w-full text-left bg-gradient-to-r from-maldiva-dark to-maldiva-ink p-4 rounded-2xl shadow-md flex items-center justify-between text-white hover:shadow-xl hover:-translate-y-0.5 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maldiva-orange focus-visible:ring-offset-2">
+                <span class="flex items-center gap-4">
+                    <span class="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
+                        <i class="fa-solid fa-clipboard-list text-xl text-maldiva-orange"></i>
+                    </span>
+                    <span class="block">
+                        <span class="block font-bold t-card">Règlement &amp; infos importantes</span>
+                        <span class="block t-small opacity-75 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</span>
+                    </span>
+                </span>
+                <i class="fa-solid fa-chevron-right t-small opacity-60 group-hover:translate-x-1 transition-transform"></i>
+            </button>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <div class="lg:col-span-7 xl:col-span-8 space-y-8">
-                    <div class="space-y-4">
-                        <div class="border-b border-gray-200 pb-3">
-                            <h3 class="serif-title text-2xl font-bold text-maldiva-dark"><i class="fa-solid fa-sun text-maldiva-orange mr-2"></i>Équipements de Plage</h3>
-                            <p class="text-xs text-gray-500 mt-1">Tarifs journaliers valables pour toute la journée • الأسعار صالحة طوال اليوم</p>
+
+                <!-- ── الكتالوج ── -->
+                <div class="lg:col-span-7 xl:col-span-8 space-y-10">
+
+                    <!-- معدات الشاطئ -->
+                    <section class="space-y-4 reveal">
+                        <div class="sec-head">
+                            <span class="ico bg-maldiva-orange/10 text-maldiva-orange"><i class="fa-solid fa-sun"></i></span>
+                            <h2 class="serif-title t-section font-bold text-maldiva-dark whitespace-nowrap">Équipements de plage</h2>
+                            <span class="rule"></span>
                         </div>
+                        <p class="t-body text-gray-500 -mt-1">Tarifs valables pour toute la journée • الأسعار صالحة طوال اليوم</p>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0"><img id="img-item-chaise" src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Chaise]"></div>
-                                <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Chaise Longue</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي استلقاء</span>
-                                    </div>
-                                    <p class="text-[10px] text-gray-500 mt-0.5">À partir de 3 chaises longues, parasol & table inclus.</p>
-                                    <span class="text-sm font-extrabold text-maldiva-teal block mt-1">2,000 DA <span class="text-[10px] font-normal text-gray-400">/ personne</span></span>
+                            <article class="card card-hover p-4 flex items-center gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-chaise" src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Chaise longue">
                                 </div>
-                            </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Chaise Longue</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">كرسي استلقاء</span>
+                                    </div>
+                                    <p class="t-small text-gray-500 mt-1">À partir de 3 chaises longues, parasol &amp; table inclus.</p>
+                                    <p class="mt-1.5"><span class="t-card font-extrabold text-maldiva-teal">2 000 DA</span> <span class="t-small text-gray-400">/ personne</span></p>
+                                </div>
+                            </article>
 
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-teal-100 flex-shrink-0"><img id="img-item-transat" src="https://i.postimg.cc/zyG4KscT/IMG-8145.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Transat]"></div>
-                                <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Transat en Bois</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">كرسي الاسترخاء بالخشب</span>
-                                    </div>
-                                    <p class="text-[10px] text-gray-500 mt-0.5">À partir de 3 transats Matelas épais, parasol & table ajustable.</p>
-                                    <span class="text-sm font-extrabold text-maldiva-teal block mt-1">3,000 DA <span class="text-[10px] font-normal text-gray-400">/ personne</span></span>
+                            <article class="card card-hover p-4 flex items-center gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-transat" src="https://i.postimg.cc/zyG4KscT/IMG-8145.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Transat en bois">
                                 </div>
-                            </div>
-                            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all md:col-span-2 relative">
-                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-orange-100 flex-shrink-0"><img id="img-item-baldaquin" src="https://i.postimg.cc/xX1BMw4H/IMG-8148.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Baldaquin]"></div>
-                                <div class="flex-grow">
-                                    <div class="flex justify-between items-baseline">
-                                        <h4 class="font-bold text-gray-800 text-sm">Baldaquin Royal</h4>
-                                        <span class="text-xs text-gray-400 font-arabic" dir="rtl">بالداكين ملكي</span>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Transat en Bois</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">كرسي بالخشب</span>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">Lit de plage double, rideaux & intimité complète.</p>
-                                    <span class="text-sm font-extrabold text-maldiva-orange block mt-1.5">10,000 DA <span class="text-[10px] font-normal text-gray-400">/ jour</span></span>
+                                    <p class="t-small text-gray-500 mt-1">À partir de 3 transats : matelas épais, parasol &amp; table ajustable.</p>
+                                    <p class="mt-1.5"><span class="t-card font-extrabold text-maldiva-teal">3 000 DA</span> <span class="t-small text-gray-400">/ personne</span></p>
                                 </div>
-                            </div>
+                            </article>
+
+                            <article class="card card-hover p-4 flex items-center gap-4 md:col-span-2 border-maldiva-orange/25">
+                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-baldaquin" src="https://i.postimg.cc/xX1BMw4H/IMG-8148.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Baldaquin royal">
+                                </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Baldaquin Royal</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">بالداكين ملكي</span>
+                                    </div>
+                                    <p class="t-body text-gray-500 mt-1">Lit de plage double, rideaux &amp; intimité complète.</p>
+                                    <p class="mt-1.5"><span class="t-card font-extrabold text-maldiva-orange">10 000 DA</span> <span class="t-small text-gray-400">/ jour</span></p>
+                                </div>
+                            </article>
                         </div>
 
-                        <div class="bg-white rounded-2xl p-6 border border-gray-100 mt-4">
-                            <h4 class="font-bold text-sm text-maldiva-dark mb-4 border-b pb-2">Inclus Gratuitement avec vos Réservations</h4>
+                        <div class="card p-5">
+                            <h3 class="t-label text-maldiva-dark mb-4">Inclus gratuitement</h3>
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                                <div class="space-y-1"><i class="fa-solid fa-square-parking text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Parking</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-shower text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Douches</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-child-reaching text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Jeux Enfants</div></div>
-                                <div class="space-y-1"><i class="fa-solid fa-glass-water text-lg text-maldiva-teal"></i><div class="text-xs font-bold text-gray-700">Service</div></div>
+                                <div class="space-y-1.5"><i class="fa-solid fa-square-parking text-lg text-maldiva-teal"></i><div class="t-small font-bold text-gray-700">Parking</div></div>
+                                <div class="space-y-1.5"><i class="fa-solid fa-shower text-lg text-maldiva-teal"></i><div class="t-small font-bold text-gray-700">Douches</div></div>
+                                <div class="space-y-1.5"><i class="fa-solid fa-child-reaching text-lg text-maldiva-teal"></i><div class="t-small font-bold text-gray-700">Jeux enfants</div></div>
+                                <div class="space-y-1.5"><i class="fa-solid fa-glass-water text-lg text-maldiva-teal"></i><div class="t-small font-bold text-gray-700">Service</div></div>
                             </div>
                         </div>
-                    </div>
+                    </section>
 
-                    <div class="space-y-4 pt-4 border-t border-gray-200">
-                        <div class="border-b border-gray-200 pb-3">
-                            <h3 class="serif-title text-2xl font-bold text-maldiva-dark"><i class="fa-solid fa-water text-maldiva-teal mr-2"></i>Activités Nautiques</h3>
-                            <p class="text-xs text-gray-500 mt-1">Profitez de la mer avec nos équipements nautiques</p>
+                    <!-- الأنشطة البحرية -->
+                    <section class="space-y-4 reveal">
+                        <div class="sec-head">
+                            <span class="ico bg-maldiva-teal/10 text-maldiva-teal"><i class="fa-solid fa-water"></i></span>
+                            <h2 class="serif-title t-section font-bold text-maldiva-dark whitespace-nowrap">Activités nautiques</h2>
+                            <span class="rule"></span>
                         </div>
+                        <p class="t-body text-gray-500 -mt-1">Profitez de la mer avec nos équipements nautiques</p>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- JET SKI -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-jetski" src="https://i.postimg.cc/ykVK7WWh/IMG-8522.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Jet-ski]"></div>
-                                <div class="flex-grow space-y-1.5">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <h4 class="font-bold text-gray-800 text-sm">Jet-Ski</h4>
-                                        <span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">2 personnes</span>
-                                    </div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">15 Min :</span><span class="font-bold text-maldiva-dark">6,000 DA</span></div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">12,000 DA</span></div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">20,000 DA</span></div>
+                            <article class="card card-hover p-4 flex gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-jetski" src="https://i.postimg.cc/ykVK7WWh/IMG-8522.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Jet-ski">
                                 </div>
-                            </div>
-                            
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2 mb-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Jet-Ski</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">جيت سكي</span>
+                                    </div>
+                                    <dl class="space-y-1 t-small">
+                                        <div class="flex justify-between"><dt class="text-gray-500">15 Min</dt><dd class="font-bold text-maldiva-ink">6 000 DA</dd></div>
+                                        <div class="flex justify-between"><dt class="text-gray-500">30 Min</dt><dd class="font-bold text-maldiva-ink">12 000 DA</dd></div>
+                                        <div class="flex justify-between"><dt class="text-gray-500">1 Heure</dt><dd class="font-bold text-maldiva-ink">20 000 DA</dd></div>
+                                    </dl>
+                                </div>
+                            </article>
+
                             <!-- BATEAU -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-bateau" src="https://i.postimg.cc/grMpkmRj/IMG-8525.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Bateau]"></div>
-                                <div class="flex-grow space-y-2">
-                                    <div class="flex justify-between items-baseline mb-1">
-                                        <h4 class="font-bold text-gray-800 text-sm">Bateau</h4>
-                                        <span class="text-[10px] text-gray-500 font-semibold bg-gray-100 px-2 py-0.5 rounded">+4 personnes</span>
-                                    </div>
-                                    <p class="text-xs text-gray-500">Sortie en mer</p>
-                                    <div class="flex justify-between items-center text-xs pt-1"><span class="text-gray-500">À partir de :</span><span class="font-bold text-maldiva-orange">4,000 DA</span></div>
+                            <article class="card card-hover p-4 flex gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-bateau" src="https://i.postimg.cc/grMpkmRj/IMG-8525.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Bateau">
                                 </div>
-                            </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2 mb-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Bateau</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">قارب</span>
+                                    </div>
+                                    <dl class="space-y-1 t-small">
+                                        <div class="flex justify-between"><dt class="text-gray-500">Sortie (+4 pers.)</dt><dd class="font-bold text-maldiva-ink">4 000 DA</dd></div>
+                                    </dl>
+                                </div>
+                            </article>
 
                             <!-- BOUEE TRACTEE -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-bouee" src="https://i.postimg.cc/TpRxThh9/IMG-8523.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Bouée]"></div>
-                                <div class="flex-grow space-y-2">
-                                    <h4 class="font-bold text-gray-800 text-sm">Bouée tractée</h4>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">2 personnes :</span><span class="font-bold text-maldiva-dark">3,000 DA</span></div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">3 personnes :</span><span class="font-bold text-maldiva-dark">4,000 DA</span></div>
+                            <article class="card card-hover p-4 flex gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-bouee" src="https://i.postimg.cc/TpRxThh9/IMG-8523.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Bouée tractée">
                                 </div>
-                            </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2 mb-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Bouée tractée</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">عوامة مجرورة</span>
+                                    </div>
+                                    <dl class="space-y-1 t-small">
+                                        <div class="flex justify-between"><dt class="text-gray-500">2 Personnes</dt><dd class="font-bold text-maldiva-ink">3 000 DA</dd></div>
+                                        <div class="flex justify-between"><dt class="text-gray-500">3 Personnes</dt><dd class="font-bold text-maldiva-ink">4 000 DA</dd></div>
+                                    </dl>
+                                </div>
+                            </article>
 
                             <!-- PEDALO -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-pedalo" src="https://i.postimg.cc/GHcRb99K/IMG-8524.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Pédalo]"></div>
-                                <div class="flex-grow space-y-2">
-                                    <h4 class="font-bold text-gray-800 text-sm">Pédalo</h4>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">1,000 DA</span></div>
-                                    <div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">2,000 DA</span></div>
+                            <article class="card card-hover p-4 flex gap-4">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-pedalo" src="https://i.postimg.cc/GHcRb99K/IMG-8524.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Pédalo">
                                 </div>
-                            </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2 mb-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Pédalo</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">بيدالو</span>
+                                    </div>
+                                    <dl class="space-y-1 t-small">
+                                        <div class="flex justify-between"><dt class="text-gray-500">30 Min</dt><dd class="font-bold text-maldiva-ink">1 000 DA</dd></div>
+                                        <div class="flex justify-between"><dt class="text-gray-500">1 Heure</dt><dd class="font-bold text-maldiva-ink">2 000 DA</dd></div>
+                                    </dl>
+                                </div>
+                            </article>
 
                             <!-- KAYAK -->
-                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4 hover:shadow-md transition-all md:col-span-2">
-                                <div class="w-24 h-24 rounded-xl overflow-hidden bg-blue-50 flex-shrink-0"><img id="img-item-kayak" src="https://i.postimg.cc/hfSnKhhM/IMG-8521.jpg?w=500&q=80" class="w-full h-full object-cover" alt="[Kayak]"></div>
-                                <div class="flex-grow space-y-2">
-                                    <h4 class="font-bold text-gray-800 text-sm">Kayak</h4>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><div class="flex justify-between items-center text-xs"><span class="text-gray-500">30 Min :</span><span class="font-bold text-maldiva-dark">1,000 DA</span></div></div>
-                                        <div><div class="flex justify-between items-center text-xs"><span class="text-gray-500">1 Heure :</span><span class="font-bold text-maldiva-dark">2,000 DA</span></div></div>
-                                    </div>
+                            <article class="card card-hover p-4 flex gap-4 md:col-span-2">
+                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-maldiva-accent flex-shrink-0">
+                                    <img id="img-item-kayak" src="https://i.postimg.cc/hfSnKhhM/IMG-8521.jpg?w=500&q=80" loading="lazy" class="w-full h-full object-cover" alt="Kayak">
                                 </div>
-                            </div>
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex justify-between items-baseline gap-2 mb-2">
+                                        <h3 class="font-bold text-maldiva-ink t-card">Kayak</h3>
+                                        <span class="t-small text-gray-400 font-arabic whitespace-nowrap" dir="rtl">كاياك</span>
+                                    </div>
+                                    <dl class="grid grid-cols-2 gap-x-6 gap-y-1 t-small">
+                                        <div class="flex justify-between"><dt class="text-gray-500">30 Min</dt><dd class="font-bold text-maldiva-ink">1 000 DA</dd></div>
+                                        <div class="flex justify-between"><dt class="text-gray-500">1 Heure</dt><dd class="font-bold text-maldiva-ink">2 000 DA</dd></div>
+                                    </dl>
+                                </div>
+                            </article>
                         </div>
-                    </div>
+                    </section>
                 </div>
 
-                <!-- Form Section -->
+                <!-- ── النموذج ── -->
                 <div class="lg:col-span-5 xl:col-span-4">
-                    <div class="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 h-fit space-y-5 sticky top-24">
-                        <div class="border-b border-gray-100 pb-3 text-center">
-                            <h4 class="serif-title text-xl font-bold text-maldiva-dark">Formulaire de Réservation</h4>
-                            <p class="text-xs text-gray-400">احسب السعر واملأ تفاصيل حجزك</p>
+                    <div id="form-card" class="card p-5 sm:p-6 h-fit space-y-6 lg:sticky lg:top-24">
+                        <div class="text-center pb-4 border-b border-maldiva-line">
+                            <h2 class="serif-title text-xl font-bold text-maldiva-dark">Votre réservation</h2>
+                            <p class="t-small text-gray-500 mt-1 font-arabic" dir="rtl">احسب السعر واملأ تفاصيل حجزك</p>
                         </div>
 
-                        <form id="booking-form-el" class="space-y-5" onsubmit="event.preventDefault();">
+                        <form id="booking-form-el" class="space-y-6" onsubmit="event.preventDefault();">
 
-                            <!-- 1. Coordonnées -->
+                            <!-- 1. المعلومات -->
                             <div class="space-y-3">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-7 h-7 rounded-lg bg-maldiva-dark/10 text-maldiva-dark flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-user"></i></span>
-                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Vos coordonnées</span>
-                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                <div class="sec-head">
+                                    <span class="ico bg-maldiva-dark/10 text-maldiva-dark"><i class="fa-solid fa-user"></i></span>
+                                    <span class="t-label text-maldiva-dark whitespace-nowrap">Vos coordonnées</span>
+                                    <span class="rule"></span>
                                 </div>
                                 <div>
                                     <label for="client-name" class="field-label">Nom complet / الاسم الكامل *</label>
-                                    <input type="text" id="client-name" placeholder="Nom et prénom / الاسم واللقب" class="field-input" required>
+                                    <input type="text" id="client-name" placeholder="Nom et prénom / الاسم واللقب" autocomplete="name" class="field-input" required>
                                 </div>
                                 <div>
                                     <label for="client-phone" class="field-label">Téléphone / رقم الهاتف *</label>
-                                    <input type="tel" id="client-phone" placeholder="Numéro de téléphone / رقم الهاتف" class="field-input" required>
+                                    <input type="tel" id="client-phone" placeholder="Numéro de téléphone / رقم الهاتف" autocomplete="tel" inputmode="tel" class="field-input" required>
                                 </div>
                                 <div>
                                     <label for="visit-date" class="field-label">Date de visite / تاريخ الزيارة *</label>
@@ -286,16 +341,16 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Équipements de plage -->
+                            <!-- 2. معدات الشاطئ -->
                             <div class="space-y-2">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-7 h-7 rounded-lg bg-maldiva-orange/10 text-maldiva-orange flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-umbrella-beach"></i></span>
-                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Équipements de plage</span>
-                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                <div class="sec-head">
+                                    <span class="ico bg-maldiva-orange/10 text-maldiva-orange"><i class="fa-solid fa-umbrella-beach"></i></span>
+                                    <span class="t-label text-maldiva-dark whitespace-nowrap">Équipements</span>
+                                    <span class="rule"></span>
                                 </div>
 
-                                <div data-qty-row="qty-chaise" data-accent="teal" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
-                                    <span class="text-xs font-bold text-gray-700">Chaise Longue</span>
+                                <div data-qty-row="qty-chaise" data-accent="teal" data-label="Chaise Longue" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
+                                    <span class="t-body font-bold text-gray-700">Chaise Longue</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="qty-btn" aria-label="Retirer une chaise longue">−</button>
                                         <span id="qty-chaise" class="qty-value w-6 text-center font-bold text-sm">0</span>
@@ -303,8 +358,8 @@
                                     </div>
                                 </div>
 
-                                <div data-qty-row="qty-chaise-enfant" data-accent="purple" class="flex items-center justify-between gap-2 bg-purple-50/60 border border-purple-100 px-3 py-1.5 rounded-xl ml-4">
-                                    <span class="text-[10px] font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants -13 ans (-40%)</span>
+                                <div data-qty-row="qty-chaise-enfant" data-accent="purple" data-label="Dont enfants -13 ans (-40%)" class="flex items-center justify-between gap-2 bg-purple-50/60 border border-purple-100 px-3 py-1.5 rounded-xl ml-4">
+                                    <span class="t-small font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants -13 ans (-40%)</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" onclick="window.adjustChildChaise(-1)" class="qty-btn qty-btn-sm" aria-label="Retirer un enfant">−</button>
                                         <span id="qty-chaise-enfant" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -312,8 +367,8 @@
                                     </div>
                                 </div>
 
-                                <div data-qty-row="qty-transat" data-accent="teal" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
-                                    <span class="text-xs font-bold text-gray-700">Transat en Bois</span>
+                                <div data-qty-row="qty-transat" data-accent="teal" data-label="Transat en Bois" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
+                                    <span class="t-body font-bold text-gray-700">Transat en Bois</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" onclick="window.adjustQty('qty-transat', -1)" class="qty-btn" aria-label="Retirer un transat">−</button>
                                         <span id="qty-transat" class="qty-value w-6 text-center font-bold text-sm">0</span>
@@ -321,8 +376,8 @@
                                     </div>
                                 </div>
 
-                                <div data-qty-row="qty-baldaquin" data-accent="orange" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
-                                    <span class="text-xs font-bold text-gray-700">Baldaquin Royal</span>
+                                <div data-qty-row="qty-baldaquin" data-accent="orange" data-label="Baldaquin Royal" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
+                                    <span class="t-body font-bold text-gray-700">Baldaquin Royal</span>
                                     <div class="flex items-center gap-1">
                                         <button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="qty-btn" aria-label="Retirer un baldaquin">−</button>
                                         <span id="qty-baldaquin" class="qty-value w-6 text-center font-bold text-sm">0</span>
@@ -331,34 +386,35 @@
                                 </div>
                             </div>
 
-                            <!-- 3. Activités nautiques -->
+                            <!-- 3. الأنشطة -->
                             <div class="space-y-2">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-7 h-7 rounded-lg bg-maldiva-teal/10 text-maldiva-teal flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-water"></i></span>
-                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Activités nautiques</span>
-                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                <div class="sec-head">
+                                    <span class="ico bg-maldiva-teal/10 text-maldiva-teal"><i class="fa-solid fa-water"></i></span>
+                                    <span class="t-label text-maldiva-dark whitespace-nowrap">Activités</span>
+                                    <span class="rule"></span>
                                 </div>
-                                <div class="h-52 overflow-y-auto p-2 -mx-1 space-y-2 hide-scrollbar rounded-xl border border-gray-100 bg-gray-50/40">
-                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
-                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Jet-Ski</div>
-                                        <div data-qty-row="qty-jetski-15" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">15 Min</span>
+                                <div class="max-h-56 overflow-y-auto p-2 space-y-2 custom-scrollbar rounded-xl border border-maldiva-line bg-maldiva-sand/40">
+
+                                    <div class="bg-white/70 px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="t-small font-bold text-maldiva-dark mb-1">Jet-Ski</div>
+                                        <div data-qty-row="qty-jetski-15" data-accent="teal" data-label="Jet-Ski (15 Min)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">15 Min</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 15 min">−</button>
                                                 <span id="qty-jetski-15" class="qty-value w-5 text-center font-bold text-xs">0</span>
                                                 <button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter Jet-Ski 15 min">+</button>
                                             </div>
                                         </div>
-                                        <div data-qty-row="qty-jetski-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                        <div data-qty-row="qty-jetski-30" data-accent="teal" data-label="Jet-Ski (30 Min)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">30 Min</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 30 min">−</button>
                                                 <span id="qty-jetski-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
                                                 <button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter Jet-Ski 30 min">+</button>
                                             </div>
                                         </div>
-                                        <div data-qty-row="qty-jetski-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                        <div data-qty-row="qty-jetski-60" data-accent="teal" data-label="Jet-Ski (1 Heure)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">1 Heure</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 1 heure">−</button>
                                                 <span id="qty-jetski-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -367,18 +423,18 @@
                                         </div>
                                     </div>
 
-                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
-                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Bouée Tractée</div>
-                                        <div data-qty-row="qty-bouee-2" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">2 Personnes</span>
+                                    <div class="bg-white/70 px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="t-small font-bold text-maldiva-dark mb-1">Bouée Tractée</div>
+                                        <div data-qty-row="qty-bouee-2" data-accent="teal" data-label="Bouée Tractée (2 pers)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">2 Personnes</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer bouée 2 personnes">−</button>
                                                 <span id="qty-bouee-2" class="qty-value w-5 text-center font-bold text-xs">0</span>
                                                 <button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter bouée 2 personnes">+</button>
                                             </div>
                                         </div>
-                                        <div data-qty-row="qty-bouee-3" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">3 Personnes</span>
+                                        <div data-qty-row="qty-bouee-3" data-accent="teal" data-label="Bouée Tractée (3 pers)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">3 Personnes</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer bouée 3 personnes">−</button>
                                                 <span id="qty-bouee-3" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -387,10 +443,10 @@
                                         </div>
                                     </div>
 
-                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
-                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Bateau (Sortie)</div>
-                                        <div data-qty-row="qty-bateau-standard" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">+4 Personnes</span>
+                                    <div class="bg-white/70 px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="t-small font-bold text-maldiva-dark mb-1">Bateau (Sortie)</div>
+                                        <div data-qty-row="qty-bateau-standard" data-accent="teal" data-label="Bateau (+4 pers)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">+4 Personnes</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer sortie bateau">−</button>
                                                 <span id="qty-bateau-standard" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -399,18 +455,18 @@
                                         </div>
                                     </div>
 
-                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
-                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Pédalo</div>
-                                        <div data-qty-row="qty-pedalo-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                    <div class="bg-white/70 px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="t-small font-bold text-maldiva-dark mb-1">Pédalo</div>
+                                        <div data-qty-row="qty-pedalo-30" data-accent="teal" data-label="Pédalo (30 Min)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">30 Min</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer pédalo 30 min">−</button>
                                                 <span id="qty-pedalo-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
                                                 <button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter pédalo 30 min">+</button>
                                             </div>
                                         </div>
-                                        <div data-qty-row="qty-pedalo-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                        <div data-qty-row="qty-pedalo-60" data-accent="teal" data-label="Pédalo (1 Heure)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">1 Heure</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer pédalo 1 heure">−</button>
                                                 <span id="qty-pedalo-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -419,18 +475,18 @@
                                         </div>
                                     </div>
 
-                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
-                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Kayak</div>
-                                        <div data-qty-row="qty-kayak-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                    <div class="bg-white/70 px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="t-small font-bold text-maldiva-dark mb-1">Kayak</div>
+                                        <div data-qty-row="qty-kayak-30" data-accent="teal" data-label="Kayak (30 Min)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">30 Min</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer kayak 30 min">−</button>
                                                 <span id="qty-kayak-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
                                                 <button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter kayak 30 min">+</button>
                                             </div>
                                         </div>
-                                        <div data-qty-row="qty-kayak-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
-                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                        <div data-qty-row="qty-kayak-60" data-accent="teal" data-label="Kayak (1 Heure)" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="t-small text-gray-500 font-semibold">1 Heure</span>
                                             <div class="flex items-center gap-1">
                                                 <button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer kayak 1 heure">−</button>
                                                 <span id="qty-kayak-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
@@ -441,12 +497,12 @@
                                 </div>
                             </div>
 
-                            <!-- 4. Durée -->
+                            <!-- 4. المدة -->
                             <div class="space-y-2">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="w-7 h-7 rounded-lg bg-maldiva-dark/10 text-maldiva-dark flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-calendar-days"></i></span>
-                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Durée du séjour</span>
-                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                <div class="sec-head">
+                                    <span class="ico bg-maldiva-dark/10 text-maldiva-dark"><i class="fa-solid fa-calendar-days"></i></span>
+                                    <span class="t-label text-maldiva-dark whitespace-nowrap">Durée</span>
+                                    <span class="rule"></span>
                                 </div>
                                 <label for="duration" class="field-label">S'applique aux équipements de plage / أيام مستلزمات الشاطئ</label>
                                 <select id="duration" onchange="window.calculateTotal()" class="field-input">
@@ -458,241 +514,452 @@
                                 </select>
                             </div>
 
-                            <!-- 5. Total -->
-                            <div class="bg-gradient-to-tr from-maldiva-dark to-teal-950 rounded-2xl p-4 text-white">
-                                <div class="flex justify-between items-center mb-1 text-[10px] opacity-80">
-                                    <span class="uppercase tracking-wider font-semibold">Total estimé / المجموع الإجمالي</span>
-                                    <span id="discount-badge" class="hidden bg-maldiva-orange text-white font-bold px-2 py-0.5 rounded text-[8px]">REMISE ACTIVE</span>
+                            <!-- 5. المجموع -->
+                            <div class="bg-gradient-to-tr from-maldiva-dark to-maldiva-ink rounded-2xl p-4 text-white">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <span class="t-label opacity-80">Total estimé / المجموع</span>
+                                    <span id="discount-badge" class="hidden bg-maldiva-orange text-white font-bold px-2 py-0.5 rounded t-small">REMISE ACTIVE</span>
                                 </div>
                                 <div class="flex justify-between items-baseline">
                                     <span id="total-price" class="text-2xl font-extrabold text-maldiva-orange tabular-nums">0 DA</span>
-                                    <span class="text-xs opacity-70">TTC</span>
+                                    <span class="t-small opacity-70">TTC</span>
                                 </div>
                             </div>
 
-                            <!-- حاوية ملاحظات التسعير الخاصة -->
-                            <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full"></div>
+                            <!-- ملاحظات التسعير الخاصة -->
+                            <div id="special-pricing-notes" class="hidden flex flex-col gap-1.5 w-full"></div>
 
-                            <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maldiva-teal focus-visible:ring-offset-2 transition-all duration-200 uppercase text-xs tracking-wider flex items-center justify-center gap-2">
-                                <span>Confirmer la demande • إرسال الطلب</span>
+                            <!-- مراجعة قبل التأكيد -->
+                            <button type="button" onclick="window.openReview()" class="btn btn-dark w-full">
+                                <span class="btn-text">Vérifier et confirmer</span>
                                 <i class="fa-solid fa-arrow-right text-[10px]"></i>
                             </button>
+                            <p class="t-small text-gray-400 text-center -mt-2">Vous verrez un récapitulatif avant l'envoi.</p>
                         </form>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <!-- Tracking Tab -->
-        <div id="tab-tracking-section" class="max-w-xl mx-auto space-y-6 hidden">
-            <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4">
-                <div class="w-16 h-16 bg-maldiva-orange/10 text-maldiva-orange rounded-full flex items-center justify-center text-2xl mx-auto"><i class="fa-solid fa-magnifying-glass"></i></div>
+        <!-- ══════════════ Tracking Tab ══════════════ -->
+        <div id="tab-tracking-section" class="max-w-xl mx-auto space-y-5 hidden">
+            <div class="card p-6 text-center space-y-4">
+                <div class="w-14 h-14 bg-maldiva-orange/10 text-maldiva-orange rounded-2xl flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-magnifying-glass"></i></div>
                 <div>
-                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Suivi de Réservation • تتبع الحجز</h3>
-                    <p class="text-xs text-gray-500 mt-1">Saisissez votre code pour vérifier si votre حجز a été validé</p>
+                    <h2 class="serif-title t-section font-bold text-maldiva-dark">Suivi de réservation</h2>
+                    <p class="t-body text-gray-500 mt-1">Entrez votre code et votre téléphone pour voir l'état de votre réservation.</p>
+                    <p class="t-small text-gray-400 mt-1 font-arabic" dir="rtl">أدخل رمز الحجز ورقم هاتفك لمعرفة حالة حجزك</p>
                 </div>
-                <div class="space-y-2 pt-2">
-                    <input type="text" id="track-code-input" placeholder="Ex: MLD-4829" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none uppercase">
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="tel" id="track-phone-input" placeholder="Numéro de téléphone / رقم الهاتف" class="flex-grow bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm font-bold focus:outline-none">
-                        <button onclick="window.trackReservation()" class="bg-maldiva-orange hover:bg-maldiva-dark text-white font-bold px-6 py-3 rounded-xl text-xs transition-all tracking-wider uppercase">Vérifier / تحقق</button>
+                <div class="space-y-2.5 pt-1 text-left">
+                    <div>
+                        <label for="track-code-input" class="field-label">Code de réservation</label>
+                        <input type="text" id="track-code-input" placeholder="MLD-0000" class="field-input text-center font-bold tracking-widest uppercase">
                     </div>
+                    <div>
+                        <label for="track-phone-input" class="field-label">Téléphone / رقم الهاتف</label>
+                        <input type="tel" id="track-phone-input" inputmode="tel" placeholder="Numéro de téléphone" class="field-input text-center font-bold">
+                    </div>
+                    <button type="button" id="track-btn" onclick="window.uiTrack(this)" class="btn btn-primary w-full">
+                        <i class="fa-solid fa-circle-notch spin text-[11px]"></i>
+                        <span class="btn-text">Vérifier / تحقق</span>
+                    </button>
                 </div>
             </div>
 
-            <div id="track-result-box" class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hidden space-y-4">
-                <div class="text-center space-y-2 border-b pb-4">
+            <!-- حالة: لا شيء بعد -->
+            <div id="track-empty" class="card empty">
+                <div class="ico bg-maldiva-sand text-maldiva-teal"><i class="fa-solid fa-ticket"></i></div>
+                <p class="t-body font-bold text-maldiva-dark">Aucune réservation affichée</p>
+                <p class="t-small text-gray-500 mt-1">Votre code se trouve dans le message reçu après votre demande.</p>
+            </div>
+
+            <!-- حالة: غير موجود -->
+            <div id="track-notfound" class="card empty hidden">
+                <div class="ico bg-red-50 text-red-500"><i class="fa-solid fa-circle-question"></i></div>
+                <p class="t-body font-bold text-maldiva-dark">Réservation introuvable</p>
+                <p class="t-small text-gray-500 mt-1">Vérifiez que le code et le numéro de téléphone correspondent à votre demande.</p>
+            </div>
+
+            <div id="track-result-box" class="card p-6 hidden space-y-4">
+                <div class="text-center space-y-2 border-b border-maldiva-line pb-4">
                     <div id="track-status-icon" class="w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl"></div>
-                    <h4 class="font-bold text-lg text-gray-800">Détails du الحجز</h4>
-                    <span id="track-status-badge" class="px-3 py-1 rounded-full text-xs font-bold inline-block"></span>
+                    <h3 class="font-bold t-card text-maldiva-ink">Détails de la réservation</h3>
+                    <span id="track-status-badge" class="px-3 py-1 rounded-full t-small font-bold inline-block"></span>
                 </div>
 
-                <div id="track-res-parasol" class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center hidden animate-pulse">
-                    <div class="text-blue-800 font-bold text-sm uppercase tracking-wide"><i class="fa-solid fa-umbrella-beach mr-1"></i> Votre Parasol / رقم مظلتك</div>
-                    <div id="track-parasol-id" class="text-3xl font-extrabold text-blue-900 mt-1">--</div>
-                    <div class="text-[10px] text-blue-600 mt-1 font-arabic" dir="rtl">يرجى التوجه إلى هذه المظلة المخصصة لك.</div>
+                <div id="track-res-parasol" class="bg-maldiva-teal/10 border border-maldiva-teal/30 rounded-xl p-4 text-center hidden">
+                    <div class="t-label text-maldiva-dark"><i class="fa-solid fa-umbrella-beach mr-1"></i> Votre parasol / رقم مظلتك</div>
+                    <div id="track-parasol-id" class="text-3xl font-extrabold text-maldiva-dark mt-1 tabular-nums">--</div>
+                    <div class="t-small text-maldiva-teal mt-1 font-arabic" dir="rtl">يرجى التوجه إلى هذه المظلة المخصصة لك.</div>
                 </div>
 
-                <div class="space-y-3 text-xs text-gray-600">
-                    <div class="flex justify-between border-b pb-2"><span>Code:</span><strong id="track-res-code" class="text-maldiva-dark"></strong></div>
-                    <div class="flex justify-between border-b pb-2"><span>Client:</span><strong id="track-res-name"></strong></div>
-                    <div class="flex justify-between border-b pb-2"><span>Date de visite:</span><strong id="track-res-date"></strong></div>
-                    <div class="flex justify-between border-b pb-2"><span>Durée Plage:</span><strong id="track-res-dur"></strong></div>
-                    <div id="track-res-items" class="bg-maldiva-sand p-3 rounded-xl space-y-1.5 font-semibold text-gray-700"></div>
+                <dl class="space-y-2.5 t-body text-gray-600">
+                    <div class="flex justify-between border-b border-maldiva-line pb-2"><dt>Code</dt><dd><strong id="track-res-code" class="text-maldiva-dark"></strong></dd></div>
+                    <div class="flex justify-between border-b border-maldiva-line pb-2"><dt>Client</dt><dd><strong id="track-res-name" class="text-maldiva-ink"></strong></dd></div>
+                    <div class="flex justify-between border-b border-maldiva-line pb-2"><dt>Date de visite</dt><dd><strong id="track-res-date" class="text-maldiva-ink"></strong></dd></div>
+                    <div class="flex justify-between border-b border-maldiva-line pb-2"><dt>Durée plage</dt><dd><strong id="track-res-dur" class="text-maldiva-ink"></strong></dd></div>
+                </dl>
+                <div id="track-res-items" class="bg-maldiva-sand p-3.5 rounded-xl space-y-1.5 t-body font-semibold text-gray-700"></div>
+
+                <div class="bg-maldiva-orange/10 border border-maldiva-orange/30 rounded-xl p-3.5 text-maldiva-dark t-small font-semibold text-center space-y-1">
+                    <p><i class="fa-solid fa-camera mr-1 text-maldiva-orange"></i> Prenez une capture d'écran de ce code et présentez-la à votre arrivée.</p>
+                    <p class="font-arabic" dir="rtl">هام: يرجى التقاط صورة لهذه الشاشة وتقديمها عند زيارتك للنادي</p>
                 </div>
 
-                <!-- رسالة التقاط الصورة -->
-                <div class="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-xs font-bold shadow-sm animate-pulse text-center mt-4">
-                    <p><i class="fa-solid fa-camera mr-1"></i> Important : veuillez prendre une capture d’écran de ce code et le présenter lors de votre visite !</p>
-                    <p class="font-arabic mt-1" dir="rtl">هام: يرجى التقاط صورة لهذه الشاشة (Capture) وتقديمها عند زيارتك للنادي!</p>
-                </div>
-
-                <div id="track-status-arabic" class="text-xs text-gray-500 font-arabic text-center leading-relaxed mt-2" dir="rtl"></div>
+                <div id="track-status-arabic" class="t-body text-gray-500 font-arabic text-center leading-relaxed" dir="rtl"></div>
             </div>
         </div>
     </main>
 
-    <!-- Success Modal -->
-    <div id="success-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 relative">
-            <button onclick="window.hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <div class="text-center space-y-4">
-                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl"><i class="fa-solid fa-circle-check"></i></div>
-                <div>
-                    <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Demande envoyée !</h3>
-                    <p class="text-xs text-gray-500 mt-1">Notez bien votre code de suivi :</p>
+    <!-- ═══ العنصر المميز: شريط الملخص الثابت على الهاتف ═══ -->
+    <div id="sumbar" class="sumbar">
+        <div class="flex items-center gap-3">
+            <div class="min-w-0 flex-grow">
+                <div class="t-label text-white/60">Total estimé</div>
+                <div class="flex items-baseline gap-2">
+                    <span id="sumbar-total" class="text-lg font-extrabold text-maldiva-orange tabular-nums">0 DA</span>
+                    <span id="sumbar-count" class="t-small text-white/60"></span>
                 </div>
-                <div class="bg-maldiva-orange/10 text-maldiva-orange text-xl font-extrabold tracking-widest py-3 px-6 rounded-2xl inline-block" id="booking-success-code">#MLD-0000</div>
-                
-                <!-- رسالة التنبيه لتتبع الحجز -->
-                <div class="bg-blue-50 border-2 border-blue-400 rounded-xl p-3 shadow-md transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-center text-blue-700 mb-1">
-                        <i class="fa-solid fa-magnifying-glass text-lg mr-2 animate-bounce"></i>
-                        <span class="font-bold text-sm uppercase tracking-wider">Suivi de Réservation / تتبع الحجز</span>
-                    </div>
-                    <p class="text-blue-800 text-xs font-semibold">Conservez ce code ! Utilisez-le dans l'onglet "Suivi" pour vérifier l'état de votre réservation.</p>
-                    <p class="text-blue-800 text-xs font-bold font-arabic mt-1" dir="rtl">احتفظ بهذا الكود! واستخدمه في قسم "تتبع الحجز" لمعرفة هل تم قبول حجزك أم لا.</p>
-                </div>
+            </div>
+            <button type="button" onclick="window.openReview()" class="btn btn-primary !py-3 !px-5 flex-shrink-0">
+                <span class="btn-text">Confirmer</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+        </div>
+    </div>
 
-                <div class="bg-maldiva-sand p-4 rounded-xl text-left text-xs space-y-1">
-                    <div class="font-bold text-maldiva-dark border-b border-gray-200 pb-1.5 mb-1.5">Résumé :</div>
-                    <div id="summary-items" class="space-y-1 text-gray-600 max-h-32 overflow-y-auto"></div>
-                    <p class="pt-1.5 border-t border-gray-200 font-bold text-maldiva-teal flex justify-between">
-                        <span>Total estimé :</span><span id="summary-total" class="text-sm">0 DA</span>
-                    </p>
-                    <!-- ملاحظات التسعير في الملخص -->
-                    <div id="summary-special-notes" class="hidden pt-1.5 border-t border-gray-200"></div>
+    <!-- ═══ لوحة المراجعة قبل التأكيد ═══ -->
+    <div id="review-sheet" class="sheet" hidden>
+        <div class="sheet-veil" onclick="window.closeReview()"></div>
+        <div class="sheet-panel">
+            <div class="sheet-grip"></div>
+            <div class="px-5 pt-2 pb-3 flex items-start justify-between gap-3 border-b border-maldiva-line">
+                <div>
+                    <h2 class="serif-title text-xl font-bold text-maldiva-dark">Récapitulatif</h2>
+                    <p class="t-small text-gray-500 mt-0.5">Vérifiez avant d'envoyer votre demande.</p>
                 </div>
-                
-                <!-- الرسالة العربية -->
-                <p class="text-sm text-maldiva-dark font-arabic font-extrabold text-center mt-2" dir="rtl">تواصل معنا هاتفيا لتأكيد الحجز</p>
-                
-                <button type="button" onclick="window.hideSuccessModal()" class="w-full bg-maldiva-dark text-white font-bold py-3 rounded-xl hover:bg-maldiva-orange mt-2">Fermer / إغلاق</button>
+                <button type="button" onclick="window.closeReview()" class="text-gray-400 hover:text-maldiva-dark p-1" aria-label="Fermer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="px-5 py-4 overflow-y-auto custom-scrollbar space-y-4 flex-grow">
+                <dl id="review-who" class="space-y-2 t-body"></dl>
+                <div>
+                    <div class="t-label text-gray-500 mb-2">Votre sélection</div>
+                    <div id="review-items" class="space-y-1.5 t-body"></div>
+                </div>
+                <div id="review-notes" class="space-y-1.5"></div>
+            </div>
+
+            <div class="px-5 py-4 border-t border-maldiva-line bg-maldiva-sand/60 space-y-3">
+                <div class="flex items-baseline justify-between">
+                    <span class="t-label text-maldiva-dark">Total estimé</span>
+                    <span id="review-total" class="text-2xl font-extrabold text-maldiva-dark tabular-nums">0 DA</span>
+                </div>
+                <button type="button" id="submit-btn" onclick="window.uiSubmit(this)" class="btn btn-primary w-full">
+                    <i class="fa-solid fa-circle-notch spin text-[11px]"></i>
+                    <span class="btn-text">Envoyer ma demande • إرسال الطلب</span>
+                </button>
+                <p class="t-small text-gray-500 text-center">Aucun paiement en ligne — nous vous appelons pour confirmer.</p>
             </div>
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- النافذة المنبثقة لقواعد ومعلومات النادي (الجديدة) -->
-    <!-- ============================================== -->
-    <div id="rules-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] transition-opacity duration-300 opacity-0 pointer-events-none">
-        <div id="rules-modal-content" class="bg-maldiva-sand rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 transform translate-y-8 scale-95 transition-all duration-400 relative overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <!-- الهيدر -->
-            <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 text-white text-center relative flex-shrink-0">
-                <button onclick="window.closeRulesModal()" class="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full hover:bg-white/40 transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
-                <div class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <i class="fa-solid fa-clipboard-list text-2xl text-maldiva-orange"></i>
+    <!-- Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-maldiva-ink/70 backdrop-blur-sm flex items-center justify-center p-4 z-[65] hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl transform translate-y-4 transition-transform duration-300 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <button onclick="window.hideSuccessModal()" class="absolute top-4 right-4 text-gray-400 hover:text-maldiva-dark" aria-label="Fermer"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-3xl"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <h2 class="serif-title text-2xl font-bold text-maldiva-dark">Demande envoyée</h2>
+                    <p class="t-body text-gray-500 mt-1">Voici votre code de suivi — gardez-le.</p>
                 </div>
-                <h3 class="serif-title text-xl font-bold tracking-wide">Règlement du Club</h3>
-                <p class="text-xs font-arabic mt-1 opacity-90" dir="rtl">القواعد والمعلومات الهامة</p>
+
+                <div id="booking-success-code" class="bg-maldiva-dark text-white text-2xl font-extrabold tracking-[.2em] py-4 px-6 rounded-2xl">#MLD-0000</div>
+
+                <div class="bg-maldiva-teal/10 border border-maldiva-teal/30 rounded-xl p-3.5 text-left">
+                    <div class="flex items-center gap-2 text-maldiva-dark mb-1">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span class="t-label">Suivi de réservation</span>
+                    </div>
+                    <p class="t-small text-gray-600">Utilisez ce code dans l'onglet « Suivi » avec votre téléphone pour voir si la réservation est validée.</p>
+                    <p class="t-small text-gray-600 font-arabic mt-1" dir="rtl">استخدم هذا الرمز مع رقم هاتفك في قسم «تتبع الحجز» لمعرفة هل تم قبول حجزك.</p>
+                </div>
+
+                <div class="bg-maldiva-sand p-4 rounded-xl text-left space-y-1.5">
+                    <div class="t-label text-maldiva-dark border-b border-maldiva-line pb-2 mb-2">Résumé</div>
+                    <div id="summary-items" class="space-y-1 t-body text-gray-600 max-h-32 overflow-y-auto custom-scrollbar"></div>
+                    <p class="pt-2 border-t border-maldiva-line font-bold text-maldiva-dark flex justify-between t-body">
+                        <span>Total estimé</span><span id="summary-total" class="t-card">0 DA</span>
+                    </p>
+                    <div id="summary-special-notes" class="hidden pt-2 border-t border-maldiva-line"></div>
+                </div>
+
+                <p class="t-body text-maldiva-dark font-arabic font-bold" dir="rtl">تواصل معنا هاتفيا لتأكيد الحجز</p>
+
+                <button type="button" onclick="window.hideSuccessModal()" class="btn btn-dark w-full">Fermer / إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ نافذة القواعد ══════════════ -->
+    <div id="rules-modal" class="fixed inset-0 bg-maldiva-ink/70 backdrop-blur-sm flex items-center justify-center p-4 z-[75] transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div id="rules-modal-content" class="bg-maldiva-sand rounded-3xl max-w-lg w-full shadow-2xl transform translate-y-8 scale-95 transition-all duration-300 relative overflow-hidden flex flex-col max-h-[90vh]">
+
+            <div class="p-5 bg-gradient-to-r from-maldiva-dark to-maldiva-ink text-white flex items-center gap-3 flex-shrink-0">
+                <span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-clipboard-list text-maldiva-orange"></i></span>
+                <div>
+                    <h2 class="serif-title text-xl font-bold">Règlement du Club</h2>
+                    <p class="t-small opacity-70 font-arabic" dir="rtl">قوانين ومعلومات النادي</p>
+                </div>
             </div>
 
-            <!-- المحتوى (القواعد) قابل للتمرير -->
-            <div class="p-5 md:p-6 space-y-4 overflow-y-auto flex-grow custom-scrollbar">
-                
-                <!-- القاعدة 1: ساعات العمل -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 border border-blue-100"><i class="fa-solid fa-clock text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Horaires d'Ouverture</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">La plage est ouverte tous les jours de <strong>08h00 à 22h00</strong>.</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الشاطئ مفتوح كل يوم من الساعة <strong>08:00 صباحاً إلى 22:00 ليلاً</strong>.</p>
+            <div class="p-5 space-y-3 overflow-y-auto custom-scrollbar flex-grow">
+
+                <div class="card p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-maldiva-teal/10 text-maldiva-teal flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-clock"></i></span>
+                        <div class="min-w-0">
+                            <h3 class="font-bold t-body text-maldiva-dark">Horaires d'ouverture</h3>
+                            <p class="t-small text-gray-600 mt-1 leading-relaxed">Le club est ouvert de <strong>8h00 à 19h00</strong>.</p>
+                            <p class="t-small text-gray-600 mt-1 font-arabic border-t border-maldiva-line pt-1.5" dir="rtl">النادي مفتوح من الساعة 8:00 صباحًا إلى 19:00.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- القاعدة 2: وقت الوصول -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-orange-50 text-maldiva-orange flex items-center justify-center flex-shrink-0 border border-orange-100"><i class="fa-solid fa-hourglass-end text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Délai d'Arrivée</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Toute réservation sans présentation avant <strong>13h00</strong> sera automatiquement annulée, sauf avis préalable.</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">سيتم إلغاء أي حجز لا يحضر أصحابه قبل الساعة <strong>13:00 (الواحدة زوالاً)</strong> تلقائياً، ما لم يتم إبلاغنا مسبقاً.</p>
+                <div class="card p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-maldiva-orange/10 text-maldiva-orange flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-hourglass-end"></i></span>
+                        <div class="min-w-0">
+                            <h3 class="font-bold t-body text-maldiva-dark">Délai d'arrivée</h3>
+                            <p class="t-small text-gray-600 mt-1 leading-relaxed">Présentez-vous <strong>avant 10h30</strong>. Passé ce délai, la réservation peut être annulée.</p>
+                            <p class="t-small text-gray-600 mt-1 font-arabic border-t border-maldiva-line pt-1.5" dir="rtl">يرجى الحضور قبل الساعة 10:30. بعد هذا الوقت قد يُلغى الحجز.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- القاعدة 3: الكراسي -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-teal-50 text-maldiva-teal flex items-center justify-center flex-shrink-0 border border-teal-100"><i class="fa-solid fa-umbrella-beach text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Placement (Transats)</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Les 3 premières rangées sont réservées pour <strong>2 Transats en bois ou plus</strong>. Choix sur place (1er arrivé, 1er servi).</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">الصفوف الـ 3 الأولى مخصصة لحجوزات <strong>كرسي خشب +2</strong>. حرية الاختيار للأماكن تكون على الشاطئ (الأسبقية لمن يأتي أولاً).</p>
+                <div class="card p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-maldiva-teal/10 text-maldiva-teal flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-umbrella-beach"></i></span>
+                        <div class="min-w-0">
+                            <h3 class="font-bold t-body text-maldiva-dark">Placement (transats)</h3>
+                            <p class="t-small text-gray-600 mt-1 leading-relaxed">Le placement est attribué par le club selon la disponibilité.</p>
+                            <p class="t-small text-gray-600 mt-1 font-arabic border-t border-maldiva-line pt-1.5" dir="rtl">يتم تحديد المكان من قبل النادي حسب التوفر.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- القاعدة 4: سياسة الدخول -->
-                <div class="bg-red-50 p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-red-200">
-                    <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-ban text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-red-800">Politique d'Accès</h4>
-                        <p class="text-xs text-red-700 mt-1 font-semibold leading-relaxed">Les groupes composés uniquement d'hommes ne sont pas autorisés. Merci de votre compréhension.</p>
-                        <p class="text-[11px] text-red-700 mt-1.5 font-arabic font-semibold border-t border-red-200 pt-1.5" dir="rtl">عذراً، لا نقبل الحجوزات للمجموعات المكونة من الشباب (الرجال) فقط. نشكركم على تفهمكم.</p>
+                <div class="card p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-ban"></i></span>
+                        <div class="min-w-0">
+                            <h3 class="font-bold t-body text-maldiva-dark">Politique d'accès</h3>
+                            <p class="t-small text-gray-600 mt-1 leading-relaxed">L'accès est réservé aux familles et aux personnes ayant une réservation confirmée.</p>
+                            <p class="t-small text-gray-600 mt-1 font-arabic border-t border-maldiva-line pt-1.5" dir="rtl">الدخول مخصص للعائلات ولأصحاب الحجوزات المؤكدة.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- القاعدة 5: تعرفة الأطفال -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm flex gap-4 items-start border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center flex-shrink-0 border border-purple-100"><i class="fa-solid fa-child-reaching text-lg"></i></div>
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-sm text-maldiva-dark">Tarifs Enfants & Bébés</h4>
-                        <p class="text-xs text-gray-600 mt-1 leading-relaxed">Une <strong>réduction de 40%</strong> est appliquée pour les enfants de <strong>moins de 13 ans</strong> qui occupent une chaise longue. Accès <strong>gratuit</strong> pour les bébés et les enfants qui n'occupent pas de chaise longue.</p>
-                        <p class="text-[11px] text-gray-600 mt-1.5 font-arabic border-t border-gray-100 pt-1.5" dir="rtl">تخفيض <strong>40%</strong> للأطفال الذين يقل عمرهم عن <strong>13 سنة</strong> ويستخدمون كرسي استلقاء. دخول <strong>مجاني</strong> للرضّع والأطفال الذين لا يستخدمون كرسي استلقاء.</p>
+                <div class="card p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-child-reaching"></i></span>
+                        <div class="min-w-0">
+                            <h3 class="font-bold t-body text-maldiva-dark">Tarifs enfants &amp; bébés</h3>
+                            <p class="t-small text-gray-600 mt-1 leading-relaxed">Une <strong>réduction de 40%</strong> est appliquée pour les enfants de <strong>moins de 13 ans</strong> qui occupent une chaise longue. Accès <strong>gratuit</strong> pour les bébés et les enfants qui n'occupent pas de chaise longue.</p>
+                            <p class="t-small text-gray-600 mt-1 font-arabic border-t border-maldiva-line pt-1.5" dir="rtl">تخفيض <strong>40%</strong> للأطفال الذين يقل عمرهم عن <strong>13 سنة</strong> ويستخدمون كرسي استلقاء. دخول <strong>مجاني</strong> للرضّع والأطفال الذين لا يستخدمون كرسي استلقاء.</p>
+                        </div>
                     </div>
                 </div>
-
             </div>
 
-            <!-- الفوتر (زر الإغلاق) -->
-            <div class="p-4 bg-white border-t border-gray-200 flex-shrink-0">
-                <button onclick="window.closeRulesModal()" class="w-full bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg uppercase tracking-wider text-xs flex justify-center items-center gap-2">
+            <div class="p-4 bg-white border-t border-maldiva-line flex-shrink-0">
+                <button onclick="window.closeRulesModal()" class="btn btn-dark w-full">
                     <span>J'ai compris</span>
-                    <span class="opacity-50">|</span>
-                    <span class="font-arabic" dir="rtl">موافق، فهمت ذلك</span>
+                    <span class="opacity-40">|</span>
+                    <span class="font-arabic" dir="rtl">موافق، فهمت</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <footer class="bg-maldiva-dark text-white py-8 px-4 border-t-4 border-maldiva-orange mt-12">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
-            <div><span class="serif-title text-2xl font-bold tracking-wider text-maldiva-orange">MALDIVA</span><p class="text-[10px] uppercase tracking-widest text-gray-300 mt-1">Plage Dorée, Tipaza, Algérie</p></div>
-            <p class="text-[10px] text-gray-400">&copy; 2026 Maldiva Beach Club. Tous droits réservés.</p>
+    <footer class="bg-maldiva-ink text-white py-9 px-4 mt-12">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
+            <div>
+                <span class="serif-title text-2xl font-bold tracking-wide text-maldiva-orange">MALDIVA</span>
+                <p class="t-label text-white/50 mt-1">Plage Dorée · Tipaza · Algérie</p>
+            </div>
+            <div class="flex items-center gap-5 t-small text-white/60">
+                <span><i class="fa-solid fa-clock mr-1.5 text-maldiva-orange"></i>8h – 19h</span>
+                <span>&copy; 2026 Maldiva Beach Club</span>
+            </div>
         </div>
     </footer>
 
-    <!-- سكريبت التحكم في نافذة القواعد -->
     <script>
-        // دالة فتح النافذة
-        window.openRulesModal = function() {
-            const modal = document.getElementById('rules-modal');
-            const content = document.getElementById('rules-modal-content');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            content.classList.remove('translate-y-8', 'scale-95');
+        /* ═══════════════════════════════════════════════════════
+           سكريبت الواجهة فقط — لا يحتوي أي منطق تسعير أو حجز.
+           كل الحسابات تبقى في js/prices.js و js/reservation.js
+           ═══════════════════════════════════════════════════════ */
+
+        /* ---------- نافذة القواعد ---------- */
+        window.openRulesModal = function () {
+            document.getElementById('rules-modal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('rules-modal-content').classList.remove('translate-y-8', 'scale-95');
+        };
+        window.closeRulesModal = function () {
+            document.getElementById('rules-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('rules-modal-content').classList.add('translate-y-8', 'scale-95');
         };
 
-        // دالة إغلاق النافذة
-        window.closeRulesModal = function() {
-            const modal = document.getElementById('rules-modal');
-            const content = document.getElementById('rules-modal-content');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            content.classList.add('translate-y-8', 'scale-95');
+        /* ---------- أزرار الـ Hero ---------- */
+        const scrollToTabs = () => {
+            const bar = document.getElementById('tabs-bar');
+            if (bar) window.scrollTo({ top: bar.offsetTop, behavior: 'smooth' });
+        };
+        window.goToBooking = function () { window.switchTab('booking-form'); scrollToTabs(); };
+        window.goToTracking = function () { window.switchTab('tracking-section'); scrollToTabs(); };
+
+        /* ---------- قراءة حالة النموذج (بدون أي حساب) ---------- */
+        const readSelection = () => {
+            const out = [];
+            document.querySelectorAll('[data-qty-row]').forEach(row => {
+                const span = document.getElementById(row.dataset.qtyRow);
+                const qty = span ? (parseInt(span.innerText) || 0) : 0;
+                if (qty > 0) out.push({ label: row.dataset.label || row.dataset.qtyRow, qty });
+            });
+            return out;
         };
 
-        // نظام الفتح التلقائي عند الزيارة الأولى
+        /* ---------- شريط الملخص الثابت ---------- */
+        const refreshSumbar = () => {
+            const bar = document.getElementById('sumbar');
+            const totalEl = document.getElementById('total-price');
+            if (!bar || !totalEl) return;
+
+            const picks = readSelection();
+            // لا نعرض عدّاد الأطفال كعنصر مستقل في العدد
+            const units = picks.filter(p => p.label.indexOf('enfants') === -1)
+                               .reduce((s, p) => s + p.qty, 0);
+
+            document.getElementById('sumbar-total').innerText = totalEl.innerText;
+            document.getElementById('sumbar-count').innerText = units > 0 ? `· ${units} article${units > 1 ? 's' : ''}` : '';
+
+            const onBooking = !document.getElementById('tab-booking-form').classList.contains('hidden');
+            bar.classList.toggle('in', units > 0 && onBooking);
+        };
+
+        // نتابع تغيّر المجموع بدل تعديل منطق الحساب
+        const totalNode = document.getElementById('total-price');
+        if (totalNode) new MutationObserver(refreshSumbar).observe(totalNode, { childList: true, characterData: true, subtree: true });
+        document.querySelectorAll('#btn-tab-booking, #btn-tab-tracking').forEach(b => b.addEventListener('click', () => setTimeout(refreshSumbar, 0)));
+
+        /* ---------- لوحة المراجعة ---------- */
+        window.openReview = function () {
+            const picks = readSelection();
+            if (picks.length === 0) {
+                window.showNotification && window.showNotification("Choisissez au moins un équipement ou une activité.", "error");
+                return;
+            }
+
+            const name = document.getElementById('client-name').value.trim();
+            const phone = document.getElementById('client-phone').value.trim();
+            const date = document.getElementById('visit-date').value;
+            const durSel = document.getElementById('duration');
+            const dur = durSel.options[durSel.selectedIndex].text;
+
+            const row = (k, v) => `<div class="flex justify-between gap-3 border-b border-maldiva-line pb-2">
+                    <dt class="text-gray-500 flex-shrink-0">${k}</dt>
+                    <dd class="font-bold text-maldiva-ink text-right">${v || '<span class="text-red-500 font-semibold">à remplir</span>'}</dd></div>`;
+
+            document.getElementById('review-who').innerHTML =
+                row('Nom', name) + row('Téléphone', phone) + row('Date', date) + row('Durée', dur);
+
+            document.getElementById('review-items').innerHTML = picks.map(p =>
+                `<div class="flex justify-between gap-3 bg-maldiva-sand rounded-lg px-3 py-2">
+                    <span class="text-gray-700">${p.label}</span>
+                    <span class="font-bold text-maldiva-dark tabular-nums">× ${p.qty}</span></div>`).join('');
+
+            const notes = document.getElementById('special-pricing-notes');
+            document.getElementById('review-notes').innerHTML = notes.classList.contains('hidden') ? '' : notes.innerHTML;
+            document.getElementById('review-total').innerText = document.getElementById('total-price').innerText;
+
+            const sheet = document.getElementById('review-sheet');
+            sheet.hidden = false;
+            requestAnimationFrame(() => sheet.classList.add('in'));
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeReview = function () {
+            const sheet = document.getElementById('review-sheet');
+            sheet.classList.remove('in');
+            document.body.style.overflow = '';
+            setTimeout(() => { sheet.hidden = true; }, 300);
+        };
+
+        /* ---------- حالات التحميل ---------- */
+        const withLoading = async (btn, fn) => {
+            if (!btn || btn.disabled) return;
+            btn.disabled = true;
+            btn.classList.add('is-loading');
+            try { await fn(); }
+            finally { btn.disabled = false; btn.classList.remove('is-loading'); }
+        };
+
+        window.uiSubmit = function (btn) {
+            withLoading(btn, async () => {
+                await window.submitReservation();
+                // إذا نجح الإرسال تُفتح نافذة النجاح — نغلق لوحة المراجعة
+                const ok = !document.getElementById('success-modal').classList.contains('hidden');
+                if (ok) window.closeReview();
+            });
+        };
+
+        window.uiTrack = function (btn) {
+            withLoading(btn, async () => {
+                const box = document.getElementById('track-result-box');
+                // نخفي كل الحالات أولاً حتى لا تبقى نتيجة قديمة معروضة بعد بحث فاشل
+                document.getElementById('track-empty').classList.add('hidden');
+                document.getElementById('track-notfound').classList.add('hidden');
+                box.classList.add('hidden');
+
+                await window.trackReservation();
+
+                // reservation.js يُظهر الصندوق عند النجاح فقط
+                if (box.classList.contains('hidden')) {
+                    document.getElementById('track-notfound').classList.remove('hidden');
+                }
+            });
+        };
+
+        /* ---------- الظهور التدريجي ---------- */
+        const revealables = document.querySelectorAll('.reveal');
+        if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+            }, { rootMargin: '0px 0px -8% 0px', threshold: .08 });
+            revealables.forEach(el => io.observe(el));
+        } else {
+            revealables.forEach(el => el.classList.add('in'));
+        }
+
+        /* ---------- القواعد عند أول زيارة ---------- */
         document.addEventListener('DOMContentLoaded', () => {
-            // نتحقق إذا كان المستخدم قد رأى القواعد من قبل
-            const hasSeenRules = localStorage.getItem('maldiva_rules_seen');
-            
-            if (!hasSeenRules) {
-                // إذا لم يرها، نفتحها بعد 1.5 ثانية من تحميل الصفحة
+            if (!localStorage.getItem('maldiva_rules_seen')) {
                 setTimeout(() => {
                     window.openRulesModal();
-                    // نحفظ في المتصفح أنه قد رأى القواعد كي لا نزعجه في المرات القادمة
                     localStorage.setItem('maldiva_rules_seen', 'true');
-                }, 1500);
+                }, 1800);
             }
+            refreshSumbar();
+        });
+
+        // Échap يغلق اللوحات
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (!document.getElementById('review-sheet').hidden) window.closeReview();
+            else window.closeRulesModal();
         });
     </script>
 

@@ -1,22 +1,29 @@
-/* /css/style.css */
+/* ═══════════════════════════════════════════════════════════════
+   /css/style.css — Maldiva Beach Club
+   Source unique du système de design, partagée par
+   index.html · admin.html · suivi.html
+   ═══════════════════════════════════════════════════════════════ */
 
-/* الإعدادات العامة والخطوط */
-body { 
-    font-family: 'Montserrat', sans-serif; 
-    background-color: #fbf7f0; 
+/* ───────────────────────────────────────────────
+   1. RÈGLES D'ORIGINE (conservées telles quelles)
+   ─────────────────────────────────────────────── */
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #fbf7f0;
 }
 
-.serif-title { 
-    font-family: 'Playfair Display', serif; 
+.serif-title {
+    font-family: 'Playfair Display', serif;
 }
 
 /* إخفاء شريط التمرير في المتصفح للحصول على شكل أنيق */
-.hide-scrollbar::-webkit-scrollbar { 
-    display: none; 
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
 }
-.hide-scrollbar { 
-    -ms-overflow-style: none; 
-    scrollbar-width: none; 
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 /* تحسينات إضافية للتجاوب */
@@ -30,4 +37,248 @@ body {
 .admin-tab-active {
     border-bottom: 2px solid #ff7e67;
     color: #ff7e67;
+}
+
+
+/* ───────────────────────────────────────────────
+   2. JETONS DE COULEUR
+   Mêmes valeurs que tailwind.config — définies ici
+   pour être utilisables en CSS pur.
+   ─────────────────────────────────────────────── */
+
+:root {
+    --m-ink:    #052e33;   /* le plus foncé — textes */
+    --m-dark:   #0b4c53;   /* couleur d'identité */
+    --m-teal:   #24a19c;
+    --m-orange: #ff7e67;   /* couleur d'action (CTA) */
+    --m-sand:   #fbf7f0;
+    --m-accent: #f4eee1;
+    --m-line:   #e8ded0;   /* filet chaud, remplace le gris froid */
+}
+
+
+/* ───────────────────────────────────────────────
+   3. TYPOGRAPHIE
+   L'ancienne page descendait à 8px : illisible sur
+   mobile. Plancher fixé à 12px.
+   ─────────────────────────────────────────────── */
+
+.font-arabic {
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, 'Arial', sans-serif;
+}
+
+.t-hero    { font-size: clamp(2.1rem, 8vw, 4rem); line-height: 1.05; letter-spacing: -.02em; }
+.t-section { font-size: clamp(1.35rem, 4.5vw, 1.75rem); line-height: 1.2; }
+.t-card    { font-size: .9375rem; line-height: 1.35; }   /* 15px */
+.t-body    { font-size: .8125rem; line-height: 1.55; }   /* 13px */
+.t-small   { font-size: .75rem;   line-height: 1.5; }    /* 12px — plancher */
+.t-label   { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+
+
+/* ───────────────────────────────────────────────
+   4. BARRES DE DÉFILEMENT
+   ─────────────────────────────────────────────── */
+
+.custom-scrollbar { scrollbar-width: thin; }
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cfc4b4; border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+
+/* ───────────────────────────────────────────────
+   5. BOUTONS
+   ─────────────────────────────────────────────── */
+
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .08em;
+    padding: .95rem 1.5rem; border-radius: .875rem; border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .2s, background-color .2s, border-color .2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(.975); }
+.btn:focus-visible { outline: 2px solid var(--m-teal); outline-offset: 2px; }
+.btn[disabled] { opacity: .6; cursor: not-allowed; transform: none; }
+
+.btn-primary { background: var(--m-orange); color: #fff; box-shadow: 0 6px 20px -6px rgba(255,126,103,.65); }
+.btn-primary:hover:not([disabled]) { background: #f96b52; box-shadow: 0 10px 28px -8px rgba(255,126,103,.75); }
+
+.btn-dark { background: var(--m-dark); color: #fff; box-shadow: 0 6px 20px -8px rgba(11,76,83,.55); }
+.btn-dark:hover:not([disabled]) { background: var(--m-ink); }
+
+.btn-ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.35); backdrop-filter: blur(6px); }
+.btn-ghost:hover:not([disabled]) { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.6); }
+
+.btn-outline { background: #fff; color: var(--m-dark); border-color: var(--m-line); }
+.btn-outline:hover:not([disabled]) { border-color: var(--m-teal); color: var(--m-teal); }
+
+/* état de chargement */
+.btn .spin { display: none; }
+.btn.is-loading .spin { display: inline-block; animation: m-spin .7s linear infinite; }
+.btn.is-loading .btn-text { opacity: .75; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+
+/* ───────────────────────────────────────────────
+   6. CARTES ET EN-TÊTES DE SECTION
+   ─────────────────────────────────────────────── */
+
+.card {
+    background: #fff;
+    border: 1px solid #f0e9de;
+    border-radius: 1.25rem;
+    box-shadow: 0 1px 2px rgba(5,46,51,.04), 0 8px 24px -16px rgba(5,46,51,.18);
+}
+.card-hover { transition: transform .2s, box-shadow .25s; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(5,46,51,.05), 0 18px 40px -22px rgba(5,46,51,.28); }
+
+/* un seul style d'en-tête pour toutes les sections */
+.sec-head { display: flex; align-items: center; gap: .625rem; }
+.sec-head .ico {
+    width: 1.75rem; height: 1.75rem; border-radius: .5rem; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: .75rem;
+}
+.sec-head .rule { flex: 1; height: 1px; background: #efe7db; }
+
+
+/* ───────────────────────────────────────────────
+   7. CHAMPS DE FORMULAIRE
+   ─────────────────────────────────────────────── */
+
+.field-label {
+    display: block; font-size: .6875rem; font-weight: 700; color: #6b7280;
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: .35rem;
+}
+.field-input {
+    width: 100%; background: var(--m-sand); border: 1px solid var(--m-line);
+    border-radius: .75rem; padding: .7rem 1rem; font-size: .8125rem; color: var(--m-ink);
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+.field-input::placeholder { color: #a8a196; }
+.field-input:focus {
+    outline: none; background: #fff; border-color: var(--m-teal);
+    box-shadow: 0 0 0 3px rgba(36,161,156,.14);
+}
+
+
+/* ───────────────────────────────────────────────
+   8. COMPTEURS DE QUANTITÉ
+   Cibles tactiles 32px (28px pour les lignes
+   imbriquées) au lieu des 20-24px d'avant.
+   ─────────────────────────────────────────────── */
+
+.qty-btn {
+    width: 2rem; height: 2rem; flex-shrink: 0;
+    border-radius: .5rem; background: #fff; border: 1px solid var(--m-line);
+    color: var(--m-dark); font-weight: 700; font-size: .9rem; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color .15s, color .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+}
+.qty-btn.qty-btn-sm { width: 1.75rem; height: 1.75rem; font-size: .8rem; }
+.qty-btn:hover { border-color: var(--m-teal); color: var(--m-teal); }
+.qty-btn:active { transform: scale(.9); }
+.qty-btn:focus-visible { outline: 2px solid var(--m-teal); outline-offset: 1px; }
+
+/* la ligne s'éclaire dès que la quantité dépasse zéro */
+[data-qty-row] { transition: background-color .2s, border-color .2s, box-shadow .2s; }
+[data-qty-row].is-selected { background: #fff; box-shadow: 0 1px 3px rgba(11,76,83,.09); }
+[data-qty-row][data-accent="teal"].is-selected   { border-color: rgba(36,161,156,.45); }
+[data-qty-row][data-accent="orange"].is-selected { border-color: rgba(255,126,103,.5); }
+[data-qty-row][data-accent="purple"].is-selected { background: #faf5ff; border-color: rgba(147,51,234,.35); }
+
+.qty-value { color: #cbd5e1; transition: color .2s; font-variant-numeric: tabular-nums; }
+.qty-value.is-selected { color: var(--m-ink); }
+[data-qty-row][data-accent="purple"] .qty-value.is-selected { color: #7e22ce; }
+
+
+/* ───────────────────────────────────────────────
+   9. HERO (index.html)
+   ─────────────────────────────────────────────── */
+
+.hero { position: relative; min-height: 78vh; display: flex; align-items: flex-end; overflow: hidden; }
+@media (min-width: 1024px) { .hero { min-height: 82vh; } }
+.hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top,
+        rgba(5,46,51,.94) 0%, rgba(5,46,51,.72) 32%, rgba(5,46,51,.25) 62%, rgba(5,46,51,.42) 100%);
+}
+.hero-body { position: relative; width: 100%; }
+
+.fact { display: flex; align-items: center; gap: .625rem; }
+.fact i { color: var(--m-orange); font-size: .875rem; width: 1rem; text-align: center; }
+
+
+/* ───────────────────────────────────────────────
+   10. APPARITION AU DÉFILEMENT
+   ─────────────────────────────────────────────── */
+
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+
+/* ───────────────────────────────────────────────
+   11. BARRE DE RÉSUMÉ FIXE (mobile)
+   ─────────────────────────────────────────────── */
+
+.sumbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: rgba(5,46,51,.97); backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding: .7rem .9rem calc(.7rem + env(safe-area-inset-bottom));
+    transform: translateY(110%);
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.sumbar.in { transform: none; }
+@media (min-width: 1024px) { .sumbar { display: none; } }
+
+
+/* ───────────────────────────────────────────────
+   12. PANNEAU DE RÉCAPITULATIF
+   ─────────────────────────────────────────────── */
+
+.sheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; }
+.sheet[hidden] { display: none; }
+.sheet-veil { position: absolute; inset: 0; background: rgba(5,46,51,.55); backdrop-filter: blur(3px); opacity: 0; transition: opacity .25s; }
+.sheet.in .sheet-veil { opacity: 1; }
+.sheet-panel {
+    position: relative; width: 100%; max-width: 30rem; background: #fff;
+    border-radius: 1.5rem 1.5rem 0 0; max-height: 88vh;
+    display: flex; flex-direction: column;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.in .sheet-panel { transform: none; }
+@media (min-width: 640px) {
+    .sheet { align-items: center; padding: 1rem; }
+    .sheet-panel { border-radius: 1.5rem; }
+}
+.sheet-grip { width: 2.5rem; height: .25rem; border-radius: 99px; background: #e2d9cb; margin: .75rem auto .25rem; }
+
+
+/* ───────────────────────────────────────────────
+   13. ÉTATS VIDES
+   ─────────────────────────────────────────────── */
+
+.empty { text-align: center; padding: 2.25rem 1.25rem; }
+.empty .ico {
+    width: 3.25rem; height: 3.25rem; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto .875rem; font-size: 1.25rem;
+}
+
+
+/* ───────────────────────────────────────────────
+   14. ACCESSIBILITÉ — mouvement réduit
+   ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+    .reveal { opacity: 1; transform: none; }
 }

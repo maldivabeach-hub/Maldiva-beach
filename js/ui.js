@@ -77,7 +77,7 @@ export const switchTab = (tabId) => {
     // ملاحظة: نص الزر غير النشط يبقى رمادياً مقروءاً (لا نستعمل شفافية منخفضة حتى لا يبدو معطّلاً).
     const btnBase = "flex-1 py-3.5 flex flex-col items-center gap-1.5 border-b-2 transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maldiva-dark/30";
     const chipBase = "w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all duration-200";
-    const labelBase = "text-[10px] font-bold uppercase tracking-wider transition-colors duration-200";
+    const labelBase = "t-label transition-colors duration-200";
 
     const theme = {
         'booking-form': {

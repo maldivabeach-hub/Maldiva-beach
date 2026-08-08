@@ -28,6 +28,42 @@
             }
         }
     </script>
+
+    <style>
+        /* ===== مكوّنات نموذج الحجز =====
+           أزرار العدّاد موحّدة الحجم (هدف لمس مريح على الهاتف)،
+           والصف يُبرَز تلقائياً عندما تكون الكمية أكبر من صفر (عبر .is-selected من reservation.js) */
+        .qty-btn {
+            width: 2rem; height: 2rem; flex-shrink: 0;
+            border-radius: .5rem; background: #fff; border: 1px solid #e5e7eb;
+            color: #0b4c53; font-weight: 700; font-size: .9rem; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            transition: border-color .15s, color .15s, transform .1s;
+        }
+        .qty-btn.qty-btn-sm { width: 1.75rem; height: 1.75rem; font-size: .8rem; }
+        .qty-btn:hover { border-color: #24a19c; color: #24a19c; }
+        .qty-btn:active { transform: scale(.92); }
+        .qty-btn:focus-visible { outline: 2px solid #24a19c; outline-offset: 1px; }
+
+        [data-qty-row] { transition: background-color .2s, border-color .2s, box-shadow .2s; }
+        [data-qty-row].is-selected { background: #fff; box-shadow: 0 1px 3px rgba(11, 76, 83, .09); }
+        [data-qty-row][data-accent="teal"].is-selected { border-color: rgba(36, 161, 156, .45); }
+        [data-qty-row][data-accent="orange"].is-selected { border-color: rgba(255, 126, 103, .5); }
+        [data-qty-row][data-accent="purple"].is-selected { background: #faf5ff; border-color: rgba(147, 51, 234, .35); }
+
+        .qty-value { color: #cbd5e1; transition: color .2s; font-variant-numeric: tabular-nums; }
+        .qty-value.is-selected { color: #0b4c53; }
+        [data-qty-row][data-accent="purple"] .qty-value.is-selected { color: #7e22ce; }
+
+        .field-label { display: block; font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; margin-bottom: .3rem; }
+        .field-input { width: 100%; background: #fbf7f0; border: 1px solid #e5e7eb; border-radius: .75rem; padding: .625rem 1rem; font-size: .8125rem; transition: border-color .15s, box-shadow .15s; }
+        .field-input:focus { outline: none; border-color: #24a19c; box-shadow: 0 0 0 3px rgba(36, 161, 156, .15); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .qty-btn, [data-qty-row], .qty-value, .field-input { transition: none; }
+            .qty-btn:active { transform: none; }
+        }
+    </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between pb-24 md:pb-8">
 
@@ -227,72 +263,193 @@
                             <p class="text-xs text-gray-400">احسب السعر واملأ تفاصيل حجزك</p>
                         </div>
 
-                        <form id="booking-form-el" class="space-y-4" onsubmit="event.preventDefault();">
+                        <form id="booking-form-el" class="space-y-5" onsubmit="event.preventDefault();">
+
+                            <!-- 1. Coordonnées -->
                             <div class="space-y-3">
-                                <div><input type="text" id="client-name" placeholder="Nom Complet / الاسم الكامل *" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required></div>
-                                <div><input type="tel" id="client-phone" placeholder="Téléphone / رقم الهاتف *" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required></div>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-7 h-7 rounded-lg bg-maldiva-dark/10 text-maldiva-dark flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-user"></i></span>
+                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Vos coordonnées</span>
+                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date de Visite / تاريخ الزيارة *</label>
-                                    <input type="date" id="visit-date" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal" required>
+                                    <label for="client-name" class="field-label">Nom complet / الاسم الكامل *</label>
+                                    <input type="text" id="client-name" placeholder="Nom et prénom / الاسم واللقب" class="field-input" required>
+                                </div>
+                                <div>
+                                    <label for="client-phone" class="field-label">Téléphone / رقم الهاتف *</label>
+                                    <input type="tel" id="client-phone" placeholder="Numéro de téléphone / رقم الهاتف" class="field-input" required>
+                                </div>
+                                <div>
+                                    <label for="visit-date" class="field-label">Date de visite / تاريخ الزيارة *</label>
+                                    <input type="date" id="visit-date" class="field-input" required>
                                 </div>
                             </div>
 
-                            <div class="space-y-2 pt-2 border-t border-gray-100">
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase bg-gray-50 py-1.5 px-3 rounded-lg border border-gray-100"><i class="fa-solid fa-umbrella-beach text-maldiva-orange mr-1"></i> Équipements de plage</label>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
+                            <!-- 2. Équipements de plage -->
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-7 h-7 rounded-lg bg-maldiva-orange/10 text-maldiva-orange flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-umbrella-beach"></i></span>
+                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Équipements de plage</span>
+                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                </div>
+
+                                <div data-qty-row="qty-chaise" data-accent="teal" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
                                     <span class="text-xs font-bold text-gray-700">Chaise Longue</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-chaise" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-chaise', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="window.adjustQty('qty-chaise', -1)" class="qty-btn" aria-label="Retirer une chaise longue">−</button>
+                                        <span id="qty-chaise" class="qty-value w-6 text-center font-bold text-sm">0</span>
+                                        <button type="button" onclick="window.adjustQty('qty-chaise', 1)" class="qty-btn" aria-label="Ajouter une chaise longue">+</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between bg-purple-50 px-3 py-1 rounded-xl ml-4 border border-purple-100">
+
+                                <div data-qty-row="qty-chaise-enfant" data-accent="purple" class="flex items-center justify-between gap-2 bg-purple-50/60 border border-purple-100 px-3 py-1.5 rounded-xl ml-4">
                                     <span class="text-[10px] font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants -13 ans (-40%)</span>
-                                    <div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustChildChaise(-1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-[10px]">-</button><span id="qty-chaise-enfant" class="font-bold w-4 text-center text-[10px] text-purple-700">0</span><button type="button" onclick="window.adjustChildChaise(1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-[10px]">+</button></div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="window.adjustChildChaise(-1)" class="qty-btn qty-btn-sm" aria-label="Retirer un enfant">−</button>
+                                        <span id="qty-chaise-enfant" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                        <button type="button" onclick="window.adjustChildChaise(1)" class="qty-btn qty-btn-sm" aria-label="Ajouter un enfant">+</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl">
+
+                                <div data-qty-row="qty-transat" data-accent="teal" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
                                     <span class="text-xs font-bold text-gray-700">Transat en Bois</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-transat', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-transat" class="font-bold w-4 text-center text-xs text-maldiva-teal">0</span><button type="button" onclick="window.adjustQty('qty-transat', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="window.adjustQty('qty-transat', -1)" class="qty-btn" aria-label="Retirer un transat">−</button>
+                                        <span id="qty-transat" class="qty-value w-6 text-center font-bold text-sm">0</span>
+                                        <button type="button" onclick="window.adjustQty('qty-transat', 1)" class="qty-btn" aria-label="Ajouter un transat">+</button>
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between bg-maldiva-sand px-3 py-1.5 rounded-xl border border-maldiva-orange/20">
-                                    <span class="text-xs font-bold text-gray-700">Baldaquins</span>
-                                    <div class="flex items-center gap-2"><button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-baldaquin" class="font-bold w-4 text-center text-xs">0</span><button type="button" onclick="window.adjustQty('qty-baldaquin', 1)" class="w-6 h-6 rounded bg-white shadow-sm font-bold text-xs">+</button></div>
-                                </div>
-                            </div>
 
-                            <div class="space-y-2 pt-2 border-t border-gray-100">
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase bg-blue-50 py-1.5 px-3 rounded-lg border border-blue-100 flex justify-between">
-                                    <span><i class="fa-solid fa-water text-maldiva-teal mr-1"></i> Activités Nautiques</span>
-                                </label>
-                                <div class="h-40 overflow-y-auto pr-1 space-y-2 hide-scrollbar">
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Jet-Ski</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">15 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-15" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-jetski-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-jetski-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bouée Tractée</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">2 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-2" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">3 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bouee-3" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bouee-3', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Bateau (Sortie)</div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">+4 Personnes</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-bateau-standard" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-bateau-standard', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Pédalo</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-pedalo-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-pedalo-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                    </div>
-                                    <div class="bg-maldiva-sand px-3 py-2 rounded-xl">
-                                        <div class="text-[11px] font-bold text-gray-800 mb-1.5">Kayak</div>
-                                        <div class="flex justify-between items-center mb-1"><span class="text-[10px] text-gray-500">30 Min</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-30" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
-                                        <div class="flex justify-between items-center"><span class="text-[10px] text-gray-500">1 Heure</span><div class="flex items-center gap-1.5"><button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">-</button><span id="qty-kayak-60" class="font-bold w-3 text-center text-[10px]">0</span><button type="button" onclick="window.adjustQty('qty-kayak-60', 1)" class="w-5 h-5 rounded bg-white shadow-sm font-bold text-xs">+</button></div></div>
+                                <div data-qty-row="qty-baldaquin" data-accent="orange" class="flex items-center justify-between gap-2 bg-maldiva-sand border border-transparent px-3 py-2 rounded-xl">
+                                    <span class="text-xs font-bold text-gray-700">Baldaquin Royal</span>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="window.adjustQty('qty-baldaquin', -1)" class="qty-btn" aria-label="Retirer un baldaquin">−</button>
+                                        <span id="qty-baldaquin" class="qty-value w-6 text-center font-bold text-sm">0</span>
+                                        <button type="button" onclick="window.adjustQty('qty-baldaquin', 1)" class="qty-btn" aria-label="Ajouter un baldaquin">+</button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="pt-2 border-t border-gray-100">
-                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Durée (Équipements Plage) / أيام مستلزمات الشاطئ</label>
-                                <select id="duration" onchange="window.calculateTotal()" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                            <!-- 3. Activités nautiques -->
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-7 h-7 rounded-lg bg-maldiva-teal/10 text-maldiva-teal flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-water"></i></span>
+                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Activités nautiques</span>
+                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                </div>
+                                <div class="h-52 overflow-y-auto p-2 -mx-1 space-y-2 hide-scrollbar rounded-xl border border-gray-100 bg-gray-50/40">
+                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Jet-Ski</div>
+                                        <div data-qty-row="qty-jetski-15" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">15 Min</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-15', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 15 min">−</button>
+                                                <span id="qty-jetski-15" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-15', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter Jet-Ski 15 min">+</button>
+                                            </div>
+                                        </div>
+                                        <div data-qty-row="qty-jetski-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 30 min">−</button>
+                                                <span id="qty-jetski-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter Jet-Ski 30 min">+</button>
+                                            </div>
+                                        </div>
+                                        <div data-qty-row="qty-jetski-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer Jet-Ski 1 heure">−</button>
+                                                <span id="qty-jetski-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-jetski-60', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter Jet-Ski 1 heure">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Bouée Tractée</div>
+                                        <div data-qty-row="qty-bouee-2" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">2 Personnes</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-bouee-2', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer bouée 2 personnes">−</button>
+                                                <span id="qty-bouee-2" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-bouee-2', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter bouée 2 personnes">+</button>
+                                            </div>
+                                        </div>
+                                        <div data-qty-row="qty-bouee-3" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">3 Personnes</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-bouee-3', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer bouée 3 personnes">−</button>
+                                                <span id="qty-bouee-3" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-bouee-3', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter bouée 3 personnes">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Bateau (Sortie)</div>
+                                        <div data-qty-row="qty-bateau-standard" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">+4 Personnes</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-bateau-standard', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer sortie bateau">−</button>
+                                                <span id="qty-bateau-standard" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-bateau-standard', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter sortie bateau">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Pédalo</div>
+                                        <div data-qty-row="qty-pedalo-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-pedalo-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer pédalo 30 min">−</button>
+                                                <span id="qty-pedalo-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-pedalo-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter pédalo 30 min">+</button>
+                                            </div>
+                                        </div>
+                                        <div data-qty-row="qty-pedalo-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-pedalo-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer pédalo 1 heure">−</button>
+                                                <span id="qty-pedalo-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-pedalo-60', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter pédalo 1 heure">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-maldiva-sand px-3 py-2.5 rounded-xl space-y-1">
+                                        <div class="text-[11px] font-bold text-maldiva-dark mb-1">Kayak</div>
+                                        <div data-qty-row="qty-kayak-30" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">30 Min</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-kayak-30', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer kayak 30 min">−</button>
+                                                <span id="qty-kayak-30" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-kayak-30', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter kayak 30 min">+</button>
+                                            </div>
+                                        </div>
+                                        <div data-qty-row="qty-kayak-60" data-accent="teal" class="flex justify-between items-center gap-2 px-2 py-1 rounded-lg border border-transparent">
+                                            <span class="text-[10px] text-gray-500 font-semibold">1 Heure</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="window.adjustQty('qty-kayak-60', -1)" class="qty-btn qty-btn-sm" aria-label="Retirer kayak 1 heure">−</button>
+                                                <span id="qty-kayak-60" class="qty-value w-5 text-center font-bold text-xs">0</span>
+                                                <button type="button" onclick="window.adjustQty('qty-kayak-60', 1)" class="qty-btn qty-btn-sm" aria-label="Ajouter kayak 1 heure">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Durée -->
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-7 h-7 rounded-lg bg-maldiva-dark/10 text-maldiva-dark flex items-center justify-center text-xs shrink-0"><i class="fa-solid fa-calendar-days"></i></span>
+                                    <span class="text-[11px] font-bold text-maldiva-dark uppercase tracking-wider whitespace-nowrap">Durée du séjour</span>
+                                    <span class="flex-1 h-px bg-gray-100"></span>
+                                </div>
+                                <label for="duration" class="field-label">S'applique aux équipements de plage / أيام مستلزمات الشاطئ</label>
+                                <select id="duration" onchange="window.calculateTotal()" class="field-input">
                                     <option value="1">1 Jour / يوم واحد</option>
                                     <option value="2">2 Jours / يومين</option>
                                     <option value="3">3 Jours / 3 أيام</option>
@@ -301,22 +458,24 @@
                                 </select>
                             </div>
 
+                            <!-- 5. Total -->
                             <div class="bg-gradient-to-tr from-maldiva-dark to-teal-950 rounded-2xl p-4 text-white">
                                 <div class="flex justify-between items-center mb-1 text-[10px] opacity-80">
-                                    <span>Total Estimé / المجموع الإجمالي</span>
+                                    <span class="uppercase tracking-wider font-semibold">Total estimé / المجموع الإجمالي</span>
                                     <span id="discount-badge" class="hidden bg-maldiva-orange text-white font-bold px-2 py-0.5 rounded text-[8px]">REMISE ACTIVE</span>
                                 </div>
                                 <div class="flex justify-between items-baseline">
-                                    <span id="total-price" class="text-2xl font-extrabold text-maldiva-orange">0 DA</span>
+                                    <span id="total-price" class="text-2xl font-extrabold text-maldiva-orange tabular-nums">0 DA</span>
                                     <span class="text-xs opacity-70">TTC</span>
                                 </div>
                             </div>
 
                             <!-- حاوية ملاحظات التسعير الخاصة -->
-                            <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full mt-2"></div>
+                            <div id="special-pricing-notes" class="hidden flex flex-col gap-1 w-full"></div>
 
-                            <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl hover:shadow-lg hover:from-maldiva-orange hover:to-maldiva-orange transition-all duration-300 uppercase text-xs tracking-wider">
-                                Confirmer la Demande • إرسال الطلب
+                            <button type="button" onclick="window.submitReservation()" class="w-full bg-gradient-to-r from-maldiva-teal to-maldiva-dark text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maldiva-teal focus-visible:ring-offset-2 transition-all duration-200 uppercase text-xs tracking-wider flex items-center justify-center gap-2">
+                                <span>Confirmer la demande • إرسال الطلب</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
                             </button>
                         </form>
                     </div>

@@ -17,6 +17,17 @@ const setInitialDate = () => {
 };
 setInitialDate();
 
+// 🎨 يُبرز الصف بصريًا عندما تكون كميته أكبر من صفر (الأنماط معرّفة في <style> داخل index.html)
+// حتى يشوف الزبون بلمحة وحدة وش اختار بالضبط
+const syncQtyVisual = (elementId) => {
+    const span = document.getElementById(elementId);
+    if (!span) return;
+    const active = (parseInt(span.innerText) || 0) > 0;
+    span.classList.toggle('is-selected', active);
+    const row = document.querySelector(`[data-qty-row="${elementId}"]`);
+    if (row) row.classList.toggle('is-selected', active);
+};
+
 const adjustQty = (elementId, amount) => {
     const span = document.getElementById(elementId);
     if (!span) return;
@@ -31,8 +42,10 @@ const adjustQty = (elementId, amount) => {
         if (childSpan && parseInt(childSpan.innerText) > current) {
             childSpan.innerText = current;
         }
+        syncQtyVisual('qty-chaise-enfant');
     }
 
+    syncQtyVisual(elementId);
     calculateTotal();
 };
 
@@ -46,6 +59,7 @@ const adjustChildChaise = (amount) => {
     if (current < 0) current = 0;
     if (current > maxAllowed) current = maxAllowed;
     span.innerText = current;
+    syncQtyVisual('qty-chaise-enfant');
     calculateTotal();
 };
 
@@ -203,9 +217,11 @@ const resetForm = () => {
     for (let id in allPrices) { 
         const el = document.getElementById(id);
         if(el) el.innerText = '0'; 
+        syncQtyVisual(id);
     } 
     const childChaiseEl = document.getElementById('qty-chaise-enfant');
     if (childChaiseEl) childChaiseEl.innerText = '0';
+    syncQtyVisual('qty-chaise-enfant');
     calculateTotal();
 };
 

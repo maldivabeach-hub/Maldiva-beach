@@ -1,6 +1,6 @@
 // /js/reservation.js
 import { initPublicAuth } from './firebase.js';
-import { submitNewReservation, getReservationByCode, checkIfDateIsClosed, isTrackingCodeTaken } from './reservationService.js';
+import { submitNewReservation, getReservationByCode, checkIfDateIsClosed, isTrackingCodeTaken, getSiteImageSettings, SITE_IMAGE_KEYS } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
 import { allPrices, actPrices, childPricing, names, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
@@ -288,3 +288,20 @@ window.adjustChildChaise = adjustChildChaise;
 window.calculateTotal = calculateTotal;
 window.submitReservation = submitReservation;
 window.trackReservation = trackReservation;
+
+// ==========================================
+// تطبيق صور الموقع المخصّصة (من لوحة الأدمن ← Settings)
+// ==========================================
+// إذا لم توجد إعدادات، أو كان الحقل فارغاً، تبقى الصورة المكتوبة في index.html كما هي.
+// لا نُخفي الصورة أبداً عند الفشل — الموقع يعمل حتى بدون Firestore.
+const applySiteImages = async () => {
+    const urls = await getSiteImageSettings();
+    for (const settingKey in SITE_IMAGE_KEYS) {
+        const url = (urls[settingKey] || '').trim();
+        if (!url) continue;
+        const img = document.getElementById(SITE_IMAGE_KEYS[settingKey]);
+        if (img) img.src = url;
+    }
+};
+
+applySiteImages();

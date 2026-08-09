@@ -2,8 +2,8 @@
 
 import { db, appId, signInAdmin, signOutAdmin } from './firebase.js'; 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays } from './reservationService.js';
-import { showNotification, openConfirmModal, closeConfirmModal } from './ui.js';
+import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS } from './reservationService.js';
+import { showNotification, openConfirmModal, closeConfirmModal, switchAdminSubTab } from './ui.js';
 import { pricesByName, childPricing, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
 // يتحقق من أن المستخدم المسجل دخوله عبر Firebase Auth موجود فعلاً في مجموعة admins
@@ -356,7 +356,7 @@ export const openEditModal = async (trackingCode) => {
             const childQty = Math.min(res.childrenChaiseCount || 0, currentQty);
             itemsHTML += `
                 <div class="flex justify-between items-center bg-purple-50 p-2 rounded-xl border border-purple-100 ml-4">
-                    <span class="text-[11px] font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants (-40%)</span>
+                    <span class="text-[11px] font-semibold text-purple-600"><i class="fa-solid fa-child-reaching mr-1"></i>Dont enfants (-${childPricing.childWithChairDiscount * 100}%)</span>
                     <div class="flex items-center gap-1.5">
                         <button type="button" onclick="window.updateEditChildChaise(-1)" class="w-5 h-5 bg-white rounded-full text-purple-700 font-bold text-[10px] flex items-center justify-center shadow-sm">-</button>
                         <span id="edit-qty-chaise-enfant" class="text-[10px] font-bold w-4 text-center text-purple-700">${childQty}</span>
@@ -611,6 +611,144 @@ export const renderClosedDays = async () => {
 window.verifyAdminLogin = verifyAdminLogin;
 window.logoutAdmin = logoutAdmin;
 window.setAdminDateFilterToday = setAdminDateFilterToday;
+// ══════════════════════════════════════════════════════════════
+// الزبائن الأوفياء (Fidélité)
+// ══════════════════════════════════════════════════════════════
+// يُبنى بالكامل من الحجوزات الموجودة — لا حقول جديدة في Firestore.
+// التجميع بآخر 9 أرقام من الهاتف لتفادي اختلاف التنسيق (0555… / +213555…)
+
+const normalizePhone = (phone) => (phone || '').replace(/\D/g, '').slice(-9);
+const parseMoney = (str) => parseInt((str || '').replace(/[^\d]/g, '')) || 0;
+
+export const renderLoyalty = async () => {
+    const container = document.getElementById('loyalty-list');
+    if (!container) return;
+
+    const search = (document.getElementById('loyalty-search')?.value || '').trim().toLowerCase();
+
+    container.innerHTML = `<div class="text-center py-10 text-gray-400 text-xs">
+        <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Chargement…</div>`;
+
+    let list;
+    try {
+        list = await getAdminReservations();
+    } catch (e) {
+        console.error("Erreur renderLoyalty:", e);
+        container.innerHTML = `<div class="text-center py-10 text-red-500 text-xs font-bold">
+            Impossible de charger les clients. Vérifiez votre connexion.</div>`;
+        return;
+    }
+
+    // الحجوزات المرفوضة لا تُحسب كزيارة
+    const clients = {};
+    list.filter(r => r.status !== 'declined').forEach(res => {
+        const key = normalizePhone(res.clientPhone);
+        if (!key) return;
+        if (!clients[key]) {
+            clients[key] = { name: res.clientName, phone: res.clientPhone, count: 0, total: 0, last: '', approved: 0 };
+        }
+        const c = clients[key];
+        c.count++;
+        c.total += parseMoney(res.totalPrice);
+        if (res.status === 'approved') c.approved++;
+        if ((res.visitDate || '') > c.last) { c.last = res.visitDate || ''; c.name = res.clientName; }
+    });
+
+    let rows = Object.values(clients).sort((a, b) => b.count - a.count || b.total - a.total);
+
+    if (search) {
+        rows = rows.filter(c =>
+            (c.name || '').toLowerCase().includes(search) ||
+            normalizePhone(c.phone).includes(search.replace(/\D/g, ''))
+        );
+    }
+
+    // حالة فارغة واضحة بدل صندوق أبيض بلا تفسير
+    if (rows.length === 0) {
+        container.innerHTML = search
+            ? `<div class="empty">
+                   <div class="ico bg-maldiva-sand text-maldiva-teal"><i class="fa-solid fa-magnifying-glass"></i></div>
+                   <p class="t-body font-bold text-maldiva-dark">Aucun client trouvé</p>
+                   <p class="t-small text-gray-500 mt-1">Aucun résultat pour « ${search} ».</p></div>`
+            : `<div class="empty">
+                   <div class="ico bg-maldiva-sand text-maldiva-teal"><i class="fa-solid fa-users"></i></div>
+                   <p class="t-body font-bold text-maldiva-dark">Aucun client pour le moment</p>
+                   <p class="t-small text-gray-500 mt-1">La liste se remplit dès les premières réservations.</p></div>`;
+        return;
+    }
+
+    container.innerHTML = rows.map((c, i) => {
+        const rank = i < 3 && !search;
+        const medal = ['bg-amber-100 text-amber-700', 'bg-gray-200 text-gray-600', 'bg-orange-100 text-orange-700'][i];
+        return `
+        <div class="card p-3.5 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0 ${rank ? medal : 'bg-maldiva-sand text-maldiva-dark'}">
+                ${rank ? '<i class="fa-solid fa-crown"></i>' : i + 1}
+            </div>
+            <div class="flex-grow min-w-0">
+                <div class="t-body font-bold text-maldiva-ink truncate">${c.name || '—'}</div>
+                <div class="t-small text-gray-500">
+                    <a href="tel:${c.phone}" class="hover:text-maldiva-teal">${c.phone}</a>
+                    ${c.last ? ` · <span class="text-gray-400">dernière visite ${c.last}</span>` : ''}
+                </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+                <div class="t-body font-extrabold text-maldiva-teal tabular-nums">${c.count} <span class="t-small font-semibold text-gray-400">rés.</span></div>
+                <div class="t-small text-gray-500 tabular-nums">${c.total.toLocaleString('fr-FR')} DA</div>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+
+// ══════════════════════════════════════════════════════════════
+// إعدادات الموقع — روابط الصور
+// ══════════════════════════════════════════════════════════════
+// حقل فارغ = استعمال الصورة الافتراضية المكتوبة في index.html.
+// لذلك "Réinitialiser" يُفرّغ الحقول فقط — ولا نكرّر الروابط في مكانين.
+
+export const loadSettingsForm = async () => {
+    try {
+        const urls = await getSiteImageSettings();
+        for (const key in SITE_IMAGE_KEYS) {
+            const input = document.getElementById(key);
+            if (input) input.value = urls[key] || '';
+        }
+    } catch (e) {
+        console.error("Erreur loadSettingsForm:", e);
+    }
+};
+
+export const saveSiteSettings = async () => {
+    const urls = {};
+    for (const key in SITE_IMAGE_KEYS) {
+        urls[key] = (document.getElementById(key)?.value || '').trim();
+    }
+
+    // تحقق بسيط: أي قيمة غير فارغة يجب أن تكون رابطاً
+    const bad = Object.entries(urls).find(([, v]) => v && !/^https?:\/\//i.test(v));
+    if (bad) {
+        return showNotification("Les liens doivent commencer par http:// ou https://", "error");
+    }
+
+    try {
+        await saveSiteImageSettings(urls);
+        showNotification("Images enregistrées. Rechargez le site pour les voir.", "success");
+    } catch (e) {
+        console.error("Erreur saveSiteSettings:", e);
+        showNotification("Échec de l'enregistrement. Vérifiez vos droits administrateur.", "error");
+    }
+};
+
+export const resetSettingsToDefault = () => {
+    for (const key in SITE_IMAGE_KEYS) {
+        const input = document.getElementById(key);
+        if (input) input.value = '';
+    }
+    showNotification("Champs vidés — cliquez sur Sauvegarder pour revenir aux images d'origine.", "info");
+};
+
+
 window.clearAdminDateFilter = clearAdminDateFilter;
 window.toggleNautiqueFilter = toggleNautiqueFilter;
 window.setStatusFilter = setStatusFilter;
@@ -629,3 +767,16 @@ window.saveEditedReservation = saveEditedReservation;
 window.printReservation = printReservation;
 window.adminToggleDate = adminToggleDate;
 window.renderClosedDays = renderClosedDays;
+window.renderLoyalty = renderLoyalty;
+window.saveSiteSettings = saveSiteSettings;
+window.resetSettingsToDefault = resetSettingsToDefault;
+window.loadSettingsForm = loadSettingsForm;
+
+// admin.html ينادي window.switchAdminSubTab (المعرّفة في ui.js).
+// نغلّفها هنا حتى يجلب كل تبويب فرعي بياناته لحظة فتحه (تحميل عند الطلب = بداية أسرع).
+// هذا السطر يُنفَّذ بعد ui.js لأن admin.js يستوردها، فتغليفنا هو الفعّال.
+window.switchAdminSubTab = (subTabId) => {
+    switchAdminSubTab(subTabId);
+    if (subTabId === 'loyalty') renderLoyalty();
+    if (subTabId === 'settings') loadSettingsForm();
+};

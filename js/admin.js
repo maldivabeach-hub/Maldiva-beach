@@ -561,7 +561,7 @@ export const dispatchWhatsAppMessage = async (trackingCode) => {
     let messageText = "";
 
     if (res.status === 'approved') {
-        messageText = `Bonjour ${res.clientName}! 🏖️\n\nVotre demande chez *Maldiva Beach Club* a été *CONFIRMÉE* ✔️\n\n📝 *Détails :*\n• Code : #${res.trackingCode}\n• Date : ${res.visitDate} (Pour ${res.duration || 1} Jours)\n• Équipements :\n${itemsStr}\n• Total : *${res.totalPrice}*\n\n⚠️ Important : Veuillez vous présenter au club avant 10h30.\n\n--- \nمرحباً ${res.clientName}! تم تأكيد حجزك في نادي مالديفا الشاطئي ✔️`;
+        messageText = `Bonjour ${res.clientName}! 🏖️\n\nVotre demande chez *Maldiva Beach Club* a été *CONFIRMÉE* ✔️\n\n📝 *Détails :*\n• Code : #${res.trackingCode}\n• Date : ${res.visitDate} (Pour ${res.duration || 1} Jours)\n• Équipements :\n${itemsStr}\n• Total : *${res.totalPrice}*\n\n⚠️ Important : Veuillez vous présenter au club avant 13h00, sauf avis préalable.\n\n--- \nمرحباً ${res.clientName}! تم تأكيد حجزك في نادي مالديفا الشاطئي ✔️`;
     } else if (res.status === 'declined') {
         messageText = `Bonjour ${res.clientName},\n\nNous sommes désolés, mais nous ne pouvons pas confirmer votre demande chez *Maldiva Beach Club* pour le ${res.visitDate} (places complètes). ❌\n\n--- \nمرحباً ${res.clientName}! نعتذر لعدم تمكننا من قبول حجزك ليوم ${res.visitDate} نظراً لعدم توفر الأماكن.`;
     } else { 

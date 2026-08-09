@@ -20,6 +20,41 @@ let cachedReservations = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 60000;
 
+// ==========================================
+// إعدادات الموقع (روابط الصور)
+// ==========================================
+// المفتاح = id حقل الإدخال في admin.html، القيمة = id عنصر <img> في index.html
+// حقل فارغ = استعمل الصورة المكتوبة أصلاً في index.html (لا حاجة لتكرار الروابط في مكانين)
+export const SITE_IMAGE_KEYS = {
+    'setting-logo-url':      'custom-logo-img',
+    'setting-chaise-url':    'img-item-chaise',
+    'setting-transat-url':   'img-item-transat',
+    'setting-baldaquin-url': 'img-item-baldaquin',
+    'setting-jetski-url':    'img-item-jetski',
+    'setting-pedalo-url':    'img-item-pedalo',
+    'setting-kayak-url':     'img-item-kayak',
+    'setting-bouee-url':     'img-item-bouee',
+    'setting-bateau-url':    'img-item-bateau'
+};
+
+const getSettingsDocRef = () => doc(db, 'artifacts', getAppId(), 'public', 'data', 'settings', 'site-images');
+
+// قراءة عامة (يقرأها كل زائر) — مسموحة في firestore.rules
+export const getSiteImageSettings = async () => {
+    try {
+        const snap = await getDoc(getSettingsDocRef());
+        return snap.exists() ? snap.data() : {};
+    } catch (e) {
+        console.error("Erreur getSiteImageSettings:", e);
+        return {};   // في حال الفشل نُرجع فراغاً → الموقع يستعمل صوره الافتراضية
+    }
+};
+
+// كتابة للأدمن فقط (يفرضها firestore.rules)
+export const saveSiteImageSettings = async (urls) => {
+    await setDoc(getSettingsDocRef(), { ...urls, updatedAt: new Date().toISOString() }, { merge: true });
+};
+
 // 🆕 يتحقق إذا كان كود التتبع مستعملاً مسبقاً (لتفادي تصادم/مسح حجز موجود)
 export const isTrackingCodeTaken = async (code) => {
     const docRef = getReservationDoc(code);

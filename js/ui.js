@@ -129,7 +129,9 @@ export const switchTab = (tabId) => {
 };
 
 export const switchAdminSubTab = (subTabId) => {
-    const subTabs = ['reservations', 'loyalty', 'settings', 'parasols', 'restaurant'];
+    // ces trois sous-onglets sont les seuls présents dans admin.html
+    // ('parasols' et 'restaurant' figuraient ici sans exister dans le HTML — retirés)
+    const subTabs = ['reservations', 'loyalty', 'settings'];
     const activeClass = "py-3 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5 whitespace-nowrap";
     const inactiveClass = "py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap";
 

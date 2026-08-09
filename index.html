@@ -59,52 +59,56 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════
-         HERO
-         👇 لتغيير صورة الخلفية: بدّل الرابط في src أدناه فقط.
-            مقاس مقترح: 1600×1000 أو أكبر، أفقية.
+         HERO — fond dégradé (sans photo), contenu centré
          ═══════════════════════════════════════════════ -->
     <header class="hero">
-        <img id="hero-image" class="hero-img"
-             src="https://i.postimg.cc/3kxzmscR/IMG-8144.jpg"
-             alt="Plage privée Maldiva Beach Club à Tipaza">
-        <div class="hero-scrim"></div>
+        <div class="hero-body px-5 pt-10 pb-9">
+            <div class="max-w-2xl mx-auto text-center">
 
-        <div class="hero-body px-5 pb-8 pt-24">
-            <div class="max-w-5xl mx-auto text-white">
-
-                <div class="flex items-center gap-3 mb-6">
-                    <div id="custom-logo-wrapper" class="w-14 h-14 rounded-full border-2 border-white/70 overflow-hidden bg-white/95 shadow-lg flex-shrink-0">
-                        <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Logo Maldiva Beach Club">
-                    </div>
-                    <span class="t-label text-white/85">Plage privée · شاطئ خاص</span>
+                <div id="custom-logo-wrapper" class="hero-logo mb-5">
+                    <img id="custom-logo-img" src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" class="w-full h-full object-cover" alt="Logo Maldiva Beach Club">
                 </div>
 
-                <h1 class="serif-title t-hero font-bold mb-4 max-w-2xl">Maldiva Beach&nbsp;Club</h1>
+                <p class="t-label text-maldiva-teal mb-3">Plage privée · شاطئ خاص</p>
 
-                <p class="t-card text-white/90 max-w-lg mb-2 font-light">
-                    Une journée les pieds dans le sable, sur une plage privée de Tipaza — transats, baldaquins et sports nautiques.
+                <h1 class="serif-title t-hero font-bold text-maldiva-dark mb-4">Maldiva Beach&nbsp;Club</h1>
+
+                <p class="t-card text-gray-600 mb-2 max-w-xl mx-auto">
+                    Une journée les pieds dans l'eau, sur une plage privée à Tipaza — transats, baldaquins et activités nautiques. 🌊 ☀️
                 </p>
-                <p class="t-body text-white/70 max-w-lg mb-7 font-arabic" dir="rtl">
+                <p class="t-body text-gray-500 mb-7 font-arabic max-w-xl mx-auto" dir="rtl">
                     يوم كامل على شاطئ خاص في تيبازة — كراسي استلقاء، بالداكين، وأنشطة بحرية.
                 </p>
 
-                <div class="flex flex-col sm:flex-row gap-3 max-w-md">
+                <div class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
                     <button type="button" onclick="window.goToBooking()" class="btn btn-primary flex-1">
                         <span>Réserver maintenant</span>
                         <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </button>
-                    <button type="button" onclick="window.goToTracking()" class="btn btn-ghost flex-1">
+                    <button type="button" onclick="window.goToTracking()" class="btn btn-outline flex-1">
                         <i class="fa-solid fa-magnifying-glass text-[11px]"></i>
                         <span>Suivre ma réservation</span>
                     </button>
                 </div>
 
-                <!-- معلومات سريعة -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-3 mt-8 pt-6 border-t border-white/15 t-small text-white/85">
+                <!-- Règlement : remonté ici pour être vu tout de suite -->
+                <button type="button" onclick="window.openRulesModal()" class="mt-4 max-w-md mx-auto w-full flex items-center justify-between gap-3 bg-white/70 hover:bg-white border border-maldiva-line rounded-xl px-4 py-3 text-left transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maldiva-teal">
+                    <span class="flex items-center gap-3 min-w-0">
+                        <i class="fa-solid fa-clipboard-list text-maldiva-orange"></i>
+                        <span class="min-w-0">
+                            <span class="block t-body font-bold text-maldiva-dark">Règlement &amp; infos importantes</span>
+                            <span class="block t-small text-gray-500 font-arabic" dir="rtl">قوانين النادي ومعلومات الحجز</span>
+                        </span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right t-small text-gray-400 group-hover:translate-x-0.5 transition-transform"></i>
+                </button>
+
+                <!-- معلومات عملية — لا تتكرر مع قسم «Inclus gratuitement» -->
+                <div class="grid grid-cols-2 gap-x-5 gap-y-2.5 mt-7 pt-6 border-t border-maldiva-line t-small text-gray-600 max-w-md mx-auto text-left">
                     <div class="fact"><i class="fa-solid fa-clock"></i><span>Ouvert 8h – 19h</span></div>
-                    <div class="fact"><i class="fa-solid fa-square-parking"></i><span>Parking gratuit</span></div>
-                    <div class="fact"><i class="fa-solid fa-shower"></i><span>Douches &amp; vestiaires</span></div>
-                    <div class="fact"><i class="fa-solid fa-child-reaching"></i><span>Espace enfants</span></div>
+                    <div class="fact"><i class="fa-solid fa-hourglass-end"></i><span>Arrivée avant 10h30</span></div>
+                    <div class="fact"><i class="fa-solid fa-location-dot"></i><span>Tipaza, Algérie</span></div>
+                    <div class="fact"><i class="fa-solid fa-phone"></i><span>Confirmation par appel</span></div>
                 </div>
             </div>
         </div>
@@ -128,20 +132,6 @@
 
         <!-- ══════════════ Booking Tab ══════════════ -->
         <div id="tab-booking-form" class="space-y-8 block">
-
-            <!-- زر القواعد -->
-            <button type="button" onclick="window.openRulesModal()" class="reveal w-full text-left bg-gradient-to-r from-maldiva-dark to-maldiva-ink p-4 rounded-2xl shadow-md flex items-center justify-between text-white hover:shadow-xl hover:-translate-y-0.5 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-maldiva-orange focus-visible:ring-offset-2">
-                <span class="flex items-center gap-4">
-                    <span class="w-11 h-11 bg-white/10 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-                        <i class="fa-solid fa-clipboard-list text-xl text-maldiva-orange"></i>
-                    </span>
-                    <span class="block">
-                        <span class="block font-bold t-card">Règlement &amp; infos importantes</span>
-                        <span class="block t-small opacity-75 font-arabic mt-0.5" dir="rtl">اضغط هنا لقراءة قوانين النادي ومعلومات الحجز</span>
-                    </span>
-                </span>
-                <i class="fa-solid fa-chevron-right t-small opacity-60 group-hover:translate-x-1 transition-transform"></i>
-            </button>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 

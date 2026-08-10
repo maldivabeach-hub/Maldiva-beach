@@ -117,8 +117,75 @@ export const deleteReservation = async (trackingCode) => {
 };
 
 // ==========================================
-// نظام إغلاق الأيام (النسخة المضمونة 100%)
+// التذاكر: التحقق وتسجيل الدخول (واجهة الاستقبال)
 // ==========================================
+
+// تاريخ اليوم بصيغة YYYY-MM-DD حسب توقيت الجهاز (لا UTC — الجزائر UTC+1)
+export const todayKey = () => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+};
+
+// هل اليوم يقع ضمن مدة الحجز؟ visitDate = يوم البداية، duration = عدد الأيام
+export const isDateWithinStay = (visitDate, duration, dayKey) => {
+    if (!visitDate) return false;
+    const start = new Date(visitDate + 'T00:00:00');
+    const day = new Date(dayKey + 'T00:00:00');
+    if (isNaN(start) || isNaN(day)) return false;
+    const diff = Math.round((day - start) / 86400000);
+    return diff >= 0 && diff < (parseInt(duration) || 1);
+};
+
+// يفحص تذكرة ويُرجع نتيجة واضحة — لا يكتب أي شيء
+// الكود المُرجَع: ok | not_found | not_approved | declined | wrong_date | already_used
+export const validateTicket = async (rawCode) => {
+    const code = (rawCode || '').trim().toUpperCase().replace(/^#/, '');
+    if (!code) return { ok: false, reason: 'not_found', code };
+
+    const data = await getReservationByCode(code);
+    if (!data) return { ok: false, reason: 'not_found', code };
+
+    const day = todayKey();
+
+    if (data.status === 'declined') return { ok: false, reason: 'declined', code, data };
+    if (data.status !== 'approved')  return { ok: false, reason: 'not_approved', code, data };
+    if (!isDateWithinStay(data.visitDate, data.duration, day)) {
+        return { ok: false, reason: 'wrong_date', code, data, day };
+    }
+
+    // الحجوزات متعددة الأيام تُمسح مرة واحدة كل يوم، لذلك نفهرس الدخول بالتاريخ
+    const already = (data.checkIns || {})[day];
+    if (already) return { ok: false, reason: 'already_used', code, data, already, day };
+
+    return { ok: true, code, data, day };
+};
+
+// يسجّل الدخول ليوم واحد. merge حتى لا نمسح أيام سابقة.
+// نكتب checkIns فقط — أي حقل آخر ترفضه قواعد Firestore للموظف.
+export const recordCheckIn = async (code, staffLabel) => {
+    const day = todayKey();
+    await setDoc(getReservationDoc(code), {
+        checkIns: { [day]: { at: new Date().toISOString(), by: staffLabel || 'inconnu' } }
+    }, { merge: true });
+
+    if (cachedReservations) {
+        const r = cachedReservations.find(x => x.trackingCode === code);
+        if (r) r.checkIns = { ...(r.checkIns || {}), [day]: { at: new Date().toISOString(), by: staffLabel } };
+    }
+    return day;
+};
+
+// حالة الدفع (اختياري — للحصول على مكان في الصفوف الأمامية). يضبطها الأدمن فقط.
+export const setPaymentStatus = async (code, paid, adminLabel) => {
+    await updateDoc(getReservationDoc(code), {
+        payment: paid ? { paid: true, at: new Date().toISOString(), by: adminLabel || 'admin' } : { paid: false }
+    });
+    if (cachedReservations) {
+        const r = cachedReservations.find(x => x.trackingCode === code);
+        if (r) r.payment = paid ? { paid: true, at: new Date().toISOString(), by: adminLabel } : { paid: false };
+    }
+};
+
 
 export const checkIfDateIsClosed = async (dateStr) => {
     try {

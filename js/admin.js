@@ -2,7 +2,7 @@
 
 import { db, appId, signInAdmin, signOutAdmin } from './firebase.js'; 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS } from './reservationService.js';
+import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS, setPaymentStatus } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal, switchAdminSubTab } from './ui.js';
 import { pricesByName, childPricing, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
@@ -275,6 +275,7 @@ export const renderAdminReservations = async (forceRefresh = false) => {
                         <button onclick="window.printReservation('${res.trackingCode}')" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold px-2 py-1.5 rounded flex items-center gap-1"><i class="fa-solid fa-print"></i> Imprimer</button>
                         
                         <button onclick="window.dispatchWhatsAppMessage('${res.trackingCode}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button onclick="window.togglePayment('${res.trackingCode}')" class="${res.payment && res.payment.paid ? 'bg-amber-400 hover:bg-amber-500 text-amber-950' : 'bg-gray-200 hover:bg-gray-300 text-gray-600'} text-[10px] font-bold px-2.5 py-1.5 rounded flex items-center gap-1" title="Paiement (rangées de devant)"><i class="fa-solid fa-star"></i> ${res.payment && res.payment.paid ? 'Payé' : 'Non payé'}</button>
                         ${archiveBtn}
                         <button onclick="window.prepareDelete('${res.trackingCode}')" class="bg-gray-200 hover:bg-gray-300 text-gray-600 p-1.5 rounded text-[10px]" title="Suppression"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
@@ -749,6 +750,25 @@ export const resetSettingsToDefault = () => {
 };
 
 
+// Paiement optionnel : il donne droit aux rangées de devant.
+// Il ne conditionne JAMAIS l'entrée — le scanner l'affiche seulement à l'agent.
+export const togglePayment = async (trackingCode) => {
+    const list = await getAdminReservations();
+    const res = list.find(r => r.trackingCode === trackingCode);
+    if (!res) return showNotification("Réservation introuvable.", "error");
+
+    const willBePaid = !(res.payment && res.payment.paid);
+    try {
+        await setPaymentStatus(trackingCode, willBePaid, 'admin');
+        showNotification(willBePaid ? "Marqué comme payé (rangées de devant)." : "Marqué comme non payé.", "success");
+        await renderAdminReservations(true);
+    } catch (e) {
+        console.error("Erreur togglePayment:", e);
+        showNotification("Échec de la mise à jour du paiement.", "error");
+    }
+};
+
+
 window.clearAdminDateFilter = clearAdminDateFilter;
 window.toggleNautiqueFilter = toggleNautiqueFilter;
 window.setStatusFilter = setStatusFilter;
@@ -771,6 +791,7 @@ window.renderLoyalty = renderLoyalty;
 window.saveSiteSettings = saveSiteSettings;
 window.resetSettingsToDefault = resetSettingsToDefault;
 window.loadSettingsForm = loadSettingsForm;
+window.togglePayment = togglePayment;
 
 // admin.html ينادي window.switchAdminSubTab (المعرّفة في ui.js).
 // نغلّفها هنا حتى يجلب كل تبويب فرعي بياناته لحظة فتحه (تحميل عند الطلب = بداية أسرع).

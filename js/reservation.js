@@ -264,6 +264,45 @@ const resetForm = () => {
 // يقارن آخر 9 أرقام فقط لتفادي مشاكل تنسيق الهاتف (مع/بدون رمز الدولة أو الصفر الأول)
 const normalizePhone = (phone) => (phone || '').replace(/\D/g, '').slice(-9);
 
+// ══════════════════════════════════════════════════════════════
+// QR code du billet numérique
+// ══════════════════════════════════════════════════════════════
+// Le QR encode uniquement le code de réservation (ex. « MLD-4829 »),
+// c'est-à-dire exactement ce que le client peut déjà lire à l'écran.
+// Aucune donnée personnelle n'y est placée : un QR se photographie
+// facilement, et y mettre un téléphone serait une fuite inutile.
+//
+// La bibliothèque vient d'un CDN. Si elle ne charge pas (réseau coupé,
+// CDN bloqué), on masque simplement le bloc : le code reste lisible
+// en texte juste au-dessus, donc le client peut toujours entrer.
+const renderTicketQr = (code, isValidTicket) => {
+    const wrap = document.getElementById('track-qr-wrap');
+    const box = document.getElementById('track-qr');
+    if (!wrap || !box) return;
+
+    box.innerHTML = '';
+
+    if (!isValidTicket || typeof window.QRCode === 'undefined') {
+        wrap.classList.add('hidden');
+        return;
+    }
+
+    try {
+        new window.QRCode(box, {
+            text: code,
+            width: 168,
+            height: 168,
+            colorDark: '#052e33',      // encre de la charte
+            colorLight: '#ffffff',
+            correctLevel: window.QRCode.CorrectLevel.M
+        });
+        wrap.classList.remove('hidden');
+    } catch (e) {
+        console.error("QR indisponible:", e);
+        wrap.classList.add('hidden');
+    }
+};
+
 const trackReservation = async () => {
     let code = document.getElementById('track-code-input').value.trim().toUpperCase();
     const phoneInput = document.getElementById('track-phone-input').value.trim();
@@ -313,6 +352,11 @@ const trackReservation = async () => {
         iconBox.className = `w-12 h-12 rounded-full flex items-center justify-center mx-auto text-xl ${current.icon}`;
         iconBox.innerHTML = `<i class="fa-solid ${current.fa}"></i>`;
         document.getElementById('track-status-arabic').innerText = current.ar;
+
+        // ── QR code du billet ──
+        // Uniquement pour une réservation CONFIRMÉE : une demande en attente
+        // ou refusée n'est pas un billet valable, afficher un QR induirait en erreur.
+        renderTicketQr(code, data.status === 'approved');
 
     } catch (error) {
         showNotification("Erreur de connexion.", "error");

@@ -16,6 +16,10 @@
     <!-- ربط ملف التصميم -->
     <link rel="stylesheet" href="css/style.css">
 
+    <!-- Génération du QR code du billet. Si ce script ne charge pas,
+         le code de réservation reste affiché en texte : rien ne casse. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -588,6 +592,12 @@
                     <div class="t-label text-maldiva-dark"><i class="fa-solid fa-umbrella-beach mr-1"></i> Votre parasol / رقم مظلتك</div>
                     <div id="track-parasol-id" class="text-3xl font-extrabold text-maldiva-dark mt-1 tabular-nums">--</div>
                     <div class="t-small text-maldiva-teal mt-1 font-arabic" dir="rtl">يرجى التوجه إلى هذه المظلة المخصصة لك.</div>
+                </div>
+
+                <div id="track-qr-wrap" class="hidden text-center border-b border-maldiva-line pb-4">
+                    <div id="track-qr" class="inline-block bg-white p-3 rounded-xl border border-maldiva-line"></div>
+                    <p class="t-small text-gray-500 mt-2">Présentez ce QR code à l'entrée</p>
+                    <p class="t-small text-gray-400 font-arabic" dir="rtl">اعرض رمز QR هذا عند المدخل</p>
                 </div>
 
                 <dl class="space-y-2.5 t-body text-gray-600">

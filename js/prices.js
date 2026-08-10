@@ -116,6 +116,44 @@ export function calculateEquipmentPricing({ qtyChaise = 0, qtyTransat = 0, qtyBa
     return { subtotal, notes };
 }
 
+// ══════════════════════════════════════════════════════════════
+// 🏖️ RÈGLE DE PLACEMENT (rangées de devant)
+// ══════════════════════════════════════════════════════════════
+// Règlement du club : les 3 premières rangées sont réservées aux
+// réservations de 2 Transats en bois ou plus. Choix sur place.
+//
+// ⚠️ Cette règle n'affecte AUCUN prix — elle sert uniquement à
+//    informer le client avant qu'il ne réserve, pour éviter une
+//    déception à l'arrivée.
+export const placementRules = {
+    frontRows: 3,          // nombre de rangées concernées
+    minTransat: 2          // minimum de Transats en bois pour y avoir droit
+};
+
+// Renvoie null si rien à signaler, sinon { type, fr, ar }
+//   type 'warn' → il manque un transat pour débloquer les rangées de devant
+//   type 'ok'   → le client y a droit (on le lui confirme)
+export function getPlacementNote(qtyTransat = 0) {
+    const { frontRows, minTransat } = placementRules;
+
+    if (qtyTransat === 0) return null;   // pas de transat : la règle ne le concerne pas
+
+    if (qtyTransat < minTransat) {
+        const missing = minTransat - qtyTransat;
+        return {
+            type: 'warn',
+            fr: `Les ${frontRows} premières rangées sont réservées aux réservations de ${minTransat} Transats en bois ou plus. Ajoutez ${missing} transat pour y avoir droit.`,
+            ar: `الصفوف الـ ${frontRows} الأولى مخصصة لحجوزات ${minTransat} كراسي خشب أو أكثر. أضف ${missing} كرسي للاستفادة منها.`
+        };
+    }
+
+    return {
+        type: 'ok',
+        fr: `Vous avez accès aux ${frontRows} premières rangées. Choix des places sur la plage (1ᵉʳ arrivé, 1ᵉʳ servi).`,
+        ar: `لك الحق في الصفوف الـ ${frontRows} الأولى. اختيار المكان يكون على الشاطئ (الأسبقية لمن يأتي أولاً).`
+    };
+}
+
 // يطبّق تخفيض المدة (5 أيام / أسبوع) على مجموع المعدات
 export function applyDurationDiscount(subtotal, duration) {
     let total = subtotal * (duration || 1);

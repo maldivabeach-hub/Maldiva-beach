@@ -100,8 +100,13 @@ window.openReview = function () {
             <span class="text-gray-700">${p.label}</span>
             <span class="font-bold text-maldiva-dark tabular-nums">× ${p.qty}</span></div>`).join('');
 
+    // On réutilise le HTML déjà produit par calculateTotal (js/reservation.js) :
+    // aucune règle métier n'est dupliquée ici, app.js ne fait que de l'affichage.
     const notes = document.getElementById('special-pricing-notes');
-    document.getElementById('review-notes').innerHTML = notes.classList.contains('hidden') ? '' : notes.innerHTML;
+    const placement = document.getElementById('placement-note');
+    const notesHTML = notes && !notes.classList.contains('hidden') ? notes.innerHTML : '';
+    const placementHTML = placement && !placement.classList.contains('hidden') ? placement.innerHTML : '';
+    document.getElementById('review-notes').innerHTML = placementHTML + notesHTML;
     document.getElementById('review-total').innerText = document.getElementById('total-price').innerText;
 
     const sheet = document.getElementById('review-sheet');

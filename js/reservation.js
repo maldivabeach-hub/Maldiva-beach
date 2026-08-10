@@ -2,7 +2,7 @@
 import { initPublicAuth } from './firebase.js';
 import { submitNewReservation, getReservationByCode, checkIfDateIsClosed, isTrackingCodeTaken, getSiteImageSettings, SITE_IMAGE_KEYS } from './reservationService.js';
 import { showNotification, showSuccessModal } from './ui.js';
-import { allPrices, actPrices, childPricing, names, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
+import { allPrices, actPrices, childPricing, names, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote, getPlacementNote } from './prices.js';
 
 // 1. تسجيل الدخول
 initPublicAuth();
@@ -63,6 +63,37 @@ const adjustChildChaise = (amount) => {
     calculateTotal();
 };
 
+// ══════════════════════════════════════════════════════════════
+// Note de placement (rangées de devant) — information, pas un prix
+// ══════════════════════════════════════════════════════════════
+// Ambre = il manque un transat pour débloquer les 3 premières rangées
+// Vert  = le client y a droit (on le lui confirme, ça valorise son choix)
+const renderPlacementNote = (qtyTransat) => {
+    const box = document.getElementById('placement-note');
+    if (!box) return;
+
+    const note = getPlacementNote(qtyTransat);
+    if (!note) {
+        box.innerHTML = '';
+        box.classList.add('hidden');
+        return;
+    }
+
+    const style = note.type === 'warn'
+        ? { wrap: 'bg-amber-50 border-amber-200', ico: 'fa-circle-exclamation text-amber-500', txt: 'text-amber-900', sub: 'text-amber-700' }
+        : { wrap: 'bg-emerald-50 border-emerald-200', ico: 'fa-circle-check text-emerald-500', txt: 'text-emerald-900', sub: 'text-emerald-700' };
+
+    box.innerHTML = `
+        <div class="flex items-start gap-2 ${style.wrap} border rounded-xl px-3 py-2.5">
+            <i class="fa-solid ${style.ico} text-xs mt-0.5 flex-shrink-0"></i>
+            <div class="min-w-0">
+                <p class="t-small font-semibold ${style.txt} leading-snug">${note.fr}</p>
+                <p class="t-small ${style.sub} font-arabic leading-snug mt-1" dir="rtl">${note.ar}</p>
+            </div>
+        </div>`;
+    box.classList.remove('hidden');
+};
+
 const calculateTotal = () => {
     let subtotalAct = 0;
 
@@ -105,6 +136,11 @@ const calculateTotal = () => {
             notesContainer.classList.add('hidden');
         }
     }
+
+    // ── Règle de placement (rangées de devant) ──
+    // Conteneur distinct des notes de prix : ce n'est pas un tarif mais une
+    // information de placement, et la mélanger aux remises serait trompeur.
+    renderPlacementNote(parseInt(document.getElementById('qty-transat')?.innerText || 0));
 
     let finalTotal = totalEquip + subtotalAct;
     document.getElementById('total-price').innerText = finalTotal.toLocaleString() + ' DA';

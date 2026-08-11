@@ -1,175 +1,438 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#052e33">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Contrôle d'accès — Maldiva Beach Club</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#052e33">
+<meta name="robots" content="noindex, nofollow">
+<title>Contrôle d'accès — Maldiva Beach Club</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
+<!-- ═══════════════════════════════════════════════════════════════
+     FICHIER AUTONOME — VOLONTAIREMENT
+     Cette page n'utilise AUCUN fichier local (ni js/, ni css/).
+     Tout est à l'intérieur : styles, logique, Firebase.
+     Raison : c'est un outil interne pour le personnel, et il doit
+     fonctionner même si un autre fichier du site n'est pas déployé.
+     Un seul fichier à mettre en ligne = aucune erreur 404 possible.
+     ═══════════════════════════════════════════════════════════════ -->
 
-    <!-- Lecteur de QR par la caméra. S'il ne charge pas, la saisie manuelle reste disponible. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 
-    <script>
-        tailwind.config = {
-            theme: { extend: {
-                colors: { maldiva: {
-                    ink:'#052e33', dark:'#0b4c53', teal:'#24a19c',
-                    orange:'#ff7e67', sand:'#fbf7f0', accent:'#f4eee1', line:'#e8ded0'
-                }},
-                fontFamily: { serif:['Playfair Display','serif'], sans:['Montserrat','sans-serif'] }
-            }}
-        }
-    </script>
+<style>
+    :root{--ink:#052e33;--dark:#0b4c53;--teal:#24a19c;--orange:#ff7e67;--line:#e8ded0}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Montserrat',sans-serif;background:var(--ink);color:#fff;
+         min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+    .serif{font-family:'Playfair Display',serif}
+    .ar{direction:rtl}
+
+    .wrap{width:100%;max-width:26rem;margin:0 auto;padding:1.25rem}
+    .grow{flex:1}
+    .center{display:flex;align-items:center;justify-content:center}
+    .hide{display:none !important}
+
+    .lbl{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+    .sm{font-size:.75rem;line-height:1.5}
+    .md{font-size:.8125rem;line-height:1.55}
+    .lg{font-size:.9375rem;line-height:1.35}
+    .mut{opacity:.6}
+    .num{font-variant-numeric:tabular-nums}
+
+    input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+          border-radius:.75rem;padding:.8rem 1rem;font-size:.875rem;color:#fff;
+          font-family:inherit;margin-bottom:.6rem}
+    input::placeholder{color:rgba(255,255,255,.4)}
+    input:focus{outline:none;border-color:var(--teal)}
+
+    .btn{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;
+         font-family:inherit;font-weight:700;font-size:.75rem;text-transform:uppercase;
+         letter-spacing:.08em;padding:.95rem 1.25rem;border-radius:.875rem;border:1px solid transparent;
+         cursor:pointer;transition:transform .12s,background .2s;-webkit-tap-highlight-color:transparent}
+    .btn:active{transform:scale(.97)}
+    .btn:disabled{opacity:.55}
+    .btn-p{background:var(--orange);color:#fff}
+    .btn-d{background:var(--dark);color:#fff}
+    .btn-o{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+    .btn .sp{display:none}
+    .btn.busy .sp{display:inline-block;animation:sp .7s linear infinite}
+    @keyframes sp{to{transform:rotate(360deg)}}
+
+    .err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fecaca;
+         border-radius:.75rem;padding:.75rem;font-size:.75rem;line-height:1.5;margin-bottom:.6rem}
+    .uid{display:block;margin-top:.5rem;background:rgba(0,0,0,.35);padding:.5rem;border-radius:.4rem;
+         font-family:ui-monospace,monospace;font-size:.6875rem;word-break:break-all;
+         color:#fff;-webkit-user-select:all;user-select:all}
+
+    .bar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+         padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.1)}
+    .chip{background:rgba(255,255,255,.12);padding:.25rem .6rem;border-radius:.5rem;font-size:.75rem}
+    #reader{border-radius:1rem;overflow:hidden;background:rgba(0,0,0,.4);
+            border:1px solid rgba(255,255,255,.1);margin-bottom:.75rem}
+    .row{display:flex;gap:.5rem;align-items:flex-start}
+    .row input{margin-bottom:0}
+    .row .btn{width:auto;flex-shrink:0;padding:.95rem 1.1rem}
+
+    /* Verdict plein écran */
+    #verdict{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column}
+    .vhead{padding:2.5rem 1.5rem 2rem;text-align:center}
+    .vicon{width:5rem;height:5rem;border-radius:50%;background:rgba(255,255,255,.22);
+           display:flex;align-items:center;justify-content:center;font-size:2.25rem;margin:0 auto 1rem}
+    .vtitle{font-size:1.75rem;font-weight:700;margin:0}
+    .ok{background:#059669}.no{background:#dc2626}
+    .vbody{flex:1;overflow-y:auto;background:#fff;color:var(--ink);
+           border-radius:1.5rem 1.5rem 0 0;padding:1.25rem;display:flex;flex-direction:column;gap:.9rem}
+    .vfoot{background:#fff;padding:0 1.25rem 1.5rem}
+    .card{border:1px solid var(--line);border-radius:.85rem;padding:.85rem}
+    .line{display:flex;justify-content:space-between;gap:1rem;font-size:.8125rem}
+    .line dt{color:#6b7280}.line dd{margin:0;font-weight:700}
+
+    #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(6rem);
+           background:rgba(0,0,0,.92);padding:.85rem 1.25rem;border-radius:1rem;font-size:.8125rem;
+           font-weight:600;transition:transform .3s,opacity .3s;opacity:0;z-index:95;
+           max-width:92%;text-align:center}
+    #toast.show{transform:translateX(-50%);opacity:1}
+</style>
 </head>
-<body class="bg-maldiva-ink text-white min-h-screen flex flex-col">
+<body>
 
-    <div id="custom-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] bg-black/90 backdrop-blur-md text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[92%]">
-        <span id="toast-icon"></span>
-        <span id="toast-message" class="t-body font-semibold"></span>
-    </div>
+<div id="toast"></div>
 
-    <!-- ════════ Connexion ════════ -->
-    <div id="login-view" class="flex-grow flex items-center justify-center p-5">
-        <div class="w-full max-w-sm space-y-5">
-            <div class="text-center">
-                <div class="w-14 h-14 rounded-2xl bg-maldiva-teal/20 text-maldiva-teal flex items-center justify-center text-2xl mx-auto mb-4">
-                    <i class="fa-solid fa-qrcode"></i>
-                </div>
-                <h1 class="serif-title text-2xl font-bold">Contrôle d'accès</h1>
-                <p class="t-small text-white/50 mt-1">Réservé au personnel · للموظفين فقط</p>
-            </div>
-
-            <div class="space-y-2.5">
-                <input type="email" id="staff-email" placeholder="Email" autocomplete="username"
-                       class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-maldiva-teal">
-                <input type="password" id="staff-password" placeholder="Mot de passe" autocomplete="current-password"
-                       class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-maldiva-teal">
-                <p id="login-error" class="t-small text-red-400 font-bold hidden"></p>
-                <button type="button" id="login-btn" onclick="window.staffLogin(this)" class="btn btn-primary w-full">
-                    <i class="fa-solid fa-circle-notch spin text-[11px]"></i>
-                    <span class="btn-text">Se connecter</span>
-                </button>
-            </div>
+<!-- ═══════ Connexion ═══════ -->
+<div id="login" class="grow center">
+    <div class="wrap">
+        <div style="text-align:center;margin-bottom:1.5rem">
+            <div style="width:3.5rem;height:3.5rem;border-radius:1rem;background:rgba(36,161,156,.2);
+                        color:var(--teal);display:flex;align-items:center;justify-content:center;
+                        font-size:1.5rem;margin:0 auto .9rem"><i class="fa-solid fa-qrcode"></i></div>
+            <h1 class="serif" style="font-size:1.5rem;margin:0">Contrôle d'accès</h1>
+            <p class="sm mut" style="margin:.25rem 0 0">Réservé au personnel · للموظفين فقط</p>
         </div>
+        <input type="email" id="email" placeholder="Email" autocomplete="username">
+        <input type="password" id="pass" placeholder="Mot de passe" autocomplete="current-password">
+        <div id="loginErr" class="err hide"></div>
+        <button type="button" id="loginBtn" class="btn btn-p">
+            <i class="fa-solid fa-circle-notch sp"></i><span>Se connecter</span>
+        </button>
     </div>
+</div>
 
-    <!-- ════════ Scanner ════════ -->
-    <div id="scan-view" class="hidden flex-grow flex flex-col">
-
-        <header class="flex items-center justify-between px-4 py-3 border-b border-white/10">
-            <div class="min-w-0">
-                <div class="t-label text-maldiva-teal">Contrôle d'accès</div>
-                <div id="staff-label" class="t-small text-white/50 truncate"></div>
-            </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-                <div id="scan-counter" class="t-small text-white/60 tabular-nums bg-white/10 px-2.5 py-1 rounded-lg">0</div>
-                <button type="button" onclick="window.staffLogout()" class="t-small font-bold text-white/60 hover:text-white px-2 py-1">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
-            </div>
-        </header>
-
-        <!-- caméra -->
-        <div class="p-4 space-y-3">
-            <div id="reader" class="rounded-2xl overflow-hidden bg-black/40 border border-white/10"></div>
-
-            <div class="flex gap-2">
-                <button type="button" id="cam-btn" onclick="window.toggleCamera(this)" class="btn btn-primary flex-1">
-                    <i class="fa-solid fa-camera text-[11px]"></i>
-                    <span class="btn-text">Démarrer la caméra</span>
-                </button>
-            </div>
-
-            <!-- saisie manuelle : indispensable si la caméra est refusée ou le QR abîmé -->
-            <div class="flex gap-2">
-                <input type="text" id="manual-code" placeholder="MLD-0000" inputmode="text" autocapitalize="characters"
-                       class="flex-grow bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white text-center font-bold tracking-widest uppercase placeholder-white/30 focus:outline-none focus:border-maldiva-teal">
-                <button type="button" id="manual-btn" onclick="window.checkManual(this)" class="btn btn-outline flex-shrink-0 !px-5">
-                    <i class="fa-solid fa-circle-notch spin text-[11px]"></i>
-                    <span class="btn-text">Vérifier</span>
-                </button>
-            </div>
+<!-- ═══════ Scanner ═══════ -->
+<div id="scan" class="hide grow" style="flex-direction:column">
+    <div class="bar">
+        <div style="min-width:0">
+            <div class="lbl" style="color:var(--teal)">Contrôle d'accès</div>
+            <div id="who" class="sm mut" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
         </div>
-    </div>
-
-    <!-- ════════ Verdict plein écran ════════ -->
-    <div id="verdict" class="fixed inset-0 z-[80] hidden flex-col">
-        <div class="flex-grow overflow-y-auto custom-scrollbar">
-            <div id="verdict-head" class="px-6 pt-12 pb-8 text-center">
-                <div id="verdict-icon" class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-4xl mx-auto mb-4"></div>
-                <h2 id="verdict-title" class="serif-title text-3xl font-bold"></h2>
-                <p id="verdict-reason" class="t-card mt-2 opacity-90"></p>
-                <p id="verdict-reason-ar" class="t-body mt-1 opacity-75 font-arabic" dir="rtl"></p>
-            </div>
-            <div id="verdict-body" class="bg-white text-maldiva-ink rounded-t-3xl p-5 space-y-4 min-h-[40vh]"></div>
-        </div>
-        <div class="bg-white px-5 pb-6 pt-2">
-            <button type="button" onclick="window.closeVerdict()" class="btn btn-dark w-full">
-                <span>Scanner le suivant</span>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0">
+            <span id="count" class="chip num">0</span>
+            <button type="button" id="outBtn" class="btn btn-o" style="width:auto;padding:.6rem .75rem">
+                <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </div>
     </div>
 
-    <!-- ════════ Panneau d'erreur de démarrage ════════
-         Si un module JS ne charge pas, le bouton « Se connecter » ne fait
-         rien du tout et rien ne s'affiche. Sur téléphone la console est
-         inaccessible : on montre donc l'erreur directement à l'écran. -->
-    <div id="boot-error" class="hidden fixed inset-0 z-[90] bg-red-700 text-white p-6 overflow-y-auto">
-        <div class="max-w-md mx-auto space-y-4">
-            <div class="text-center">
-                <i class="fa-solid fa-triangle-exclamation text-4xl mb-3"></i>
-                <h2 class="serif-title text-2xl font-bold">Chargement impossible</h2>
-                <p class="t-body opacity-90 mt-1">Un fichier JavaScript n'a pas pu être chargé.</p>
+    <div class="wrap">
+        <div id="reader"></div>
+        <button type="button" id="camBtn" class="btn btn-p" style="margin-bottom:.75rem">
+            <i class="fa-solid fa-camera"></i><span id="camTxt">Démarrer la caméra</span>
+        </button>
+        <div class="row">
+            <input type="text" id="manual" placeholder="MLD-0000" autocapitalize="characters"
+                   style="text-align:center;font-weight:700;letter-spacing:.15em;text-transform:uppercase">
+            <button type="button" id="manBtn" class="btn btn-o">
+                <i class="fa-solid fa-circle-notch sp"></i><span>OK</span>
+            </button>
+        </div>
+        <p class="sm mut" style="margin:.75rem 0 0;text-align:center">
+            Si la caméra ne marche pas, tapez le code du billet.
+        </p>
+    </div>
+</div>
+
+<!-- ═══════ Verdict ═══════ -->
+<div id="verdict" class="hide">
+    <div id="vhead" class="vhead">
+        <div id="vicon" class="vicon"></div>
+        <h2 id="vtitle" class="serif vtitle"></h2>
+        <p id="vreason" class="lg" style="margin:.5rem 0 0;opacity:.92"></p>
+        <p id="vreasonAr" class="md ar" style="margin:.25rem 0 0;opacity:.78"></p>
+    </div>
+    <div id="vbody" class="vbody"></div>
+    <div class="vfoot">
+        <button type="button" id="nextBtn" class="btn btn-d">Scanner le suivant</button>
+    </div>
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════════
+// Tout est ici : Firebase, validation, caméra.
+// Les imports viennent d'une URL (gstatic), pas d'un fichier local.
+//
+// ⚠️ La sécurité réelle est dans firestore.rules, pas dans cette page :
+//    un compte "staff" ne peut modifier QUE le champ checkIns.
+// ═══════════════════════════════════════════════════════════════
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const app  = initializeApp({
+    apiKey: "AIzaSyDMHbPerIT_IPNobLCwBObWheTQerK-W_4",
+    authDomain: "maldiva-beach-4fe61.firebaseapp.com",
+    projectId: "maldiva-beach-4fe61",
+    storageBucket: "maldiva-beach-4fe61.firebasestorage.app",
+    messagingSenderId: "528746467653",
+    appId: "1:528746467653:web:9d456c59a8221130936e2c"
+});
+const auth  = getAuth(app);
+const db    = getFirestore(app);
+const APPID = 'maldiva-beach-club-prod';   // identique à js/firebase.js
+
+const $ = id => document.getElementById(id);
+const base = col => ['artifacts', APPID, 'public', 'data', col];
+
+let staffLabel = '', count = 0, scanner = null, camOn = false, busy = false;
+
+// ── petit toast ──
+let toastT;
+const toast = (msg) => {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200);
+};
+
+const withBusy = async (btn, fn) => {
+    if (!btn || btn.disabled) return;
+    btn.disabled = true; btn.classList.add('busy');
+    try { await fn(); } finally { btn.disabled = false; btn.classList.remove('busy'); }
+};
+
+// ══════════ 1. Connexion ══════════
+const findRole = async (uid) => {
+    let denied = false;
+    for (const col of ['staff', 'admins']) {
+        try {
+            const snap = await getDoc(doc(db, ...base(col), uid));
+            if (snap.exists()) return { role: col };
+        } catch (e) {
+            console.error(col, e && e.code);
+            if (e && e.code === 'permission-denied') denied = true;
+        }
+    }
+    return { role: null, denied };
+};
+
+$('loginBtn').addEventListener('click', () => withBusy($('loginBtn'), async () => {
+    const email = $('email').value.trim(), pass = $('pass').value, err = $('loginErr');
+    err.classList.add('hide');
+
+    if (!email || !pass) { err.textContent = "Entrez votre email et votre mot de passe."; return err.classList.remove('hide'); }
+
+    try {
+        const cred = await signInWithEmailAndPassword(auth, email, pass);
+        const { role, denied } = await findRole(cred.user.uid);
+
+        if (!role) {
+            await signOut(auth);
+            err.innerHTML = denied
+                ? "Règles Firestore non publiées.<br>Publiez firestore.rules dans la console Firebase."
+                : "Compte non enregistré comme personnel.<br>Ajoutez cet UID dans la collection <b>staff</b> :"
+                  + `<span class="uid">${cred.user.uid}</span>`;
+            return err.classList.remove('hide');
+        }
+
+        staffLabel = email;
+        $('who').textContent = `${email} · ${role === 'admins' ? 'admin' : 'staff'}`;
+        $('login').classList.add('hide');
+        $('scan').classList.remove('hide');
+        $('scan').style.display = 'flex';
+        toast("Connecté. Prêt à scanner.");
+    } catch (e) {
+        console.error(e && e.code, e);
+        const m = {
+            'auth/invalid-credential': "Email ou mot de passe incorrect.",
+            'auth/wrong-password':     "Mot de passe incorrect.",
+            'auth/user-not-found':     "Aucun compte avec cet email. Créez-le dans Firebase → Authentication.",
+            'auth/invalid-email':      "Format d'email invalide.",
+            'auth/too-many-requests':  "Trop de tentatives. Patientez quelques minutes.",
+            'auth/network-request-failed': "Pas de connexion internet."
+        };
+        err.textContent = m[e && e.code] || `Erreur (${(e && e.code) || 'inconnue'}).`;
+        err.classList.remove('hide');
+    }
+}));
+
+$('outBtn').addEventListener('click', async () => {
+    await stopCam(); await signOut(auth);
+    staffLabel = ''; $('pass').value = '';
+    $('scan').classList.add('hide'); $('scan').style.display = '';
+    $('login').classList.remove('hide');
+});
+
+// ══════════ 2. Caméra ══════════
+const stopCam = async () => {
+    if (scanner && camOn) { try { await scanner.stop(); } catch (e) {} }
+    camOn = false; $('camTxt').textContent = 'Démarrer la caméra';
+};
+
+$('camBtn').addEventListener('click', () => withBusy($('camBtn'), async () => {
+    if (typeof window.Html5Qrcode === 'undefined') return toast("Lecteur QR indisponible. Tapez le code.");
+    if (camOn) return stopCam();
+    try {
+        if (!scanner) scanner = new window.Html5Qrcode("reader");
+        await scanner.start({ facingMode: "environment" },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            (txt) => check(txt), () => {});
+        camOn = true; $('camTxt').textContent = 'Arrêter la caméra';
+    } catch (e) {
+        console.error(e);
+        toast("Caméra refusée. Tapez le code du billet.");
+    }
+}));
+
+$('manBtn').addEventListener('click', () => withBusy($('manBtn'), async () => {
+    const c = $('manual').value.trim();
+    if (!c) return toast("Entrez un code.");
+    await check(c); $('manual').value = '';
+}));
+
+// ══════════ 3. Validation (les 7 contrôles) ══════════
+const todayKey = () => {
+    const d = new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+};
+
+// visitDate = 1er jour, duration = nombre de jours.
+// Un séjour de 5 jours doit pouvoir entrer 5 fois, 1 fois par jour.
+const withinStay = (visitDate, duration, day) => {
+    if (!visitDate) return false;
+    const s = new Date(visitDate + 'T00:00:00'), d = new Date(day + 'T00:00:00');
+    if (isNaN(s) || isNaN(d)) return false;
+    const diff = Math.round((d - s) / 86400000);
+    return diff >= 0 && diff < (parseInt(duration) || 1);
+};
+
+const REASON = {
+    not_found:    ["Aucune réservation ne correspond à ce code.", "لا يوجد حجز بهذا الرمز."],
+    not_approved: ["Réservation non confirmée (en attente).",     "الحجز غير مؤكَّد بعد."],
+    declined:     ["Cette réservation a été refusée.",            "هذا الحجز مرفوض."],
+    wrong_date:   ["Ce billet n'est pas valable aujourd'hui.",    "هذه التذكرة غير صالحة اليوم."],
+    already_used: ["Ce billet a déjà été scanné aujourd'hui.",    "تم مسح هذه التذكرة اليوم من قبل."],
+    error:        ["Erreur de connexion. Réessayez.",             "خطأ في الاتصال. حاول مجدداً."]
+};
+
+const check = async (raw) => {
+    if (busy) return;                 // la caméra lit plusieurs fois par seconde
+    busy = true;
+    await stopCam();
+
+    const code = (raw || '').trim().toUpperCase().replace(/^#/, '');
+    const day = todayKey();
+
+    try {
+        const ref = doc(db, ...base('reservations'), code);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) return show('no', 'not_found', { code });
+        const d = snap.data();
+
+        if (d.status === 'declined')  return show('no', 'declined',     { code, d });
+        if (d.status !== 'approved')  return show('no', 'not_approved', { code, d });
+        if (!withinStay(d.visitDate, d.duration, day)) return show('no', 'wrong_date', { code, d, day });
+
+        const already = (d.checkIns || {})[day];
+        if (already) return show('no', 'already_used', { code, d, already });
+
+        // ✅ on n'écrit QUE checkIns — les règles Firestore refusent tout le reste
+        await setDoc(ref, { checkIns: { [day]: { at: new Date().toISOString(), by: staffLabel } } }, { merge: true });
+        count++; $('count').textContent = count;
+        show('ok', null, { code, d });
+
+    } catch (e) {
+        console.error(e);
+        show('no', 'error', { code });
+    } finally {
+        busy = false;
+    }
+};
+
+// ══════════ 4. Verdict ══════════
+const show = (kind, reason, info) => {
+    const ok = kind === 'ok';
+    const used = reason === 'already_used';
+
+    $('vhead').className = 'vhead ' + (ok ? 'ok' : 'no');
+    $('vicon').innerHTML = `<i class="fa-solid ${ok ? 'fa-circle-check' : used ? 'fa-rotate-left' : 'fa-circle-xmark'}"></i>`;
+    $('vtitle').textContent = ok ? 'ACCÈS AUTORISÉ' : used ? 'BILLET DÉJÀ UTILISÉ' : 'ACCÈS REFUSÉ';
+
+    const hm = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const r = REASON[reason];
+    $('vreason').textContent   = ok ? `Entrée enregistrée · ${hm}` : (r ? r[0] : "Billet invalide.");
+    $('vreasonAr').textContent = ok ? 'تم تسجيل الدخول بنجاح.'      : (r ? r[1] : "التذكرة غير صالحة.");
+
+    const d = info.d;
+    let html = '';
+
+    if (!d) {
+        html = `<p class="md mut" style="text-align:center">Code lu : <b>${info.code || '—'}</b></p>`;
+    } else {
+        const items = Object.entries(d.items || {})
+            .map(([n, q]) => `<div class="line"><dt>${n}</dt><dd class="num">× ${q}</dd></div>`).join('');
+        const paid = d.payment && d.payment.paid;
+        const days = parseInt(d.duration) || 1;
+
+        html = `
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+                    border-bottom:1px solid var(--line);padding-bottom:.75rem">
+            <div style="min-width:0">
+                <div class="lg" style="font-weight:700">${d.clientName || '—'}</div>
+                <a href="tel:${d.clientPhone}" class="md" style="color:var(--teal);text-decoration:none">${d.clientPhone || '—'}</a>
             </div>
-            <div class="bg-black/30 rounded-xl p-3">
-                <div class="t-label opacity-70 mb-1">Détail technique</div>
-                <code id="boot-error-msg" class="block t-small font-mono break-all"></code>
+            <div class="lbl mut">#${info.code}</div>
+        </div>
+
+        <div class="card" style="${paid ? 'background:#fffbeb;border-color:#fcd34d' : 'background:#f9fafb'}">
+            <div class="md" style="font-weight:700;color:${paid ? '#78350f' : '#4b5563'}">
+                <i class="fa-solid ${paid ? 'fa-star' : 'fa-circle-info'}"></i>
+                ${paid ? 'PAYÉ — rangées de devant' : 'Non payé — placement libre'}
             </div>
-            <div class="bg-white/10 rounded-xl p-4 space-y-2">
-                <p class="t-body font-bold">À vérifier sur l'hébergement :</p>
-                <ol class="t-small space-y-1.5 opacity-90 list-decimal list-inside">
-                    <li><strong>js/reservationService.js</strong> est-il la dernière version ? (c'est la cause la plus fréquente)</li>
-                    <li><strong>js/scan.js</strong> existe-t-il bien dans le dossier <strong>js/</strong> ?</li>
-                    <li>Les noms de fichiers sont sensibles à la casse : <strong>scan.js</strong> ≠ <strong>Scan.js</strong></li>
-                    <li>Rechargez avec vidage du cache.</li>
-                </ol>
+            <div class="sm ar" style="margin-top:.25rem;color:${paid ? '#92400e' : '#6b7280'}">
+                ${paid ? 'مدفوع — له الحق في الصفوف الأمامية' : 'غير مدفوع — المكان حسب المتاح'}
             </div>
         </div>
-    </div>
 
-    <script>
-        // Installé AVANT le module pour ne rater aucune erreur de chargement.
-        window.__bootFail = function (msg) {
-            var box = document.getElementById('boot-error');
-            var out = document.getElementById('boot-error-msg');
-            if (!box || !out || !box.classList.contains('hidden')) return;
-            out.textContent = msg || 'Erreur inconnue';
-            box.classList.remove('hidden');
-        };
-        window.__bootMsg = '';
-        window.addEventListener('error', function (e) {
-            if (!window.__bootMsg) {
-                window.__bootMsg = (e && e.message) ? e.message : 'Échec du chargement d\'un module';
-            }
-        }, true);
+        <div style="display:flex;flex-direction:column;gap:.35rem">${items || '<p class="sm mut">—</p>'}</div>
 
-        // Si le module s'est bien exécuté, staffLogin existe. Sinon on alerte.
-        window.addEventListener('load', function () {
-            setTimeout(function () {
-                if (typeof window.staffLogin !== 'function') {
-                    window.__bootFail(window.__bootMsg || 'js/scan.js n\'a pas pu s\'exécuter (fichier manquant ou import échoué).');
-                }
-            }, 1200);
-        });
-    </script>
+        <div style="display:flex;flex-direction:column;gap:.35rem;border-top:1px solid var(--line);padding-top:.75rem">
+            <div class="line"><dt>Date de début</dt><dd>${d.visitDate || '—'}</dd></div>
+            <div class="line"><dt>Durée</dt><dd>${days} jour${days > 1 ? 's' : ''}</dd></div>
+            <div class="line"><dt>Total</dt><dd>${d.totalPrice || '—'}</dd></div>
+            ${d.childrenChaiseCount > 0 ? `<div class="line"><dt>Enfants (-40%)</dt><dd style="color:#7e22ce">${d.childrenChaiseCount}</dd></div>` : ''}
+        </div>`;
 
-    <script type="module" src="js/scan.js"
-            onerror="window.__bootFail('Fichier js/scan.js introuvable (erreur 404).')"></script>
+        if (info.already) {
+            const t = new Date(info.already.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            html += `<div class="card" style="background:#fef2f2;border-color:#fecaca">
+                <div class="md" style="font-weight:700;color:#991b1b">Déjà scanné aujourd'hui</div>
+                <div class="sm" style="color:#b91c1c;margin-top:.25rem">à ${t} par ${info.already.by || 'inconnu'}</div>
+            </div>`;
+        }
+        if (reason === 'wrong_date') {
+            html += `<div class="card sm" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+                Valable à partir du <b>${d.visitDate}</b> pendant <b>${days} jour${days > 1 ? 's' : ''}</b>.
+                Aujourd'hui : <b>${info.day}</b>.
+            </div>`;
+        }
+    }
+
+    $('vbody').innerHTML = html;
+    $('verdict').classList.remove('hide');
+    if (navigator.vibrate) navigator.vibrate(ok ? 60 : [60, 70, 60]);
+};
+
+$('nextBtn').addEventListener('click', () => $('verdict').classList.add('hide'));
+
+window.addEventListener('beforeunload', () => { if (camOn && scanner) scanner.stop().catch(() => {}); });
+</script>
 </body>
 </html>

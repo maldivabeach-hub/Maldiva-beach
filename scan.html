@@ -1,438 +1,299 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#052e33">
-<meta name="robots" content="noindex, nofollow">
-<title>Contrôle d'accès — Maldiva Beach Club</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maldiva Beach Club - Administration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="css/style.css">
 
-<!-- ═══════════════════════════════════════════════════════════════
-     FICHIER AUTONOME — VOLONTAIREMENT
-     Cette page n'utilise AUCUN fichier local (ni js/, ni css/).
-     Tout est à l'intérieur : styles, logique, Firebase.
-     Raison : c'est un outil interne pour le personnel, et il doit
-     fonctionner même si un autre fichier du site n'est pas déployé.
-     Un seul fichier à mettre en ligne = aucune erreur 404 possible.
-     ═══════════════════════════════════════════════════════════════ -->
-
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-
-<style>
-    :root{--ink:#052e33;--dark:#0b4c53;--teal:#24a19c;--orange:#ff7e67;--line:#e8ded0}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:'Montserrat',sans-serif;background:var(--ink);color:#fff;
-         min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
-    .serif{font-family:'Playfair Display',serif}
-    .ar{direction:rtl}
-
-    .wrap{width:100%;max-width:26rem;margin:0 auto;padding:1.25rem}
-    .grow{flex:1}
-    .center{display:flex;align-items:center;justify-content:center}
-    .hide{display:none !important}
-
-    .lbl{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
-    .sm{font-size:.75rem;line-height:1.5}
-    .md{font-size:.8125rem;line-height:1.55}
-    .lg{font-size:.9375rem;line-height:1.35}
-    .mut{opacity:.6}
-    .num{font-variant-numeric:tabular-nums}
-
-    input{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
-          border-radius:.75rem;padding:.8rem 1rem;font-size:.875rem;color:#fff;
-          font-family:inherit;margin-bottom:.6rem}
-    input::placeholder{color:rgba(255,255,255,.4)}
-    input:focus{outline:none;border-color:var(--teal)}
-
-    .btn{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;
-         font-family:inherit;font-weight:700;font-size:.75rem;text-transform:uppercase;
-         letter-spacing:.08em;padding:.95rem 1.25rem;border-radius:.875rem;border:1px solid transparent;
-         cursor:pointer;transition:transform .12s,background .2s;-webkit-tap-highlight-color:transparent}
-    .btn:active{transform:scale(.97)}
-    .btn:disabled{opacity:.55}
-    .btn-p{background:var(--orange);color:#fff}
-    .btn-d{background:var(--dark);color:#fff}
-    .btn-o{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
-    .btn .sp{display:none}
-    .btn.busy .sp{display:inline-block;animation:sp .7s linear infinite}
-    @keyframes sp{to{transform:rotate(360deg)}}
-
-    .err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.5);color:#fecaca;
-         border-radius:.75rem;padding:.75rem;font-size:.75rem;line-height:1.5;margin-bottom:.6rem}
-    .uid{display:block;margin-top:.5rem;background:rgba(0,0,0,.35);padding:.5rem;border-radius:.4rem;
-         font-family:ui-monospace,monospace;font-size:.6875rem;word-break:break-all;
-         color:#fff;-webkit-user-select:all;user-select:all}
-
-    .bar{display:flex;align-items:center;justify-content:space-between;gap:.75rem;
-         padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.1)}
-    .chip{background:rgba(255,255,255,.12);padding:.25rem .6rem;border-radius:.5rem;font-size:.75rem}
-    #reader{border-radius:1rem;overflow:hidden;background:rgba(0,0,0,.4);
-            border:1px solid rgba(255,255,255,.1);margin-bottom:.75rem}
-    .row{display:flex;gap:.5rem;align-items:flex-start}
-    .row input{margin-bottom:0}
-    .row .btn{width:auto;flex-shrink:0;padding:.95rem 1.1rem}
-
-    /* Verdict plein écran */
-    #verdict{position:fixed;inset:0;z-index:80;display:flex;flex-direction:column}
-    .vhead{padding:2.5rem 1.5rem 2rem;text-align:center}
-    .vicon{width:5rem;height:5rem;border-radius:50%;background:rgba(255,255,255,.22);
-           display:flex;align-items:center;justify-content:center;font-size:2.25rem;margin:0 auto 1rem}
-    .vtitle{font-size:1.75rem;font-weight:700;margin:0}
-    .ok{background:#059669}.no{background:#dc2626}
-    .vbody{flex:1;overflow-y:auto;background:#fff;color:var(--ink);
-           border-radius:1.5rem 1.5rem 0 0;padding:1.25rem;display:flex;flex-direction:column;gap:.9rem}
-    .vfoot{background:#fff;padding:0 1.25rem 1.5rem}
-    .card{border:1px solid var(--line);border-radius:.85rem;padding:.85rem}
-    .line{display:flex;justify-content:space-between;gap:1rem;font-size:.8125rem}
-    .line dt{color:#6b7280}.line dd{margin:0;font-weight:700}
-
-    #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(6rem);
-           background:rgba(0,0,0,.92);padding:.85rem 1.25rem;border-radius:1rem;font-size:.8125rem;
-           font-weight:600;transition:transform .3s,opacity .3s;opacity:0;z-index:95;
-           max-width:92%;text-align:center}
-    #toast.show{transform:translateX(-50%);opacity:1}
-</style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        maldiva: {
+                            dark: '#0b4c53', teal: '#24a19c', orange: '#ff7e67', sand: '#fbf7f0', accent: '#f4eee1'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            body > *:not(#print-section) { display: none !important; }
+            #print-section { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background-color: white; }
+            @page { size: A4; margin: 1.5cm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
 </head>
-<body>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col bg-gray-50">
 
-<div id="toast"></div>
-
-<!-- ═══════ Connexion ═══════ -->
-<div id="login" class="grow center">
-    <div class="wrap">
-        <div style="text-align:center;margin-bottom:1.5rem">
-            <div style="width:3.5rem;height:3.5rem;border-radius:1rem;background:rgba(36,161,156,.2);
-                        color:var(--teal);display:flex;align-items:center;justify-content:center;
-                        font-size:1.5rem;margin:0 auto .9rem"><i class="fa-solid fa-qrcode"></i></div>
-            <h1 class="serif" style="font-size:1.5rem;margin:0">Contrôle d'accès</h1>
-            <p class="sm mut" style="margin:.25rem 0 0">Réservé au personnel · للموظفين فقط</p>
+    <!-- Print Section -->
+    <div id="print-section" class="hidden font-sans bg-white text-black p-8">
+        <div class="text-center border-b-2 border-gray-800 pb-6 mb-6">
+            <img src="https://i.postimg.cc/dh3KTX2L/IMG-7963.png" alt="Maldiva Logo" class="w-24 h-24 mx-auto rounded-full border-2 border-gray-800 p-1 mb-3 grayscale">
+            <h1 class="font-serif text-3xl font-bold uppercase tracking-widest text-gray-900">Maldiva Beach Club</h1>
+            <h2 class="text-xl font-bold mt-2 bg-gray-100 py-2 rounded-lg uppercase tracking-widest border border-gray-300">Fiche de Réservation</h2>
         </div>
-        <input type="email" id="email" placeholder="Email" autocomplete="username">
-        <input type="password" id="pass" placeholder="Mot de passe" autocomplete="current-password">
-        <div id="loginErr" class="err hide"></div>
-        <button type="button" id="loginBtn" class="btn btn-p">
-            <i class="fa-solid fa-circle-notch sp"></i><span>Se connecter</span>
-        </button>
+        <div class="grid grid-cols-2 gap-6 mb-8">
+            <div class="space-y-3">
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Code Réservation:</span><br><strong class="text-xl" id="print-code"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Nom du Client:</span><br><strong class="text-lg" id="print-name"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Numéro de Téléphone:</span><br><strong class="text-lg font-mono" id="print-phone"></strong></p>
+            </div>
+            <div class="space-y-3">
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Date de la Visite:</span><br><strong class="text-lg" id="print-visit-date"></strong></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Statut Actuel:</span><br><span id="print-status" class="px-3 py-1 border-2 font-bold uppercase rounded-md inline-block mt-1"></span></p>
+                <p><span class="font-bold text-gray-500 uppercase text-xs">Date de création du billet:</span><br><span class="text-sm" id="print-created-at"></span></p>
+            </div>
+        </div>
+        <div class="mb-8">
+            <h3 class="font-bold text-lg border-b border-gray-300 pb-2 mb-3 uppercase tracking-wide">Détails de la Réservation (Durée: <span id="print-duration"></span>)</h3>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border border-gray-300 p-3 font-bold uppercase text-xs w-3/4">Service / Équipement / Activité</th>
+                        <th class="border border-gray-300 p-3 font-bold uppercase text-xs text-center w-1/4">Quantité</th>
+                    </tr>
+                </thead>
+                <tbody id="print-items-body"></tbody>
+            </table>
+        </div>
+        <div id="print-notes-container" class="mb-8 hidden">
+            <h3 class="font-bold text-sm text-gray-500 uppercase mb-2">Notes & Remarques:</h3>
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm font-semibold italic" id="print-notes"></div>
+        </div>
+        <div class="flex justify-end mb-12">
+            <div class="bg-gray-100 p-4 rounded-lg border-2 border-gray-800 min-w-[250px] text-center">
+                <span class="font-bold text-gray-500 uppercase text-xs block mb-1">Total à Payer (TTC)</span>
+                <span class="text-3xl font-extrabold" id="print-total"></span>
+            </div>
+        </div>
+        <div class="border-t border-gray-300 pt-4 flex justify-between items-end text-xs text-gray-500">
+            <div><p class="font-bold text-gray-800">MALDIVA BEACH CLUB - TIPAZA</p><p>Merci de votre visite et à très bientôt !</p></div>
+            <div class="text-right"><p>Édité par: <strong id="print-admin-name">Administrateur</strong></p><p>Imprimé le: <strong id="print-timestamp"></strong></p></div>
+        </div>
     </div>
-</div>
+    <!-- /Print Section -->
 
-<!-- ═══════ Scanner ═══════ -->
-<div id="scan" class="hide grow" style="flex-direction:column">
-    <div class="bar">
-        <div style="min-width:0">
-            <div class="lbl" style="color:var(--teal)">Contrôle d'accès</div>
-            <div id="who" class="sm mut" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+    <div id="custom-toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none max-w-sm w-[90%]">
+        <span id="toast-icon"></span>
+        <span id="toast-message" class="text-xs font-semibold"></span>
+    </div>
+
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300">
+            <div class="text-center space-y-3">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-trash"></i></div>
+                <h3 class="serif-title text-xl font-bold text-maldiva-dark">Confirmer la suppression</h3>
+                <p class="text-xs text-gray-500">Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="window.closeConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs">Annuler</button>
+                    <button onclick="window.executePendingDelete()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs">Supprimer</button>
+                </div>
+            </div>
         </div>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0">
-            <span id="count" class="chip num">0</span>
-            <button type="button" id="outBtn" class="btn btn-o" style="width:auto;padding:.6rem .75rem">
-                <i class="fa-solid fa-right-from-bracket"></i>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 transform translate-y-4 transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <div>
+                    <h3 class="serif-title text-xl font-bold text-maldiva-dark">Modifier / تعديل الحجز</h3>
+                    <p class="text-[10px] text-gray-500 mt-0.5" id="edit-modal-code"></p>
+                </div>
+                <button onclick="window.closeEditModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="overflow-y-auto hide-scrollbar space-y-4 pr-1 flex-grow">
+                <div class="space-y-2 bg-maldiva-sand/50 p-3 rounded-2xl">
+                    <input type="text" id="edit-name" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Nom">
+                    <input type="tel" id="edit-phone" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Téléphone">
+                    <div class="flex gap-2">
+                        <input type="date" id="edit-date" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
+                        <select id="edit-duration" onchange="window.calculateEditTotal()" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal">
+                            <option value="1">1 Jour</option><option value="2">2 Jours</option><option value="3">3 Jours</option><option value="5">5 Jours (-10%)</option><option value="7">1 Semaine (-15%)</option>
+                        </select>
+                    </div>
+                    <textarea id="edit-notes" rows="2" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-maldiva-teal" placeholder="Notes (ex: avec parasol, vue mer...)"></textarea>
+                </div>
+                <div class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1"><i class="fa-solid fa-list-check"></i> Équipements & Activités</div>
+                <div id="edit-items-container" class="space-y-1.5 border border-gray-100 rounded-2xl p-2 bg-gray-50"></div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center bg-white">
+                <div>
+                    <div class="text-[10px] text-gray-500 uppercase font-bold">Nouveau Total</div>
+                    <div class="font-extrabold text-maldiva-orange text-xl" id="edit-total-price">0 DA</div>
+                </div>
+                <button onclick="window.saveEditedReservation()" class="bg-gradient-to-r from-maldiva-teal to-maldiva-dark hover:shadow-lg text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all uppercase tracking-wider">
+                    Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-maldiva-dark text-white py-3 px-6 flex justify-between items-center shadow-md">
+        <div class="font-bold tracking-wider text-maldiva-orange text-sm flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> Espace Admin</div>
+        <a href="index.html" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors"><i class="fa-solid fa-arrow-left"></i> Retour au site</a>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+        
+        <div id="admin-login-view" class="max-w-md mx-auto bg-white rounded-3xl p-6 shadow-md border border-gray-100 text-center space-y-4 mt-10">
+            <div class="w-16 h-16 bg-maldiva-accent text-maldiva-dark rounded-full flex items-center justify-center text-2xl mx-auto"><i class="fa-solid fa-lock"></i></div>
+            <div>
+                <h3 class="serif-title text-2xl font-bold text-maldiva-dark">Espace Administrateur</h3>
+                <p class="text-xs text-gray-500 mt-1">Accès réservé au gérant du club</p>
+            </div>
+            <div class="space-y-3">
+                <input type="email" id="admin-email" placeholder="Email" autocomplete="username" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                <input type="password" id="admin-password" placeholder="Mot de passe" autocomplete="current-password" class="w-full bg-maldiva-sand border border-gray-200 rounded-xl px-4 py-3 text-center text-sm focus:outline-none focus:ring-2 focus:ring-maldiva-teal">
+                <span id="admin-login-error" class="text-xs text-red-500 font-bold block mt-2 hidden">Email ou mot de passe incorrect.</span>
+            </div>
+            <button onclick="window.verifyAdminLogin()" class="w-full bg-maldiva-dark hover:bg-maldiva-orange text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors">
+                Se Connecter
             </button>
         </div>
-    </div>
 
-    <div class="wrap">
-        <div id="reader"></div>
-        <button type="button" id="camBtn" class="btn btn-p" style="margin-bottom:.75rem">
-            <i class="fa-solid fa-camera"></i><span id="camTxt">Démarrer la caméra</span>
-        </button>
-        <div class="row">
-            <input type="text" id="manual" placeholder="MLD-0000" autocapitalize="characters"
-                   style="text-align:center;font-weight:700;letter-spacing:.15em;text-transform:uppercase">
-            <button type="button" id="manBtn" class="btn btn-o">
-                <i class="fa-solid fa-circle-notch sp"></i><span>OK</span>
-            </button>
-        </div>
-        <p class="sm mut" style="margin:.75rem 0 0;text-align:center">
-            Si la caméra ne marche pas, tapez le code du billet.
-        </p>
-    </div>
-</div>
-
-<!-- ═══════ Verdict ═══════ -->
-<div id="verdict" class="hide">
-    <div id="vhead" class="vhead">
-        <div id="vicon" class="vicon"></div>
-        <h2 id="vtitle" class="serif vtitle"></h2>
-        <p id="vreason" class="lg" style="margin:.5rem 0 0;opacity:.92"></p>
-        <p id="vreasonAr" class="md ar" style="margin:.25rem 0 0;opacity:.78"></p>
-    </div>
-    <div id="vbody" class="vbody"></div>
-    <div class="vfoot">
-        <button type="button" id="nextBtn" class="btn btn-d">Scanner le suivant</button>
-    </div>
-</div>
-
-<script type="module">
-// ═══════════════════════════════════════════════════════════════
-// Tout est ici : Firebase, validation, caméra.
-// Les imports viennent d'une URL (gstatic), pas d'un fichier local.
-//
-// ⚠️ La sécurité réelle est dans firestore.rules, pas dans cette page :
-//    un compte "staff" ne peut modifier QUE le champ checkIns.
-// ═══════════════════════════════════════════════════════════════
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-const app  = initializeApp({
-    apiKey: "AIzaSyDMHbPerIT_IPNobLCwBObWheTQerK-W_4",
-    authDomain: "maldiva-beach-4fe61.firebaseapp.com",
-    projectId: "maldiva-beach-4fe61",
-    storageBucket: "maldiva-beach-4fe61.firebasestorage.app",
-    messagingSenderId: "528746467653",
-    appId: "1:528746467653:web:9d456c59a8221130936e2c"
-});
-const auth  = getAuth(app);
-const db    = getFirestore(app);
-const APPID = 'maldiva-beach-club-prod';   // identique à js/firebase.js
-
-const $ = id => document.getElementById(id);
-const base = col => ['artifacts', APPID, 'public', 'data', col];
-
-let staffLabel = '', count = 0, scanner = null, camOn = false, busy = false;
-
-// ── petit toast ──
-let toastT;
-const toast = (msg) => {
-    const t = $('toast'); t.textContent = msg; t.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3200);
-};
-
-const withBusy = async (btn, fn) => {
-    if (!btn || btn.disabled) return;
-    btn.disabled = true; btn.classList.add('busy');
-    try { await fn(); } finally { btn.disabled = false; btn.classList.remove('busy'); }
-};
-
-// ══════════ 1. Connexion ══════════
-const findRole = async (uid) => {
-    let denied = false;
-    for (const col of ['staff', 'admins']) {
-        try {
-            const snap = await getDoc(doc(db, ...base(col), uid));
-            if (snap.exists()) return { role: col };
-        } catch (e) {
-            console.error(col, e && e.code);
-            if (e && e.code === 'permission-denied') denied = true;
-        }
-    }
-    return { role: null, denied };
-};
-
-$('loginBtn').addEventListener('click', () => withBusy($('loginBtn'), async () => {
-    const email = $('email').value.trim(), pass = $('pass').value, err = $('loginErr');
-    err.classList.add('hide');
-
-    if (!email || !pass) { err.textContent = "Entrez votre email et votre mot de passe."; return err.classList.remove('hide'); }
-
-    try {
-        const cred = await signInWithEmailAndPassword(auth, email, pass);
-        const { role, denied } = await findRole(cred.user.uid);
-
-        if (!role) {
-            await signOut(auth);
-            err.innerHTML = denied
-                ? "Règles Firestore non publiées.<br>Publiez firestore.rules dans la console Firebase."
-                : "Compte non enregistré comme personnel.<br>Ajoutez cet UID dans la collection <b>staff</b> :"
-                  + `<span class="uid">${cred.user.uid}</span>`;
-            return err.classList.remove('hide');
-        }
-
-        staffLabel = email;
-        $('who').textContent = `${email} · ${role === 'admins' ? 'admin' : 'staff'}`;
-        $('login').classList.add('hide');
-        $('scan').classList.remove('hide');
-        $('scan').style.display = 'flex';
-        toast("Connecté. Prêt à scanner.");
-    } catch (e) {
-        console.error(e && e.code, e);
-        const m = {
-            'auth/invalid-credential': "Email ou mot de passe incorrect.",
-            'auth/wrong-password':     "Mot de passe incorrect.",
-            'auth/user-not-found':     "Aucun compte avec cet email. Créez-le dans Firebase → Authentication.",
-            'auth/invalid-email':      "Format d'email invalide.",
-            'auth/too-many-requests':  "Trop de tentatives. Patientez quelques minutes.",
-            'auth/network-request-failed': "Pas de connexion internet."
-        };
-        err.textContent = m[e && e.code] || `Erreur (${(e && e.code) || 'inconnue'}).`;
-        err.classList.remove('hide');
-    }
-}));
-
-$('outBtn').addEventListener('click', async () => {
-    await stopCam(); await signOut(auth);
-    staffLabel = ''; $('pass').value = '';
-    $('scan').classList.add('hide'); $('scan').style.display = '';
-    $('login').classList.remove('hide');
-});
-
-// ══════════ 2. Caméra ══════════
-const stopCam = async () => {
-    if (scanner && camOn) { try { await scanner.stop(); } catch (e) {} }
-    camOn = false; $('camTxt').textContent = 'Démarrer la caméra';
-};
-
-$('camBtn').addEventListener('click', () => withBusy($('camBtn'), async () => {
-    if (typeof window.Html5Qrcode === 'undefined') return toast("Lecteur QR indisponible. Tapez le code.");
-    if (camOn) return stopCam();
-    try {
-        if (!scanner) scanner = new window.Html5Qrcode("reader");
-        await scanner.start({ facingMode: "environment" },
-            { fps: 10, qrbox: { width: 240, height: 240 } },
-            (txt) => check(txt), () => {});
-        camOn = true; $('camTxt').textContent = 'Arrêter la caméra';
-    } catch (e) {
-        console.error(e);
-        toast("Caméra refusée. Tapez le code du billet.");
-    }
-}));
-
-$('manBtn').addEventListener('click', () => withBusy($('manBtn'), async () => {
-    const c = $('manual').value.trim();
-    if (!c) return toast("Entrez un code.");
-    await check(c); $('manual').value = '';
-}));
-
-// ══════════ 3. Validation (les 7 contrôles) ══════════
-const todayKey = () => {
-    const d = new Date();
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
-};
-
-// visitDate = 1er jour, duration = nombre de jours.
-// Un séjour de 5 jours doit pouvoir entrer 5 fois, 1 fois par jour.
-const withinStay = (visitDate, duration, day) => {
-    if (!visitDate) return false;
-    const s = new Date(visitDate + 'T00:00:00'), d = new Date(day + 'T00:00:00');
-    if (isNaN(s) || isNaN(d)) return false;
-    const diff = Math.round((d - s) / 86400000);
-    return diff >= 0 && diff < (parseInt(duration) || 1);
-};
-
-const REASON = {
-    not_found:    ["Aucune réservation ne correspond à ce code.", "لا يوجد حجز بهذا الرمز."],
-    not_approved: ["Réservation non confirmée (en attente).",     "الحجز غير مؤكَّد بعد."],
-    declined:     ["Cette réservation a été refusée.",            "هذا الحجز مرفوض."],
-    wrong_date:   ["Ce billet n'est pas valable aujourd'hui.",    "هذه التذكرة غير صالحة اليوم."],
-    already_used: ["Ce billet a déjà été scanné aujourd'hui.",    "تم مسح هذه التذكرة اليوم من قبل."],
-    error:        ["Erreur de connexion. Réessayez.",             "خطأ في الاتصال. حاول مجدداً."]
-};
-
-const check = async (raw) => {
-    if (busy) return;                 // la caméra lit plusieurs fois par seconde
-    busy = true;
-    await stopCam();
-
-    const code = (raw || '').trim().toUpperCase().replace(/^#/, '');
-    const day = todayKey();
-
-    try {
-        const ref = doc(db, ...base('reservations'), code);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) return show('no', 'not_found', { code });
-        const d = snap.data();
-
-        if (d.status === 'declined')  return show('no', 'declined',     { code, d });
-        if (d.status !== 'approved')  return show('no', 'not_approved', { code, d });
-        if (!withinStay(d.visitDate, d.duration, day)) return show('no', 'wrong_date', { code, d, day });
-
-        const already = (d.checkIns || {})[day];
-        if (already) return show('no', 'already_used', { code, d, already });
-
-        // ✅ on n'écrit QUE checkIns — les règles Firestore refusent tout le reste
-        await setDoc(ref, { checkIns: { [day]: { at: new Date().toISOString(), by: staffLabel } } }, { merge: true });
-        count++; $('count').textContent = count;
-        show('ok', null, { code, d });
-
-    } catch (e) {
-        console.error(e);
-        show('no', 'error', { code });
-    } finally {
-        busy = false;
-    }
-};
-
-// ══════════ 4. Verdict ══════════
-const show = (kind, reason, info) => {
-    const ok = kind === 'ok';
-    const used = reason === 'already_used';
-
-    $('vhead').className = 'vhead ' + (ok ? 'ok' : 'no');
-    $('vicon').innerHTML = `<i class="fa-solid ${ok ? 'fa-circle-check' : used ? 'fa-rotate-left' : 'fa-circle-xmark'}"></i>`;
-    $('vtitle').textContent = ok ? 'ACCÈS AUTORISÉ' : used ? 'BILLET DÉJÀ UTILISÉ' : 'ACCÈS REFUSÉ';
-
-    const hm = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    const r = REASON[reason];
-    $('vreason').textContent   = ok ? `Entrée enregistrée · ${hm}` : (r ? r[0] : "Billet invalide.");
-    $('vreasonAr').textContent = ok ? 'تم تسجيل الدخول بنجاح.'      : (r ? r[1] : "التذكرة غير صالحة.");
-
-    const d = info.d;
-    let html = '';
-
-    if (!d) {
-        html = `<p class="md mut" style="text-align:center">Code lu : <b>${info.code || '—'}</b></p>`;
-    } else {
-        const items = Object.entries(d.items || {})
-            .map(([n, q]) => `<div class="line"><dt>${n}</dt><dd class="num">× ${q}</dd></div>`).join('');
-        const paid = d.payment && d.payment.paid;
-        const days = parseInt(d.duration) || 1;
-
-        html = `
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
-                    border-bottom:1px solid var(--line);padding-bottom:.75rem">
-            <div style="min-width:0">
-                <div class="lg" style="font-weight:700">${d.clientName || '—'}</div>
-                <a href="tel:${d.clientPhone}" class="md" style="color:var(--teal);text-decoration:none">${d.clientPhone || '—'}</a>
+        <div id="admin-dashboard-view" class="hidden space-y-6">
+            
+            <div class="flex overflow-x-auto hide-scrollbar border-b border-gray-200 bg-white rounded-t-2xl px-2 pt-2">
+                <button onclick="window.switchAdminSubTab('reservations')" id="admin-subtab-btn-res" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-maldiva-orange text-maldiva-orange flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-list-check"></i><span>Demandes</span></button>
+                <button onclick="window.switchAdminSubTab('loyalty')" id="admin-subtab-btn-loyalty" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-star"></i><span>Fidélité / زبائن أوفياء</span></button>
+                <button onclick="window.switchAdminSubTab('settings')" id="admin-subtab-btn-settings" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-image"></i><span>Paramètres</span></button>
+                <a href="orders.html" class="py-3 px-4 font-bold text-xs uppercase border-b-2 border-transparent text-gray-500 hover:text-maldiva-teal flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-utensils"></i><span>Restaurant (Externe)</span></a>
             </div>
-            <div class="lbl mut">#${info.code}</div>
-        </div>
 
-        <div class="card" style="${paid ? 'background:#fffbeb;border-color:#fcd34d' : 'background:#f9fafb'}">
-            <div class="md" style="font-weight:700;color:${paid ? '#78350f' : '#4b5563'}">
-                <i class="fa-solid ${paid ? 'fa-star' : 'fa-circle-info'}"></i>
-                ${paid ? 'PAYÉ — rangées de devant' : 'Non payé — placement libre'}
+            <div id="admin-subview-reservations" class="space-y-6">
+                <div class="bg-white rounded-b-2xl rounded-tr-2xl p-6 shadow-sm border border-gray-100 space-y-4">
+                    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                        <div>
+                            <h4 class="serif-title text-xl font-bold text-maldiva-dark">Bilan Journalier • الحصيلة اليومية</h4>
+                            <p class="text-xs text-gray-500">Cliquez sur les cases pour filtrer / إضغط على المربعات للفرز</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                            <div class="relative flex-grow max-w-[220px]">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input type="text" id="admin-search-mld" oninput="window.debouncedSearch()" placeholder="Chercher code, nom, tél..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
+                            </div>
+                            <button onclick="window.setAdminDateFilterToday()" class="bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-teal/20">Aujourd'hui</button>
+                            <input type="date" id="admin-filter-date" onchange="window.renderAdminReservations()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none w-[130px]">
+                            <button onclick="window.clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs transition-all">Tout</button>
+                            <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5"><i class="fa-solid fa-water"></i> Activités</button>
+                            <!-- Seul bouton qui relit vraiment Firestore. Les filtres et la
+                                 recherche travaillent sur les données déjà chargées (0 lecture). -->
+                            <button onclick="window.refreshReservations()" title="Recharger depuis la base" class="bg-maldiva-dark/10 text-maldiva-dark hover:bg-maldiva-dark hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-dark/20 flex items-center gap-1.5"><i class="fa-solid fa-rotate"></i> Actualiser</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div onclick="window.setStatusFilter('all')" class="cursor-pointer bg-gray-50 hover:bg-gray-100 p-3 rounded-2xl border border-gray-200 shadow-sm text-center transition-all" id="filter-btn-all">
+                            <div class="text-[10px] text-gray-400 uppercase font-bold">Total</div><span id="stat-total" class="text-xl font-extrabold text-maldiva-dark">0</span>
+                        </div>
+                        <div onclick="window.setStatusFilter('pending')" class="cursor-pointer bg-yellow-50 hover:bg-yellow-100 p-3 rounded-2xl border border-yellow-100 shadow-sm text-center transition-all" id="filter-btn-pending">
+                            <div class="text-[10px] text-yellow-600 uppercase font-bold">En attente ⏳</div><span id="stat-pending" class="text-xl font-extrabold text-yellow-600">0</span>
+                        </div>
+                        <div onclick="window.setStatusFilter('approved')" class="cursor-pointer bg-green-50 hover:bg-green-100 p-3 rounded-2xl border border-green-100 shadow-sm text-center transition-all" id="filter-btn-approved">
+                            <div class="text-[10px] text-green-600 uppercase font-bold">Confirmés ✔️</div><span id="stat-approved" class="text-xl font-extrabold text-green-600">0</span>
+                        </div>
+                        <div onclick="window.setStatusFilter('declined')" class="cursor-pointer bg-red-50 hover:bg-red-100 p-3 rounded-2xl border border-red-100 shadow-sm text-center transition-all" id="filter-btn-declined">
+                            <div class="text-[10px] text-red-600 uppercase font-bold">Refusés ❌</div><span id="stat-declined" class="text-xl font-extrabold text-red-600">0</span>
+                        </div>
+                        <div onclick="window.setStatusFilter('archived')" class="cursor-pointer bg-purple-50 hover:bg-purple-100 p-3 rounded-2xl border border-purple-100 shadow-sm text-center transition-all" id="filter-btn-archived">
+                            <div class="text-[10px] text-purple-600 uppercase font-bold">Archivés 🗃️</div><span id="stat-archived" class="text-xl font-extrabold text-purple-600">0</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-maldiva-dark to-teal-900 p-5 rounded-2xl shadow-md flex justify-between items-center text-white mt-2">
+                        <div><div class="text-xs uppercase font-bold text-maldiva-accent">Revenu Estimé / المداخيل المقدرة</div><div class="text-[10px] text-gray-300 mt-0.5">N'inclut pas les refusés (Inclus les archivés)</div></div>
+                        <span id="stat-revenue" class="text-3xl font-extrabold text-maldiva-orange">0 DA</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">Liste des Réservations <span id="current-filter-label" class="text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded ml-2 align-middle uppercase">Tout</span></h4>
+                        <button onclick="window.logoutAdmin()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-xl transition-colors">Déconnexion</button>
+                    </div>
+                    <div id="admin-reservations-list" class="space-y-4">
+                        <div class="text-center py-12 text-gray-400 text-xs">Chargement...</div>
+                    </div>
+                </div>
             </div>
-            <div class="sm ar" style="margin-top:.25rem;color:${paid ? '#92400e' : '#6b7280'}">
-                ${paid ? 'مدفوع — له الحق في الصفوف الأمامية' : 'غير مدفوع — المكان حسب المتاح'}
+
+            <div id="admin-subview-loyalty" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+                    <div>
+                        <h4 class="serif-title text-xl font-bold text-maldiva-dark">الزبائن الأوفياء / Fidélité</h4>
+                        <p class="text-xs text-gray-500">نظام البحث عن الزبائن الذين يحجزون أكثر.</p>
+                    </div>
+                    <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="loyalty-search" oninput="window.renderLoyalty()" placeholder="ابحث بالاسم أو الهاتف..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
+                    </div>
+                </div>
+                <div id="loyalty-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-2 hide-scrollbar"></div>
             </div>
+
+            <div id="admin-subview-settings" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hidden space-y-6">
+                
+                <div class="mb-8 border-b border-gray-100 pb-6">
+                    <h4 class="serif-title text-xl font-bold text-maldiva-dark"><i class="fa-solid fa-calendar-xmark text-red-500 mr-2"></i>Fermeture des Jours (إغلاق الأيام)</h4>
+                    <p class="text-xs text-gray-500 mt-1 mb-4">Bloquez ou débloquez les réservations pour des dates spécifiques.</p>
+                    
+                    <div class="flex flex-wrap items-end gap-3 bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
+                        <div class="flex-grow max-w-[200px]">
+                            <label class="block text-xs font-bold text-red-800 mb-1">Sélectionnez une date :</label>
+                            <input type="date" id="admin-close-date" class="w-full bg-white border border-red-200 rounded-xl px-3 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-400">
+                        </div>
+                        <button onclick="window.adminToggleDate(true)" class="bg-red-500 text-white hover:bg-red-600 shadow-md font-bold px-4 py-2.5 rounded-xl text-xs transition-all flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Fermer</button>
+                        <button onclick="window.adminToggleDate(false)" class="bg-green-500 text-white hover:bg-green-600 shadow-md font-bold px-4 py-2.5 rounded-xl text-xs transition-all flex items-center gap-1.5"><i class="fa-solid fa-unlock"></i> Ouvrir</button>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="text-xs font-bold text-gray-700 mb-3"><i class="fa-solid fa-list mr-1"></i> Jours actuellement fermés :</div>
+                        <div id="closed-days-list" class="flex flex-wrap gap-2 text-xs">
+                            <span class="text-gray-400 italic">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div><h4 class="serif-title text-xl font-bold text-maldiva-dark">Gestion des Images</h4><p class="text-xs text-gray-500">Personnalisez les images de votre club.</p></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-image"></i> Logo du Site</div><input type="url" id="setting-logo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-chair"></i> Chaise Longue</div><input type="url" id="setting-chaise-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-mattress-pillow"></i> Transat Bois</div><input type="url" id="setting-transat-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200/50"><div class="font-bold text-xs uppercase mb-2"><i class="fa-solid fa-hotel"></i> Baldaquin Royal</div><input type="url" id="setting-baldaquin-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ship"></i> Jet-Ski</div><input type="url" id="setting-jetski-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-bicycle"></i> Pédalo</div><input type="url" id="setting-pedalo-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-anchor"></i> Kayak</div><input type="url" id="setting-kayak-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-life-ring"></i> Bouée Tractée</div><input type="url" id="setting-bouee-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><div class="font-bold text-xs uppercase mb-2 text-blue-900"><i class="fa-solid fa-ferry"></i> Bateau</div><input type="url" id="setting-bateau-url" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs"></div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                    <button onclick="window.saveSiteSettings()" class="flex-1 bg-maldiva-teal hover:bg-maldiva-dark text-white font-bold py-3 rounded-xl text-xs uppercase flex items-center justify-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Sauvegarder les modifications</span></button>
+                    <button onclick="window.resetSettingsToDefault()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-6 rounded-xl text-xs uppercase">Réinitialiser par défaut</button>
+                </div>
+
+            </div>
+
         </div>
+    </main>
 
-        <div style="display:flex;flex-direction:column;gap:.35rem">${items || '<p class="sm mut">—</p>'}</div>
-
-        <div style="display:flex;flex-direction:column;gap:.35rem;border-top:1px solid var(--line);padding-top:.75rem">
-            <div class="line"><dt>Date de début</dt><dd>${d.visitDate || '—'}</dd></div>
-            <div class="line"><dt>Durée</dt><dd>${days} jour${days > 1 ? 's' : ''}</dd></div>
-            <div class="line"><dt>Total</dt><dd>${d.totalPrice || '—'}</dd></div>
-            ${d.childrenChaiseCount > 0 ? `<div class="line"><dt>Enfants (-40%)</dt><dd style="color:#7e22ce">${d.childrenChaiseCount}</dd></div>` : ''}
-        </div>`;
-
-        if (info.already) {
-            const t = new Date(info.already.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-            html += `<div class="card" style="background:#fef2f2;border-color:#fecaca">
-                <div class="md" style="font-weight:700;color:#991b1b">Déjà scanné aujourd'hui</div>
-                <div class="sm" style="color:#b91c1c;margin-top:.25rem">à ${t} par ${info.already.by || 'inconnu'}</div>
-            </div>`;
-        }
-        if (reason === 'wrong_date') {
-            html += `<div class="card sm" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
-                Valable à partir du <b>${d.visitDate}</b> pendant <b>${days} jour${days > 1 ? 's' : ''}</b>.
-                Aujourd'hui : <b>${info.day}</b>.
-            </div>`;
-        }
-    }
-
-    $('vbody').innerHTML = html;
-    $('verdict').classList.remove('hide');
-    if (navigator.vibrate) navigator.vibrate(ok ? 60 : [60, 70, 60]);
-};
-
-$('nextBtn').addEventListener('click', () => $('verdict').classList.add('hide'));
-
-window.addEventListener('beforeunload', () => { if (camOn && scanner) scanner.stop().catch(() => {}); });
-</script>
+    <script type="module" src="js/firebase.js"></script>
+    <script type="module" src="js/ui.js"></script>
+    <script type="module" src="js/admin.js"></script>
 </body>
 </html>

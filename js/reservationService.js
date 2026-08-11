@@ -18,7 +18,30 @@ const getSystemDocRef = () => doc(db, 'artifacts', getAppId(), 'public', 'data',
 
 let cachedReservations = null;
 let lastFetchTime = 0;
-const CACHE_DURATION = 60000;
+const CACHE_DURATION = 300000;      // 5 min (au lieu de 60 s) : les données changent peu en session admin
+let inFlight = null;                // évite N appels simultanés pour la même requête
+
+// ── Cache : pourquoi ne PAS le vider après une écriture ──
+// Firestore facture 1 lecture PAR DOCUMENT. Recharger toute la collection
+// après chaque petite action coûtait N lectures à chaque clic.
+// On applique donc la modification directement au cache local : le résultat
+// affiché est identique, pour 0 lecture.
+const patchCache = (trackingCode, changes) => {
+    if (!cachedReservations) return;
+    const i = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
+    if (i > -1) cachedReservations[i] = { ...cachedReservations[i], ...changes };
+};
+
+const dropFromCache = (trackingCode) => {
+    if (!cachedReservations) return;
+    cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
+};
+
+// Vide le cache : à n'utiliser que pour le bouton « Actualiser » explicite
+export const invalidateReservationsCache = () => {
+    cachedReservations = null;
+    lastFetchTime = 0;
+};
 
 // ==========================================
 // إعدادات الموقع (روابط الصور)
@@ -39,11 +62,30 @@ export const SITE_IMAGE_KEYS = {
 
 const getSettingsDocRef = () => doc(db, 'artifacts', getAppId(), 'public', 'data', 'settings', 'site-images');
 
-// قراءة عامة (يقرأها كل زائر) — مسموحة في firestore.rules
-export const getSiteImageSettings = async () => {
+// ── Cache navigateur des réglages d'images ──
+// Ces URLs changent quelques fois par an, mais la lecture s'exécutait à CHAQUE
+// chargement de page par CHAQUE visiteur : c'était une lecture facturée par visite.
+// On garde le résultat 12 h dans le navigateur du visiteur → ~1 lecture par
+// visiteur et par demi-journée au lieu d'une par page vue.
+const SETTINGS_CACHE_KEY = 'maldiva_site_images_v1';
+const SETTINGS_TTL = 12 * 60 * 60 * 1000;
+
+export const getSiteImageSettings = async ({ fresh = false } = {}) => {
+    if (!fresh) {
+        try {
+            const raw = localStorage.getItem(SETTINGS_CACHE_KEY);
+            if (raw) {
+                const c = JSON.parse(raw);
+                if (c && (Date.now() - c.t) < SETTINGS_TTL) return c.v;
+            }
+        } catch (e) { /* localStorage indisponible : on lit Firestore */ }
+    }
+
     try {
         const snap = await getDoc(getSettingsDocRef());
-        return snap.exists() ? snap.data() : {};
+        const data = snap.exists() ? snap.data() : {};
+        try { localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify({ t: Date.now(), v: data })); } catch (e) {}
+        return data;
     } catch (e) {
         console.error("Erreur getSiteImageSettings:", e);
         return {};   // في حال الفشل نُرجع فراغاً → الموقع يستعمل صوره الافتراضية
@@ -53,6 +95,8 @@ export const getSiteImageSettings = async () => {
 // كتابة للأدمن فقط (يفرضها firestore.rules)
 export const saveSiteImageSettings = async (urls) => {
     await setDoc(getSettingsDocRef(), { ...urls, updatedAt: new Date().toISOString() }, { merge: true });
+    // l'admin doit voir son changement tout de suite : on invalide son cache local
+    try { localStorage.removeItem(SETTINGS_CACHE_KEY); } catch (e) {}
 };
 
 // 🆕 يتحقق إذا كان كود التتبع مستعملاً مسبقاً (لتفادي تصادم/مسح حجز موجود)
@@ -82,38 +126,44 @@ export const getAdminReservations = async (forceRefresh = false) => {
     if (!forceRefresh && cachedReservations && (now - lastFetchTime < CACHE_DURATION)) {
         return cachedReservations;
     }
-    const q = query(getReservationsCollection());
-    const snapshot = await getDocs(q);
-    const results = [];
-    snapshot.forEach(doc => {
-        // 🔴 مهم جداً: نستثني الملف المخفي الخاص بالأيام المغلقة حتى لا يظهر كحجز
-        if (doc.id !== SYSTEM_DOC_ID && doc.data().trackingCode) {
-            results.push({ id: doc.id, ...doc.data() });
+
+    // Si une requête est déjà en cours, on attend la même au lieu d'en lancer
+    // une seconde : c'est ce qui évite de payer 2× N lectures au démarrage.
+    if (inFlight) return inFlight;
+
+    inFlight = (async () => {
+        try {
+            const q = query(getReservationsCollection());
+            const snapshot = await getDocs(q);
+            const results = [];
+            snapshot.forEach(doc => {
+                // 🔴 مهم جداً: نستثني الملف المخفي الخاص بالأيام المغلقة حتى لا يظهر كحجز
+                if (doc.id !== SYSTEM_DOC_ID && doc.data().trackingCode) {
+                    results.push({ id: doc.id, ...doc.data() });
+                }
+            });
+            results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            cachedReservations = results;
+            lastFetchTime = Date.now();
+            return results;
+        } finally {
+            inFlight = null;
         }
-    });
-    results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    cachedReservations = results;
-    lastFetchTime = now;
-    return results;
+    })();
+
+    return inFlight;
 };
 
 export const updateReservationData = async (trackingCode, newData) => {
     const docRef = getReservationDoc(trackingCode);
     await updateDoc(docRef, newData);
-    if (cachedReservations) {
-        const index = cachedReservations.findIndex(r => r.trackingCode === trackingCode);
-        if (index > -1) {
-            cachedReservations[index] = { ...cachedReservations[index], ...newData };
-        }
-    }
+    patchCache(trackingCode, newData);   // 0 lecture : on met à jour le cache local
 };
 
 export const deleteReservation = async (trackingCode) => {
     const docRef = getReservationDoc(trackingCode);
     await deleteDoc(docRef);
-    if (cachedReservations) {
-        cachedReservations = cachedReservations.filter(r => r.trackingCode !== trackingCode);
-    }
+    dropFromCache(trackingCode);          // 0 lecture
 };
 
 // ==========================================

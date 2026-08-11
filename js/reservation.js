@@ -148,10 +148,17 @@ const calculateTotal = () => {
 };
 
 // 🆕 يولّد كود تتبع غير مستخدم — يتحقق من Firestore قبل اعتماده لتفادي مسح حجز موجود بالخطأ
+//
+// ⚙️ Coût Firestore : chaque essai = 1 lecture.
+//    Avec 4 chiffres (9 000 combinaisons) et une base qui grandit, les collisions
+//    devenaient fréquentes et la boucle pouvait coûter plusieurs lectures par
+//    réservation. Avec 6 chiffres (900 000 combinaisons), la probabilité de
+//    collision reste < 0,1 % même à 900 réservations → 1 lecture en pratique.
+//    Le format « MLD-XXXXXX » reste compatible : le suivi cherche par code exact.
 const generateUniqueTrackingCode = async () => {
     let code, taken = true, attempts = 0;
-    while (taken && attempts < 20) {
-        code = 'MLD-' + Math.floor(1000 + Math.random() * 9000);
+    while (taken && attempts < 5) {          // 20 → 5 : au-delà, le repli temporel suffit
+        code = 'MLD-' + Math.floor(100000 + Math.random() * 900000);
         taken = await isTrackingCodeTaken(code);
         attempts++;
     }

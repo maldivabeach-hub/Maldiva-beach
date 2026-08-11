@@ -2,7 +2,7 @@
 
 import { db, appId, signInAdmin, signOutAdmin } from './firebase.js'; 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS, setPaymentStatus } from './reservationService.js';
+import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS, setPaymentStatus, invalidateReservationsCache } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal, switchAdminSubTab } from './ui.js';
 import { pricesByName, childPricing, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
@@ -469,7 +469,7 @@ export const saveEditedReservation = async () => {
         await updateReservationData(trackingCode, updatedData);
         showNotification("Réservation modifiée avec succès !", "success");
         closeEditModal();
-        renderAdminReservations(true); 
+        renderAdminReservations();   // cache déjà à jour → 0 lecture
     } catch (error) {
         showNotification("Erreur lors de la modification.", "error");
     }
@@ -710,7 +710,7 @@ export const renderLoyalty = async () => {
 
 export const loadSettingsForm = async () => {
     try {
-        const urls = await getSiteImageSettings();
+        const urls = await getSiteImageSettings({ fresh: true });   // l'admin voit toujours la vraie valeur
         for (const key in SITE_IMAGE_KEYS) {
             const input = document.getElementById(key);
             if (input) input.value = urls[key] || '';
@@ -761,13 +761,28 @@ export const togglePayment = async (trackingCode) => {
     try {
         await setPaymentStatus(trackingCode, willBePaid, 'admin');
         showNotification(willBePaid ? "Marqué comme payé (rangées de devant)." : "Marqué comme non payé.", "success");
-        await renderAdminReservations(true);
+        await renderAdminReservations();   // cache déjà à jour → 0 lecture
     } catch (e) {
         console.error("Erreur togglePayment:", e);
         showNotification("Échec de la mise à jour du paiement.", "error");
     }
 };
 
+
+// La recherche filtre le cache local, mais redessiner 15 fois pendant la frappe
+// est inutile. On attend 250 ms de pause avant de filtrer.
+let searchTimer = null;
+export const debouncedSearch = () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => renderAdminReservations(), 250);
+};
+
+// Seul point du panneau qui relit vraiment Firestore, sur demande explicite.
+export const refreshReservations = async () => {
+    invalidateReservationsCache();
+    await renderAdminReservations(true);
+    showNotification("Liste actualisée.", "success");
+};
 
 window.clearAdminDateFilter = clearAdminDateFilter;
 window.toggleNautiqueFilter = toggleNautiqueFilter;
@@ -792,6 +807,8 @@ window.saveSiteSettings = saveSiteSettings;
 window.resetSettingsToDefault = resetSettingsToDefault;
 window.loadSettingsForm = loadSettingsForm;
 window.togglePayment = togglePayment;
+window.debouncedSearch = debouncedSearch;
+window.refreshReservations = refreshReservations;
 
 // admin.html ينادي window.switchAdminSubTab (المعرّفة في ui.js).
 // نغلّفها هنا حتى يجلب كل تبويب فرعي بياناته لحظة فتحه (تحميل عند الطلب = بداية أسرع).

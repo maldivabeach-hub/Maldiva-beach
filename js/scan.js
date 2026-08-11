@@ -31,15 +31,24 @@ const withLoading = async (btn, fn) => {
 // ══════════════════════════════════════════════
 // 1. Connexion — accepte staff OU admin
 // ══════════════════════════════════════════════
+// Cherche l'utilisateur dans staff puis dans admins.
+// On distingue deux échecs très différents, sinon impossible à diagnostiquer :
+//   • permission-denied → les règles Firestore ne sont pas publiées
+//   • document absent   → l'UID n'a pas été ajouté dans la collection staff
 const isAuthorised = async (uid) => {
     const base = ['artifacts', appId, 'public', 'data'];
+    let denied = false;
+
     for (const col of ['staff', 'admins']) {
         try {
             const snap = await getDoc(doc(db, ...base, col, uid));
-            if (snap.exists()) return col;
-        } catch (e) { /* la règle peut refuser la lecture : on essaie l'autre */ }
+            if (snap.exists()) return { role: col };
+        } catch (e) {
+            console.error(`Lecture ${col} refusée:`, e && e.code, e);
+            if (e && e.code === 'permission-denied') denied = true;
+        }
     }
-    return null;
+    return { role: null, denied };
 };
 
 window.staffLogin = (btn) => withLoading(btn, async () => {
@@ -55,11 +64,22 @@ window.staffLogin = (btn) => withLoading(btn, async () => {
 
     try {
         const cred = await signInAdmin(email, pass);
-        const role = await isAuthorised(cred.user.uid);
+        const uid = cred.user.uid;
+        const { role, denied } = await isAuthorised(uid);
 
         if (!role) {
             await signOutAdmin();
-            err.textContent = "Ce compte n'est pas autorisé au contrôle d'accès.";
+            if (denied) {
+                // Firestore a refusé la lecture : les règles ne sont pas à jour
+                err.innerHTML = `Règles Firestore non publiées.<br>
+                    <span class="font-normal opacity-80">Publiez firestore.rules dans la console Firebase.</span>`;
+            } else {
+                // L'authentification a réussi, mais l'UID n'est pas enregistré.
+                // On affiche l'UID : c'est exactement ce qu'il faut copier dans Firestore.
+                err.innerHTML = `Compte non enregistré comme personnel.<br>
+                    <span class="font-normal opacity-80">Ajoutez cet UID dans la collection <strong>staff</strong> :</span>
+                    <span class="block mt-1.5 select-all bg-white/10 px-2 py-1.5 rounded text-white font-mono text-[11px] break-all">${uid}</span>`;
+            }
             return err.classList.remove('hidden');
         }
 
@@ -70,8 +90,16 @@ window.staffLogin = (btn) => withLoading(btn, async () => {
         $('scan-view').classList.add('flex');
         showNotification("Connecté. Prêt à scanner.", "success");
     } catch (e) {
-        console.error(e);
-        err.textContent = "Email ou mot de passe incorrect.";
+        console.error("Échec connexion staff:", e && e.code, e);
+        const msgs = {
+            'auth/invalid-credential': "Email ou mot de passe incorrect.",
+            'auth/wrong-password':     "Mot de passe incorrect.",
+            'auth/user-not-found':     "Aucun compte avec cet email. Créez-le dans Firebase → Authentication.",
+            'auth/invalid-email':      "Format d'email invalide.",
+            'auth/too-many-requests':  "Trop de tentatives. Patientez quelques minutes.",
+            'auth/network-request-failed': "Pas de connexion internet."
+        };
+        err.textContent = msgs[e && e.code] || `Erreur de connexion (${(e && e.code) || 'inconnue'}).`;
         err.classList.remove('hidden');
     }
 });

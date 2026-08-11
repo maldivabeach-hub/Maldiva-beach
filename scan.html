@@ -116,6 +116,60 @@
         </div>
     </div>
 
-    <script type="module" src="js/scan.js"></script>
+    <!-- ════════ Panneau d'erreur de démarrage ════════
+         Si un module JS ne charge pas, le bouton « Se connecter » ne fait
+         rien du tout et rien ne s'affiche. Sur téléphone la console est
+         inaccessible : on montre donc l'erreur directement à l'écran. -->
+    <div id="boot-error" class="hidden fixed inset-0 z-[90] bg-red-700 text-white p-6 overflow-y-auto">
+        <div class="max-w-md mx-auto space-y-4">
+            <div class="text-center">
+                <i class="fa-solid fa-triangle-exclamation text-4xl mb-3"></i>
+                <h2 class="serif-title text-2xl font-bold">Chargement impossible</h2>
+                <p class="t-body opacity-90 mt-1">Un fichier JavaScript n'a pas pu être chargé.</p>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3">
+                <div class="t-label opacity-70 mb-1">Détail technique</div>
+                <code id="boot-error-msg" class="block t-small font-mono break-all"></code>
+            </div>
+            <div class="bg-white/10 rounded-xl p-4 space-y-2">
+                <p class="t-body font-bold">À vérifier sur l'hébergement :</p>
+                <ol class="t-small space-y-1.5 opacity-90 list-decimal list-inside">
+                    <li><strong>js/reservationService.js</strong> est-il la dernière version ? (c'est la cause la plus fréquente)</li>
+                    <li><strong>js/scan.js</strong> existe-t-il bien dans le dossier <strong>js/</strong> ?</li>
+                    <li>Les noms de fichiers sont sensibles à la casse : <strong>scan.js</strong> ≠ <strong>Scan.js</strong></li>
+                    <li>Rechargez avec vidage du cache.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Installé AVANT le module pour ne rater aucune erreur de chargement.
+        window.__bootFail = function (msg) {
+            var box = document.getElementById('boot-error');
+            var out = document.getElementById('boot-error-msg');
+            if (!box || !out || !box.classList.contains('hidden')) return;
+            out.textContent = msg || 'Erreur inconnue';
+            box.classList.remove('hidden');
+        };
+        window.__bootMsg = '';
+        window.addEventListener('error', function (e) {
+            if (!window.__bootMsg) {
+                window.__bootMsg = (e && e.message) ? e.message : 'Échec du chargement d\'un module';
+            }
+        }, true);
+
+        // Si le module s'est bien exécuté, staffLogin existe. Sinon on alerte.
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                if (typeof window.staffLogin !== 'function') {
+                    window.__bootFail(window.__bootMsg || 'js/scan.js n\'a pas pu s\'exécuter (fichier manquant ou import échoué).');
+                }
+            }, 1200);
+        });
+    </script>
+
+    <script type="module" src="js/scan.js"
+            onerror="window.__bootFail('Fichier js/scan.js introuvable (erreur 404).')"></script>
 </body>
 </html>

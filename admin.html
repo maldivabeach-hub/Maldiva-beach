@@ -186,12 +186,15 @@
                         <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                             <div class="relative flex-grow max-w-[220px]">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
-                                <input type="text" id="admin-search-mld" oninput="window.renderAdminReservations()" placeholder="Chercher code, nom, tél..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
+                                <input type="text" id="admin-search-mld" oninput="window.debouncedSearch()" placeholder="Chercher code, nom, tél..." class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-maldiva-teal">
                             </div>
                             <button onclick="window.setAdminDateFilterToday()" class="bg-maldiva-teal/10 text-maldiva-teal hover:bg-maldiva-teal hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-teal/20">Aujourd'hui</button>
                             <input type="date" id="admin-filter-date" onchange="window.renderAdminReservations()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none w-[130px]">
                             <button onclick="window.clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs transition-all">Tout</button>
                             <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5"><i class="fa-solid fa-water"></i> Activités</button>
+                            <!-- Seul bouton qui relit vraiment Firestore. Les filtres et la
+                                 recherche travaillent sur les données déjà chargées (0 lecture). -->
+                            <button onclick="window.refreshReservations()" title="Recharger depuis la base" class="bg-maldiva-dark/10 text-maldiva-dark hover:bg-maldiva-dark hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-dark/20 flex items-center gap-1.5"><i class="fa-solid fa-rotate"></i> Actualiser</button>
                         </div>
                     </div>
 

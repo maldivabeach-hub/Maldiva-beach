@@ -37,7 +37,29 @@ const scrollToTabs = () => {
     const bar = document.getElementById('tabs-bar');
     if (bar) window.scrollTo({ top: bar.offsetTop, behavior: 'smooth' });
 };
-window.goToBooking = function () { window.switchTab('booking-form'); scrollToTabs(); };
+
+// « Réserver maintenant » doit mener au FORMULAIRE, pas au haut du catalogue.
+// Sur mobile le formulaire est sous le catalogue : sans ça, le client atterrissait
+// devant la liste des équipements et devait faire défiler longtemps pour le trouver.
+window.goToBooking = function () {
+    window.switchTab('booking-form');
+
+    const card = document.getElementById('form-card');
+    const bar = document.getElementById('tabs-bar');
+    if (!card) return scrollToTabs();
+
+    // on laisse la place à la barre d'onglets collante pour ne pas cacher le titre
+    const offset = (bar ? bar.offsetHeight : 0) + 12;
+    const top = card.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: top < 0 ? 0 : top, behavior: 'smooth' });
+
+    // curseur dans le premier champ, une fois le défilement terminé
+    setTimeout(() => {
+        const name = document.getElementById('client-name');
+        if (name) name.focus({ preventScroll: true });
+    }, 600);
+};
+
 window.goToTracking = function () { window.switchTab('tracking-section'); scrollToTabs(); };
 
 /* ---------- قراءة حالة النموذج (بدون أي حساب) ---------- */

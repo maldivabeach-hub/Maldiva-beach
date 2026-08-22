@@ -2,7 +2,7 @@
 
 import { db, appId, signInAdmin, signOutAdmin } from './firebase.js'; 
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS, setPaymentStatus, invalidateReservationsCache } from './reservationService.js';
+import { getAdminReservations, updateReservationData, deleteReservation, toggleDateClosure, getClosedDays, getSiteImageSettings, saveSiteImageSettings, SITE_IMAGE_KEYS, setPaymentStatus, subscribeAdminReservations } from './reservationService.js';
 import { showNotification, openConfirmModal, closeConfirmModal, switchAdminSubTab } from './ui.js';
 import { pricesByName, childPricing, calculateEquipmentPricing, applyDurationDiscount, getParasolTableNote } from './prices.js';
 
@@ -39,6 +39,7 @@ const STANDARD_ITEMS = [
 ];
 
 let adminAuthorized = false;
+let unsubscribeReservations = null;   // écoute temps réel des réservations
 let currentStatusFilter = 'all';
 let filterNautique = false;
 let pendingDeleteId = null;
@@ -77,7 +78,12 @@ export const verifyAdminLogin = async () => {
         const today = new Date(Date.now() - tzoffset).toISOString().split('T')[0];
         document.getElementById('admin-filter-date').value = today;
 
-        await renderAdminReservations(true); 
+        // 🔑 Une seule lecture complète ici. Ensuite Firestore n'envoie que les
+        // documents modifiés → chaque action coûte 1 lecture au lieu de N.
+        unsubscribeReservations = subscribeAdminReservations(
+            () => renderAdminReservations(),
+            () => showNotification("Connexion perdue. Rechargez la page.", "error")
+        );
         await renderClosedDays(); 
     } catch (err) {
         console.error("Erreur connexion admin:", err);
@@ -88,6 +94,8 @@ export const verifyAdminLogin = async () => {
 
 export const logoutAdmin = async () => {
     adminAuthorized = false;
+    // ⚠️ sans ceci, l'écoute reste active en arrière-plan et continue de coûter
+    if (unsubscribeReservations) { unsubscribeReservations(); unsubscribeReservations = null; }
     await signOutAdmin();
     document.getElementById('admin-email').value = '';
     document.getElementById('admin-password').value = ''; 
@@ -777,13 +785,6 @@ export const debouncedSearch = () => {
     searchTimer = setTimeout(() => renderAdminReservations(), 250);
 };
 
-// Seul point du panneau qui relit vraiment Firestore, sur demande explicite.
-export const refreshReservations = async () => {
-    invalidateReservationsCache();
-    await renderAdminReservations(true);
-    showNotification("Liste actualisée.", "success");
-};
-
 window.clearAdminDateFilter = clearAdminDateFilter;
 window.toggleNautiqueFilter = toggleNautiqueFilter;
 window.setStatusFilter = setStatusFilter;
@@ -808,7 +809,6 @@ window.resetSettingsToDefault = resetSettingsToDefault;
 window.loadSettingsForm = loadSettingsForm;
 window.togglePayment = togglePayment;
 window.debouncedSearch = debouncedSearch;
-window.refreshReservations = refreshReservations;
 
 // admin.html ينادي window.switchAdminSubTab (المعرّفة في ui.js).
 // نغلّفها هنا حتى يجلب كل تبويب فرعي بياناته لحظة فتحه (تحميل عند الطلب = بداية أسرع).

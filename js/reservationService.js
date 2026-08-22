@@ -1,6 +1,6 @@
 // /js/reservationService.js
 import { db, appId } from './firebase.js'; 
-import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, setDoc, getDoc, collection, query, getDocs, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // دالة ذكية لجلب معرف التطبيق لتفادي أي أخطاء وقت التحميل
 const getAppId = () => {
@@ -41,6 +41,54 @@ const dropFromCache = (trackingCode) => {
 export const invalidateReservationsCache = () => {
     cachedReservations = null;
     lastFetchTime = 0;
+};
+
+// ══════════════════════════════════════════════════════════════
+// 🔑 MODE TEMPS RÉEL — la vraie réponse au coût des lectures
+// ══════════════════════════════════════════════════════════════
+// Problème : getDocs() relit TOUTE la collection. Avec 100 documents,
+// chaque rechargement coûtait 100 lectures, même si un seul champ avait changé.
+//
+// onSnapshot fonctionne autrement :
+//   • 1re fois          → N lectures (la collection entière, inévitable)
+//   • ensuite           → Firestore n'envoie QUE les documents modifiés
+//     approuver 1 réservation = 1 lecture, pas N.
+//     13 approbations = 13 lectures au lieu de 13 × N.
+//
+// Bonus : le panneau devient à jour en direct, donc le cache de 5 minutes
+// et son problème de données périmées (check-ins du scanner) disparaissent.
+let liveMode = false;
+
+const buildList = (snapshot) => {
+    const results = [];
+    snapshot.forEach(d => {
+        // on exclut toujours le document système des jours fermés
+        if (d.id !== SYSTEM_DOC_ID && d.data().trackingCode) {
+            results.push({ id: d.id, ...d.data() });
+        }
+    });
+    results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return results;
+};
+
+// Retourne la fonction de désabonnement. TOUJOURS l'appeler à la déconnexion,
+// sinon l'écoute continue et consomme des lectures en arrière-plan.
+export const subscribeAdminReservations = (onUpdate, onError) => {
+    liveMode = true;
+    const unsub = onSnapshot(
+        query(getReservationsCollection()),
+        (snapshot) => {
+            cachedReservations = buildList(snapshot);
+            lastFetchTime = Date.now();
+            if (typeof onUpdate === 'function') onUpdate(cachedReservations);
+        },
+        (err) => {
+            console.error("Écoute des réservations interrompue:", err);
+            liveMode = false;
+            if (typeof onError === 'function') onError(err);
+        }
+    );
+    return () => { liveMode = false; unsub(); };
 };
 
 // ==========================================
@@ -122,6 +170,10 @@ export const getReservationByCode = async (trackingCode) => {
 };
 
 export const getAdminReservations = async (forceRefresh = false) => {
+    // En mode temps réel, l'écoute maintient déjà le cache à jour.
+    // Refetcher ici coûterait une 2e lecture complète pour rien.
+    if (liveMode) return cachedReservations || [];
+
     const now = Date.now();
     if (!forceRefresh && cachedReservations && (now - lastFetchTime < CACHE_DURATION)) {
         return cachedReservations;

@@ -192,9 +192,6 @@
                             <input type="date" id="admin-filter-date" onchange="window.renderAdminReservations()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none w-[130px]">
                             <button onclick="window.clearAdminDateFilter()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold px-3 py-2 rounded-xl text-xs transition-all">Tout</button>
                             <button id="btn-filter-nautique" onclick="window.toggleNautiqueFilter()" class="bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-3 py-2 rounded-xl text-xs transition-all border border-blue-200 flex items-center gap-1.5"><i class="fa-solid fa-water"></i> Activités</button>
-                            <!-- Seul bouton qui relit vraiment Firestore. Les filtres et la
-                                 recherche travaillent sur les données déjà chargées (0 lecture). -->
-                            <button onclick="window.refreshReservations()" title="Recharger depuis la base" class="bg-maldiva-dark/10 text-maldiva-dark hover:bg-maldiva-dark hover:text-white font-bold px-3 py-2 rounded-xl text-xs transition-all border border-maldiva-dark/20 flex items-center gap-1.5"><i class="fa-solid fa-rotate"></i> Actualiser</button>
                         </div>
                     </div>
 
